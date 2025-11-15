@@ -1,0 +1,155 @@
+import { Router } from 'express';
+import { db } from '../db/index-sqlite';
+import { chatSessions, messages } from '../db/schema-sqlite';
+import { eq, desc } from 'drizzle-orm';
+import type { AuthRequest } from '../middleware/auth';
+import { requireAuth } from '../middleware/auth';
+
+const router = Router();
+
+// Get all chat sessions for user
+router.get('/', requireAuth, async (req, res) => {
+  try {
+    const authReq = req as AuthRequest;
+
+    const sessions = await db
+      .select()
+      .from(chatSessions)
+      .where(eq(chatSessions.userId, authReq.user!.id))
+      .orderBy(desc(chatSessions.createdAt));
+
+    res.json({
+      success: true,
+      data: {
+        sessions,
+        total: sessions.length,
+      },
+    });
+  } catch (error) {
+    console.error('Get sessions error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch sessions' });
+  }
+});
+
+// Get specific chat session
+router.get('/:id', requireAuth, async (req, res) => {
+  try {
+    const authReq = req as AuthRequest;
+    const sessionId = parseInt(req.params.id);
+
+    if (isNaN(sessionId)) {
+      res.status(400).json({ success: false, error: 'Invalid session ID' });
+      return;
+    }
+
+    const [session] = await db
+      .select()
+      .from(chatSessions)
+      .where(eq(chatSessions.id, sessionId))
+      .limit(1);
+
+    if (!session) {
+      res.status(404).json({ success: false, error: 'Session not found' });
+      return;
+    }
+
+    // Check ownership
+    if (session.userId !== authReq.user!.id) {
+      res.status(403).json({ success: false, error: 'Access denied' });
+      return;
+    }
+
+    res.json({ success: true, data: session });
+  } catch (error) {
+    console.error('Get session error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch session' });
+  }
+});
+
+// Get messages for a session
+router.get('/:id/messages', requireAuth, async (req, res) => {
+  try {
+    const authReq = req as AuthRequest;
+    const sessionId = parseInt(req.params.id);
+
+    if (isNaN(sessionId)) {
+      res.status(400).json({ success: false, error: 'Invalid session ID' });
+      return;
+    }
+
+    // Verify session ownership
+    const [session] = await db
+      .select()
+      .from(chatSessions)
+      .where(eq(chatSessions.id, sessionId))
+      .limit(1);
+
+    if (!session) {
+      res.status(404).json({ success: false, error: 'Session not found' });
+      return;
+    }
+
+    if (session.userId !== authReq.user!.id) {
+      res.status(403).json({ success: false, error: 'Access denied' });
+      return;
+    }
+
+    // Get messages
+    const sessionMessages = await db
+      .select()
+      .from(messages)
+      .where(eq(messages.chatSessionId, sessionId))
+      .orderBy(messages.timestamp);
+
+    res.json({
+      success: true,
+      data: {
+        messages: sessionMessages,
+        total: sessionMessages.length,
+      },
+    });
+  } catch (error) {
+    console.error('Get messages error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch messages' });
+  }
+});
+
+// Delete a chat session
+router.delete('/:id', requireAuth, async (req, res) => {
+  try {
+    const authReq = req as AuthRequest;
+    const sessionId = parseInt(req.params.id);
+
+    if (isNaN(sessionId)) {
+      res.status(400).json({ success: false, error: 'Invalid session ID' });
+      return;
+    }
+
+    // Verify session ownership
+    const [session] = await db
+      .select()
+      .from(chatSessions)
+      .where(eq(chatSessions.id, sessionId))
+      .limit(1);
+
+    if (!session) {
+      res.status(404).json({ success: false, error: 'Session not found' });
+      return;
+    }
+
+    if (session.userId !== authReq.user!.id) {
+      res.status(403).json({ success: false, error: 'Access denied' });
+      return;
+    }
+
+    // Delete session (cascade will delete messages)
+    await db.delete(chatSessions).where(eq(chatSessions.id, sessionId));
+
+    res.json({ success: true, data: { message: 'Session deleted' } });
+  } catch (error) {
+    console.error('Delete session error:', error);
+    res.status(500).json({ success: false, error: 'Failed to delete session' });
+  }
+});
+
+export default router;

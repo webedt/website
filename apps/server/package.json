@@ -1,0 +1,46 @@
+{
+  "name": "@webedt/server",
+  "version": "1.0.0",
+  "description": "Express server for WebEDT",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@webedt/shared": "workspace:*",
+    "express": "^4.21.2",
+    "pg": "^8.13.1",
+    "better-sqlite3": "^11.8.1",
+    "drizzle-orm": "^0.38.3",
+    "express-session": "^1.18.1",
+    "connect-pg-simple": "^10.0.0",
+    "connect-sqlite3": "^0.9.15",
+    "lucia": "^3.2.2",
+    "@lucia-auth/adapter-postgresql": "^3.1.2",
+    "@lucia-auth/adapter-sqlite": "^3.0.2",
+    "@octokit/rest": "^21.0.2",
+    "better-sse": "^0.13.0",
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "eventsource-parser": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.2",
+    "@types/pg": "^8.11.10",
+    "@types/express-session": "^1.18.0",
+    "@types/bcrypt": "^5.0.2",
+    "@types/cors": "^2.8.17",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "drizzle-kit": "^0.30.1"
+  }
+}
