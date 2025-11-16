@@ -100,8 +100,8 @@ async function getDeploymentLogs(sessionId) {
 ```
 **Links:**
 
-GitHub Branch: https://github.com/webedt/website/tree/{branch-name}
-Live Site: https://{deployment-identifier}.etdofresh.com/
+GitHub Branch: [https://github.com/webedt/website/tree/{branch-name}](https://github.com/webedt/website/tree/{branch-name})
+Live Site: [https://{deployment-identifier}.etdofresh.com/](https://{deployment-identifier}.etdofresh.com/)
 ```
 
 **How to construct the deployment URL:**
@@ -115,23 +115,23 @@ The deployment identifier follows this pattern:
 ```
 **Links:**
 
-GitHub Branch: https://github.com/webedt/website/tree/claude/fix-delete-modal-enter-01D495CooAjG8DPVRonWJ3tb
-Live Site: https://website-claude-fix-delete-modal-enter-01d495cooajg8dpvronwj3tb.etdofresh.com/
+GitHub Branch: [https://github.com/webedt/website/tree/claude/fix-delete-modal-enter-01D495CooAjG8DPVRonWJ3tb](https://github.com/webedt/website/tree/claude/fix-delete-modal-enter-01D495CooAjG8DPVRonWJ3tb)
+Live Site: [https://website-claude-fix-delete-modal-enter-01d495cooajg8dpvronwj3tb.etdofresh.com/](https://website-claude-fix-delete-modal-enter-01d495cooajg8dpvronwj3tb.etdofresh.com/)
 ```
 
 **Example 2 - Branch: claude/fix-sessions-api-error-01jbd4reujegugqwvnzhs8ae**
 ```
 **Links:**
 
-GitHub Branch: https://github.com/webedt/website/tree/claude/fix-sessions-api-error-01jbd4reujegugqwvnzhs8ae
-Live Site: https://website-claude-fix-sessions-api-error-01jbd4reujegugqwvnzhs8ae.etdofresh.com/
+GitHub Branch: [https://github.com/webedt/website/tree/claude/fix-sessions-api-error-01jbd4reujegugqwvnzhs8ae](https://github.com/webedt/website/tree/claude/fix-sessions-api-error-01jbd4reujegugqwvnzhs8ae)
+Live Site: [https://website-claude-fix-sessions-api-error-01jbd4reujegugqwvnzhs8ae.etdofresh.com/](https://website-claude-fix-sessions-api-error-01jbd4reujegugqwvnzhs8ae.etdofresh.com/)
 ```
 
 **Important Notes:**
 - ALWAYS show these links at the end of your response when completing a task
 - The deployment URL should be lowercase
 - Do NOT skip this step - users rely on these links for quick access
-- If logs are relevant, also include: `Deployment Logs: https://logs.etdofresh.com/{deployment-identifier}/`
+- If logs are relevant, also include: `Deployment Logs: [https://logs.etdofresh.com/{deployment-identifier}/](https://logs.etdofresh.com/{deployment-identifier}/)`
 
 ## Project Overview
 
