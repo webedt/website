@@ -48,7 +48,7 @@ export default function Chat() {
     queryFn: () => sessionsApi.getMessages(Number(sessionId)),
     enabled: !!sessionId,
     // Poll every 2 seconds if session is running or pending
-    refetchInterval: (query) => {
+    refetchInterval: () => {
       const session = sessionDetailsData?.data;
       return session?.status === 'running' || session?.status === 'pending' ? 2000 : false;
     },
