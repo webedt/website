@@ -13,16 +13,24 @@ https://github.com/webedt/website
 
 ### Deployment URLs
 
-If this project uses a deployment system similar to the parent WebEdt platform, deployed sessions will have unique HTTPS URLs following this pattern:
+This project uses Dokploy for deployments. Each deployment gets a unique HTTPS subdomain following this pattern:
 
 ```
-https://{DOKPLOY_DOMAIN_HOST}/{sessionId}
+https://{deployment-identifier}.etdofresh.com/
 ```
 
-Example:
+The deployment identifier is typically constructed from the repository name, branch name, and session ID.
+
+**Examples:**
 ```
-https://codex-webapp.etdofresh.com/3dbb084b-ab96-46df-b90d-f1b130b245c7
+https://webedt-website-01signhofzrrwp1vhsy58pmw.etdofresh.com/
+https://website-claude-fix-sessions-api-error-01jbd4reujegugqwvnzhs8ae.etdofresh.com/
+https://website-claude-delete-auth-option-016smpbawcs5dvprtnhaz4cc.etdofresh.com/
 ```
+
+**Pattern breakdown:**
+- `webedt-website-{sessionId}` - Repository + Session ID
+- `website-{branch-name}-{sessionId}` - Repository + Branch + Session ID
 
 ### Viewing Deployment Logs
 
@@ -91,12 +99,17 @@ GitHub: https://github.com/webedt/website
 
 **Deployment** (if applicable):
 ```
-Live Site: https://{DOKPLOY_DOMAIN_HOST}/{sessionId}
+Live Site: https://{deployment-identifier}.etdofresh.com/
+```
+
+Example:
+```
+Live Site: https://website-claude-fix-sessions-api-error-01jbd4reujegugqwvnzhs8ae.etdofresh.com/
 ```
 
 **Logs** (if applicable):
 ```
-Deployment Logs: https://logs.etdofresh.com/{sessionId}-{suffix}/
+Deployment Logs: https://logs.etdofresh.com/{deployment-identifier}/
 ```
 
 ## Project Overview
