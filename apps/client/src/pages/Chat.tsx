@@ -45,7 +45,7 @@ export default function Chat() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const { isConnected, error: streamError } = useEventSource(streamUrl, {
+  const { isConnected } = useEventSource(streamUrl, {
     onMessage: (data) => {
       // Log all events to see what we're receiving
       console.log('Received SSE event:', data);

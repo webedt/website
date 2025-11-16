@@ -76,7 +76,7 @@ export function useEventSource(url: string | null, options: UseEventSourceOption
         });
       });
 
-      es.addEventListener('completed', (event: MessageEvent) => {
+      es.addEventListener('completed', () => {
         setIsConnected(false);
         hasExplicitlyClosedRef.current = true;
         onCompleted?.();

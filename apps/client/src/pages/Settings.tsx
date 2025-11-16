@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { githubApi, userApi, authApi } from '@/lib/api';
 import { useAuthStore } from '@/lib/store';
 
@@ -8,7 +8,6 @@ export default function Settings() {
   const setUser = useAuthStore((state) => state.setUser);
   const [claudeAuthJson, setClaudeAuthJson] = useState('');
   const [claudeError, setClaudeError] = useState('');
-  const queryClient = useQueryClient();
 
   const refreshUserSession = async () => {
     try {
