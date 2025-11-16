@@ -48,11 +48,14 @@ COPY packages/shared/package.json ./packages/shared/
 COPY apps/client/package.json ./apps/client/
 COPY apps/server/package.json ./apps/server/
 
-# Install production dependencies only
-RUN pnpm install --frozen-lockfile --prod
+# Install all dependencies (including dev) to ensure native modules can be built
+RUN pnpm install --frozen-lockfile
 
 # Rebuild native modules for the target platform
 RUN pnpm rebuild better-sqlite3 bcrypt
+
+# Prune dev dependencies after building native modules
+RUN pnpm prune --prod
 
 # Copy built artifacts from build stage
 COPY --from=build /app/apps/client/dist ./apps/client/dist
