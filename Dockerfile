@@ -48,8 +48,8 @@ COPY packages/shared/package.json ./packages/shared/
 COPY apps/client/package.json ./apps/client/
 COPY apps/server/package.json ./apps/server/
 
-# Install production dependencies
-RUN pnpm install --prod --frozen-lockfile
+# Install all dependencies (needed for rebuilding native modules)
+RUN pnpm install --frozen-lockfile
 
 # Rebuild native modules for Alpine Linux
 RUN pnpm rebuild better-sqlite3 bcrypt
