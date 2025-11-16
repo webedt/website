@@ -55,6 +55,7 @@ RUN pnpm install --frozen-lockfile
 RUN pnpm rebuild better-sqlite3 bcrypt
 
 # Prune dev dependencies after building native modules
+ENV CI=true
 RUN pnpm prune --prod
 
 # Copy built artifacts from build stage
