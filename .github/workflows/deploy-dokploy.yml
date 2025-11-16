@@ -482,9 +482,9 @@ jobs:
           APP_DOMAIN: ${{ steps.dokploy_app.outputs.domain }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
-          GITHUB_OAUTH_CLIENT_ID: ${{ secrets.GITHUB_OAUTH_CLIENT_ID }}
-          GITHUB_OAUTH_CLIENT_SECRET: ${{ secrets.GITHUB_OAUTH_CLIENT_SECRET }}
-          GITHUB_OAUTH_REDIRECT_URL: ${{ secrets.GITHUB_OAUTH_REDIRECT_URL }}
+          GITHUB_OAUTH_CLIENT_ID: ${{ secrets.GH_OAUTH_CLIENT_ID }}
+          GITHUB_OAUTH_CLIENT_SECRET: ${{ secrets.GH_OAUTH_CLIENT_SECRET }}
+          GITHUB_OAUTH_REDIRECT_URL: ${{ secrets.GH_OAUTH_REDIRECT_URL }}
           AI_WORKER_URL: ${{ secrets.AI_WORKER_URL }}
         run: |
           # Strip trailing slash from DOKPLOY_URL if present
