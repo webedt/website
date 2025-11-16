@@ -22,6 +22,12 @@ FROM base AS build
 
 WORKDIR /app
 
+# Install build dependencies for native modules (better-sqlite3, bcrypt)
+RUN apk add --no-cache python3 make g++
+
+# Rebuild native modules for the Alpine Linux platform
+RUN pnpm rebuild better-sqlite3 bcrypt
+
 # Build client (React/Vite app)
 RUN pnpm --filter @webedt/client build
 
@@ -30,9 +36,6 @@ RUN pnpm --filter @webedt/server build
 
 # Production stage
 FROM node:20-alpine AS production
-
-# Install build dependencies for native modules (better-sqlite3, bcrypt)
-RUN apk add --no-cache python3 make g++
 
 # Install pnpm
 RUN npm install -g pnpm
@@ -48,15 +51,8 @@ COPY packages/shared/package.json ./packages/shared/
 COPY apps/client/package.json ./apps/client/
 COPY apps/server/package.json ./apps/server/
 
-# Install all dependencies (including dev) to ensure native modules can be built
-RUN pnpm install --frozen-lockfile
-
-# Rebuild native modules for the target platform
-RUN pnpm rebuild better-sqlite3 bcrypt
-
-# Prune dev dependencies after building native modules
-ENV CI=true
-RUN pnpm prune --prod
+# Copy node_modules with compiled native modules from build stage
+COPY --from=build /app/node_modules ./node_modules
 
 # Copy built artifacts from build stage
 COPY --from=build /app/apps/client/dist ./apps/client/dist
