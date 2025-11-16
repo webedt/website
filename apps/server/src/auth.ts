@@ -1,11 +1,20 @@
 import { Lucia } from 'lucia';
 import { NodePostgresAdapter } from '@lucia-auth/adapter-postgresql';
-import { pool } from './db/index';
+import { BetterSqlite3Adapter } from '@lucia-auth/adapter-sqlite';
+import { pool, sqliteDb } from './db/index';
 
-const adapter = new NodePostgresAdapter(pool, {
-  user: 'users',
-  session: 'sessions',
-});
+// Use PostgreSQL adapter if DATABASE_URL is set, otherwise SQLite
+const usePostgres = !!process.env.DATABASE_URL;
+
+const adapter = usePostgres
+  ? new NodePostgresAdapter(pool!, {
+      user: 'users',
+      session: 'sessions',
+    })
+  : new BetterSqlite3Adapter(sqliteDb!, {
+      user: 'users',
+      session: 'sessions',
+    });
 
 export const lucia = new Lucia(adapter, {
   sessionCookie: {

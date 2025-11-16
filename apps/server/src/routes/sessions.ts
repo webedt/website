@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { db } from '../db/index-sqlite';
-import { chatSessions, messages } from '../db/schema-sqlite';
+import { db } from '../db/index';
+import { chatSessions, messages } from '../db/index';
 import { eq, desc } from 'drizzle-orm';
 import type { AuthRequest } from '../middleware/auth';
 import { requireAuth } from '../middleware/auth';

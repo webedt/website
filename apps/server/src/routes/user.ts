@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { db } from '../db/index-sqlite';
-import { users } from '../db/schema-sqlite';
+import { db } from '../db/index';
+import { users } from '../db/index';
 import { eq } from 'drizzle-orm';
 import type { AuthRequest } from '../middleware/auth';
 import { requireAuth } from '../middleware/auth';

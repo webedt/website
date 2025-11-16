@@ -6,8 +6,8 @@ import path from 'path';
 // Load environment variables first
 dotenv.config();
 
-// Initialize database (will auto-create tables for SQLite)
-import './db/index-sqlite';
+// Initialize database (PostgreSQL if DATABASE_URL is set, otherwise SQLite)
+import './db/index';
 
 import { authMiddleware } from './middleware/auth';
 import authRoutes from './routes/auth';

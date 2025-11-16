@@ -1,19 +1,139 @@
-import { drizzle } from 'drizzle-orm/node-postgres';
+import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
+import { drizzle as drizzleSqlite } from 'drizzle-orm/better-sqlite3';
 import pg from 'pg';
-import * as schema from './schema';
+import Database from 'better-sqlite3';
+import * as schemaPg from './schema';
+import * as schemaSqlite from './schema-sqlite';
+import path from 'path';
 
 const { Pool } = pg;
 
-if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL environment variable is not set');
+// Use PostgreSQL if DATABASE_URL is set, otherwise SQLite
+const usePostgres = !!process.env.DATABASE_URL;
+
+if (usePostgres) {
+  console.log('Using PostgreSQL database');
+
+  export const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  });
+
+  export const db = drizzlePg(pool, { schema: schemaPg, logger: process.env.NODE_ENV === 'development' });
+
+  // Create PostgreSQL tables if they don't exist
+  console.log('Creating PostgreSQL tables...');
+  pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      email TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      github_id TEXT UNIQUE,
+      github_access_token TEXT,
+      claude_auth JSONB,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS sessions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      expires_at TIMESTAMPTZ NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS chat_sessions (
+      id SERIAL PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      ai_worker_session_id TEXT,
+      user_request TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      repository_url TEXT,
+      branch TEXT,
+      auto_commit BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      completed_at TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS messages (
+      id SERIAL PRIMARY KEY,
+      chat_session_id INTEGER NOT NULL REFERENCES chat_sessions(id) ON DELETE CASCADE,
+      type TEXT NOT NULL,
+      content TEXT NOT NULL,
+      timestamp TIMESTAMP NOT NULL DEFAULT NOW()
+    );
+  `).then(() => {
+    console.log('PostgreSQL tables created successfully!');
+  }).catch((err) => {
+    console.error('Error creating PostgreSQL tables:', err);
+  });
+
+  export const sqliteDb = null;
+
+  // Re-export schema for routes to use
+  export { users, sessions, chatSessions, messages } from './schema';
+} else {
+  console.log('Using SQLite database');
+
+  // Use persistent database file for development
+  const dbPath = path.join(process.cwd(), 'dev.db');
+  const sqlite = new Database(dbPath);
+
+  // Enable foreign keys
+  sqlite.pragma('foreign_keys = ON');
+
+  export const db = drizzleSqlite(sqlite, { schema: schemaSqlite, logger: process.env.NODE_ENV === 'development' });
+  export const sqliteDb: Database.Database = sqlite;
+
+  // Create SQLite tables
+  console.log('Creating SQLite tables...');
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      email TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      github_id TEXT UNIQUE,
+      github_access_token TEXT,
+      claude_auth TEXT,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+
+    CREATE TABLE IF NOT EXISTS sessions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      expires_at INTEGER NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS chat_sessions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL,
+      ai_worker_session_id TEXT,
+      user_request TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      repository_url TEXT,
+      branch TEXT,
+      auto_commit INTEGER NOT NULL DEFAULT 0,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      completed_at INTEGER,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      chat_session_id INTEGER NOT NULL,
+      type TEXT NOT NULL,
+      content TEXT NOT NULL,
+      timestamp INTEGER NOT NULL DEFAULT (unixepoch()),
+      FOREIGN KEY (chat_session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE
+    );
+  `);
+
+  console.log('SQLite tables created successfully!');
+
+  export const pool = null;
+
+  // Re-export schema for routes to use
+  export { users, sessions, chatSessions, messages } from './schema-sqlite';
 }
-
-export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-});
-
-export const db = drizzle(pool, { schema, logger: process.env.NODE_ENV === 'development' });

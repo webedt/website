@@ -1,9 +1,9 @@
 import { Router } from 'express';
 import bcrypt from 'bcrypt';
 import { generateIdFromEntropySize } from 'lucia';
-import { db } from '../db/index-sqlite';
-import { users } from '../db/schema-sqlite';
-import { lucia } from '../auth-sqlite';
+import { db } from '../db/index';
+import { users } from '../db/index';
+import { lucia } from '../auth';
 import { eq } from 'drizzle-orm';
 import type { AuthRequest } from '../middleware/auth';
 

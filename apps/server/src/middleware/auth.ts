@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { lucia } from '../auth-sqlite';
+import { lucia } from '../auth';
 import type { User, Session } from 'lucia';
 
 export interface AuthRequest extends Request {
