@@ -12,6 +12,7 @@ const router = Router();
 // Execute AI coding task with SSE
 router.get('/execute', requireAuth, async (req, res) => {
   const authReq = req as AuthRequest;
+  let chatSession: any;
 
   try {
     const { userRequest, repositoryUrl, branch, autoCommit, resumeSessionId } = req.query;
@@ -57,7 +58,7 @@ router.get('/execute', requireAuth, async (req, res) => {
     }
 
     // Create chat session in database
-    const [chatSession] = await db
+    chatSession = (await db
       .insert(chatSessions)
       .values({
         userId: authReq.user.id,
@@ -68,7 +69,7 @@ router.get('/execute', requireAuth, async (req, res) => {
         autoCommit: autoCommitBool,
         locked: false, // Will be locked after first message
       })
-      .returning();
+      .returning())[0];
 
     // Store user message and lock the session
     if (userRequest) {
@@ -263,39 +264,76 @@ router.get('/execute', requireAuth, async (req, res) => {
       }
 
       // Mark as completed
-      await db
-        .update(chatSessions)
-        .set({ status: 'completed', completedAt: new Date() })
-        .where(eq(chatSessions.id, chatSession.id));
+      try {
+        await db
+          .update(chatSessions)
+          .set({ status: 'completed', completedAt: new Date() })
+          .where(eq(chatSessions.id, chatSession.id));
+      } catch (dbError) {
+        console.error('Failed to update session status to completed:', dbError);
+        // Continue anyway to send completion event to client
+      }
 
-      res.write(`event: completed\n`);
-      res.write(`data: ${JSON.stringify({ chatSessionId: chatSession.id, completed: true })}\n\n`);
-      res.end();
+      // Check if response is still writable before writing
+      if (!res.writableEnded) {
+        res.write(`event: completed\n`);
+        res.write(`data: ${JSON.stringify({ chatSessionId: chatSession.id, completed: true })}\n\n`);
+        res.end();
+      }
     } catch (streamError) {
       console.error('Streaming error:', streamError);
 
-      await db
-        .update(chatSessions)
-        .set({ status: 'error', completedAt: new Date() })
-        .where(eq(chatSessions.id, chatSession.id));
+      // Try to update session status, but don't fail if it doesn't work
+      try {
+        await db
+          .update(chatSessions)
+          .set({ status: 'error', completedAt: new Date() })
+          .where(eq(chatSessions.id, chatSession.id));
+      } catch (dbError) {
+        console.error('Failed to update session status to error:', dbError);
+        // Continue anyway to send error event to client
+      }
 
-      res.write(`event: error\n`);
-      res.write(`data: ${JSON.stringify({ error: 'Streaming failed' })}\n\n`);
-      res.write(`event: completed\n`);
-      res.write(`data: ${JSON.stringify({ completed: true })}\n\n`);
-      res.end();
+      // Check if response is still writable before writing
+      if (!res.writableEnded) {
+        res.write(`event: error\n`);
+        res.write(`data: ${JSON.stringify({ error: 'Streaming failed' })}\n\n`);
+        res.write(`event: completed\n`);
+        res.write(`data: ${JSON.stringify({ completed: true })}\n\n`);
+        res.end();
+      }
     }
   } catch (error) {
     console.error('Execute error:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+
+    // Try to update session status if session was created, but don't fail if it doesn't work
+    if (chatSession?.id) {
+      try {
+        await db
+          .update(chatSessions)
+          .set({ status: 'error', completedAt: new Date() })
+          .where(eq(chatSessions.id, chatSession.id));
+      } catch (dbError) {
+        console.error('Failed to update session status in error handler:', dbError);
+      }
+    }
 
     // Check if headers were already sent (SSE stream started)
     if (res.headersSent) {
-      // Send error through SSE stream
-      res.write(`event: error\n`);
-      res.write(`data: ${JSON.stringify({ error: 'Internal server error' })}\n\n`);
-      res.write(`event: completed\n`);
-      res.write(`data: ${JSON.stringify({ completed: true })}\n\n`);
-      res.end();
+      // Send error through SSE stream only if response is still writable
+      if (!res.writableEnded) {
+        try {
+          res.write(`event: error\n`);
+          res.write(`data: ${JSON.stringify({ error: 'Internal server error' })}\n\n`);
+          res.write(`event: completed\n`);
+          res.write(`data: ${JSON.stringify({ completed: true })}\n\n`);
+          res.end();
+        } catch (writeError) {
+          console.error('Failed to write error to SSE stream:', writeError);
+          // Connection is likely already closed, nothing more we can do
+        }
+      }
     } else {
       // Send JSON error response
       res.status(500).json({ success: false, error: 'Internal server error' });
