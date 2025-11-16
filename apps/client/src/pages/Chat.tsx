@@ -25,6 +25,7 @@ export default function Chat() {
   const [currentSessionId, setCurrentSessionId] = useState<number | null>(
     sessionId ? Number(sessionId) : null
   );
+  const [aiWorkerSessionId, setAiWorkerSessionId] = useState<string | null>(null);
   const [isLocked, setIsLocked] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageIdCounter = useRef(0);
@@ -171,10 +172,22 @@ export default function Chat() {
       setEditTitle('');
       setDeletingSession(false);
       setCurrentSessionId(null);
+      setAiWorkerSessionId(null);
       setIsLocked(false);
       messageIdCounter.current = 0;
     }
   }, [sessionId]);
+
+  // Sync aiWorkerSessionId from query data when loading an existing session
+  useEffect(() => {
+    if (currentSessionData?.data?.aiWorkerSessionId) {
+      console.log(
+        '[Chat] Syncing aiWorkerSessionId from query:',
+        currentSessionData.data.aiWorkerSessionId
+      );
+      setAiWorkerSessionId(currentSessionData.data.aiWorkerSessionId);
+    }
+  }, [currentSessionData]);
 
   const { isConnected } = useEventSource(streamUrl, {
     onMessage: (event) => {
@@ -183,6 +196,12 @@ export default function Chat() {
       console.log('Full event data structure:', JSON.stringify(event, null, 2));
 
       const { eventType, data } = event;
+
+      // Capture AI worker session ID from connected event
+      if (eventType === 'connected' && data?.sessionId) {
+        console.log('[Chat] Captured aiWorkerSessionId from connected event:', data.sessionId);
+        setAiWorkerSessionId(data.sessionId);
+      }
 
       // Skip system events
       if (eventType === 'connected' || eventType === 'completed') {
@@ -327,6 +346,12 @@ export default function Chat() {
         setCurrentSessionId(data.chatSessionId);
         // Invalidate the query to refetch session data with aiWorkerSessionId
         queryClient.invalidateQueries({ queryKey: ['currentSession', data.chatSessionId] });
+
+        // Navigate to the session URL if not already there
+        if (!sessionId || Number(sessionId) !== data.chatSessionId) {
+          console.log('[Chat] Navigating to session:', data.chatSessionId);
+          navigate(`/chat/${data.chatSessionId}`, { replace: true });
+        }
       }
     },
     onError: (error) => {
@@ -385,13 +410,13 @@ export default function Chat() {
     // Resume session if we have an AI worker session ID
     console.log('[Chat] Session resumption check:', {
       currentSessionId,
-      hasCurrentSessionData: !!currentSessionData,
-      aiWorkerSessionId: currentSessionData?.data?.aiWorkerSessionId,
+      aiWorkerSessionId,
+      fromQuery: currentSessionData?.data?.aiWorkerSessionId,
     });
 
-    if (currentSessionData?.data?.aiWorkerSessionId) {
-      params.append('resumeSessionId', currentSessionData.data.aiWorkerSessionId);
-      console.log('[Chat] Resuming session with ID:', currentSessionData.data.aiWorkerSessionId);
+    if (aiWorkerSessionId) {
+      params.append('resumeSessionId', aiWorkerSessionId);
+      console.log('[Chat] Resuming session with ID:', aiWorkerSessionId);
     } else {
       console.log('[Chat] Starting new session - no aiWorkerSessionId available');
     }
