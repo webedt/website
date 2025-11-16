@@ -78,56 +78,131 @@ export default function Chat() {
   }, [messages]);
 
   const { isConnected } = useEventSource(streamUrl, {
-    onMessage: (data) => {
+    onMessage: (event) => {
       // Log all events to see what we're receiving
-      console.log('Received SSE event:', data);
+      console.log('Received SSE event:', event);
+      console.log('Full event data structure:', JSON.stringify(event, null, 2));
+
+      const { eventType, data } = event;
+
+      // Skip system events
+      if (eventType === 'connected' || eventType === 'completed') {
+        return;
+      }
 
       // Extract content from various possible locations
       let content = null;
       let messageType: 'assistant' | 'system' = 'assistant';
+      let eventLabel = '';
 
-      // Skip system events
-      if (data.type === 'connected' || data.type === 'completed') {
-        return;
+      // Set event label for different types
+      switch (eventType) {
+        case 'status':
+          eventLabel = '📊 Status';
+          break;
+        case 'thought':
+          eventLabel = '💭 Thinking';
+          break;
+        case 'tool_use':
+          eventLabel = '🔧 Using tool';
+          break;
+        case 'result':
+          eventLabel = '✅ Result';
+          break;
+        case 'assistant_message':
+          eventLabel = '🤖 Assistant';
+          break;
+        case 'session_name':
+          eventLabel = '📝 Session';
+          break;
+        default:
+          eventLabel = '';
       }
 
-      // Extract from direct message property
-      if (data.message) {
+      // Handle AI worker event structure: data.type with nested data.data
+      if (data.type === 'message' && data.message) {
+        // Simple message with data.message
         content = data.message;
-      }
-      // Extract from github_pull_progress
-      else if (data.type === 'github_pull_progress' && data.data?.message) {
-        content = data.data.message;
-      }
-      // Extract from Claude API response format (assistant_message)
-      else if (data.data && typeof data.data === 'object') {
-        // Skip system/init messages
-        if (data.data.type === 'system' || data.data.subtype === 'init') {
-          return;
-        }
+      } else if (data.type === 'session_name' && data.sessionName) {
+        // Session name
+        content = `Session: ${data.sessionName}`;
+      } else if (data.type === 'assistant_message' && data.data) {
+        // Nested assistant message structure
+        const messageData = data.data;
 
-        // Extract from Claude message format
-        if (data.data.content && Array.isArray(data.data.content)) {
-          const textBlocks = data.data.content
+        if (messageData.type === 'assistant' && messageData.message?.content) {
+          // Extract text from content blocks
+          const contentBlocks = messageData.message.content;
+          if (Array.isArray(contentBlocks)) {
+            const textBlocks = contentBlocks
+              .filter((block: any) => block.type === 'text' && block.text)
+              .map((block: any) => block.text);
+
+            if (textBlocks.length > 0) {
+              content = textBlocks.join('\n');
+            }
+
+            // Also show tool uses
+            const toolUses = contentBlocks
+              .filter((block: any) => block.type === 'tool_use')
+              .map((block: any) => `🔧 Using ${block.name}`);
+
+            if (toolUses.length > 0 && !content) {
+              content = toolUses.join('\n');
+            }
+          }
+        } else if (messageData.type === 'user' && messageData.message?.content) {
+          // Tool results
+          const contentBlocks = messageData.message.content;
+          if (Array.isArray(contentBlocks)) {
+            const results = contentBlocks
+              .filter((block: any) => block.type === 'tool_result')
+              .map((block: any) => block.content)
+              .filter(Boolean);
+
+            if (results.length > 0) {
+              eventLabel = '✅ Tool Result';
+              content = results.join('\n');
+            }
+          }
+        } else if (messageData.type === 'result' && messageData.result) {
+          // Final result
+          eventLabel = '✅ Complete';
+          content = messageData.result;
+        }
+      }
+      // Fallback to original extraction logic
+      else if (typeof data === 'string') {
+        content = data;
+      } else if (data.message) {
+        content = data.message;
+      } else if (data.content) {
+        if (Array.isArray(data.content)) {
+          const textBlocks = data.content
             .filter((block: any) => block.type === 'text' && block.text)
             .map((block: any) => block.text);
 
           if (textBlocks.length > 0) {
             content = textBlocks.join('\n');
           }
+        } else if (typeof data.content === 'string') {
+          content = data.content;
         }
-        // Extract from tool result or other formats
-        else if (data.data.result) {
-          content = data.data.result;
-        } else if (data.data.text) {
-          content = data.data.text;
-        }
+      } else if (data.text) {
+        content = data.text;
+      } else if (data.result) {
+        content = typeof data.result === 'string' ? data.result : JSON.stringify(data.result, null, 2);
       }
 
       // Skip if no meaningful content
       if (!content) {
+        console.log('Skipping event with no content:', event);
+        console.log('Data keys:', typeof data === 'object' ? Object.keys(data) : typeof data);
         return;
       }
+
+      // Add event label if present
+      const finalContent = eventLabel ? `${eventLabel}\n${content}` : content;
 
       messageIdCounter.current += 1;
       setMessages((prev) => [
@@ -136,7 +211,7 @@ export default function Chat() {
           id: Date.now() + messageIdCounter.current,
           chatSessionId: Number(sessionId) || 0,
           type: messageType,
-          content: content,
+          content: finalContent,
           timestamp: new Date(),
         },
       ]);

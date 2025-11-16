@@ -47,31 +47,31 @@ export function useEventSource(url: string | null, options: UseEventSourceOption
       es.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          onMessage?.(data);
+          onMessage?.({ eventType: 'message', data });
         } catch {
-          onMessage?.(event.data);
+          onMessage?.({ eventType: 'message', data: event.data });
         }
       };
 
       es.addEventListener('connected', (event: MessageEvent) => {
         try {
           const data = JSON.parse(event.data);
-          onMessage?.(data);
+          onMessage?.({ eventType: 'connected', data });
         } catch {
-          onMessage?.(event.data);
+          onMessage?.({ eventType: 'connected', data: event.data });
         }
       });
 
       // Listen to various event types the AI worker sends
-      const eventTypes = ['assistant_message', 'status', 'thought', 'tool_use', 'result'];
+      const eventTypes = ['assistant_message', 'status', 'thought', 'tool_use', 'result', 'session_name'];
 
       eventTypes.forEach(eventType => {
         es.addEventListener(eventType, (event: MessageEvent) => {
           try {
             const data = JSON.parse(event.data);
-            onMessage?.(data);
+            onMessage?.({ eventType, data });
           } catch {
-            onMessage?.(event.data);
+            onMessage?.({ eventType, data: event.data });
           }
         });
       });
@@ -97,7 +97,7 @@ export function useEventSource(url: string | null, options: UseEventSourceOption
           // Don't auto-reconnect on explicit error events
           disconnect();
         } catch {
-          onMessage?.(event.data);
+          onMessage?.({ eventType: 'error', data: event.data });
         }
       });
 

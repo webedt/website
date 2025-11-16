@@ -212,7 +212,7 @@ router.get('/execute', requireAuth, async (req, res) => {
           // Parse SSE format
           if (line.startsWith('event:')) {
             currentEvent = line.substring(6).trim();
-            res.write(`${line}\n`); // Forward event type
+            // Don't write yet - wait for the data line
             continue;
           }
 
@@ -221,6 +221,11 @@ router.get('/execute', requireAuth, async (req, res) => {
 
             try {
               const eventData = JSON.parse(data);
+
+              // If no event type was set from event: line, check data.type
+              if (!currentEvent && eventData.type) {
+                currentEvent = eventData.type;
+              }
 
               // Store ai-worker session ID
               if (eventData.sessionId && !chatSession.aiWorkerSessionId) {
@@ -239,10 +244,16 @@ router.get('/execute', requireAuth, async (req, res) => {
                 });
               }
 
-              // Forward to client
+              // Forward to client - write event and data together as a single SSE message
+              if (currentEvent) {
+                res.write(`event: ${currentEvent}\n`);
+              }
               res.write(`data: ${data}\n\n`);
             } catch (e) {
               // Forward non-JSON data as-is
+              if (currentEvent) {
+                res.write(`event: ${currentEvent}\n`);
+              }
               res.write(`data: ${data}\n\n`);
             }
 
