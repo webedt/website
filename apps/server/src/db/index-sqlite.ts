@@ -11,7 +11,7 @@ const sqlite = new Database(dbPath);
 sqlite.pragma('foreign_keys = ON');
 
 export const db = drizzle(sqlite, { schema, logger: process.env.NODE_ENV === 'development' });
-export const sqliteDb = sqlite;
+export const sqliteDb: Database.Database = sqlite;
 
 // Initialize tables
 console.log('Creating SQLite tables...');
@@ -19,7 +19,7 @@ console.log('Creating SQLite tables...');
 // Create tables
 sqlite.exec(`
   CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id TEXT PRIMARY KEY,
     email TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
     github_id TEXT UNIQUE,
@@ -30,14 +30,14 @@ sqlite.exec(`
 
   CREATE TABLE IF NOT EXISTS sessions (
     id TEXT PRIMARY KEY,
-    user_id INTEGER NOT NULL,
+    user_id TEXT NOT NULL,
     expires_at INTEGER NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   );
 
   CREATE TABLE IF NOT EXISTS chat_sessions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
+    user_id TEXT NOT NULL,
     ai_worker_session_id TEXT,
     user_request TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'pending',

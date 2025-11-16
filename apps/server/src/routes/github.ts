@@ -51,7 +51,10 @@ router.get('/oauth/callback', async (req, res) => {
       }),
     });
 
-    const tokenData = await tokenResponse.json();
+    const tokenData = (await tokenResponse.json()) as {
+      access_token?: string;
+      error?: string;
+    };
 
     if (tokenData.error) {
       res.redirect(

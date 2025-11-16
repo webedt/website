@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import bcrypt from 'bcrypt';
+import { generateIdFromEntropySize } from 'lucia';
 import { db } from '../db/index-sqlite';
 import { users } from '../db/schema-sqlite';
 import { lucia } from '../auth-sqlite';
@@ -34,10 +35,14 @@ router.post('/register', async (req, res) => {
     // Hash password
     const passwordHash = await bcrypt.hash(password, 10);
 
+    // Generate user ID
+    const userId = generateIdFromEntropySize(10); // 10 bytes = 120 bits of entropy
+
     // Create user
     const [newUser] = await db
       .insert(users)
       .values({
+        id: userId,
         email,
         passwordHash,
       })

@@ -1,7 +1,7 @@
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 
 export const users = sqliteTable('users', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+  id: text('id').primaryKey(),
   email: text('email').notNull().unique(),
   passwordHash: text('password_hash').notNull(),
   githubId: text('github_id').unique(),
@@ -19,7 +19,7 @@ export const users = sqliteTable('users', {
 
 export const sessions = sqliteTable('sessions', {
   id: text('id').primaryKey(),
-  userId: integer('user_id')
+  userId: text('user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
   expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
@@ -27,7 +27,7 @@ export const sessions = sqliteTable('sessions', {
 
 export const chatSessions = sqliteTable('chat_sessions', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  userId: integer('user_id')
+  userId: text('user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
   aiWorkerSessionId: text('ai_worker_session_id'),

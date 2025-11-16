@@ -1,8 +1,8 @@
 import { Lucia } from 'lucia';
-import { DrizzlePostgreSQLAdapter } from '@lucia-auth/adapter-postgresql';
+import { NodePostgresAdapter } from '@lucia-auth/adapter-postgresql';
 import { pool } from './db/index';
 
-const adapter = new DrizzlePostgreSQLAdapter(pool, {
+const adapter = new NodePostgresAdapter(pool, {
   user: 'users',
   session: 'sessions',
 });
@@ -18,7 +18,7 @@ export const lucia = new Lucia(adapter, {
       email: attributes.email,
       githubId: attributes.github_id,
       githubAccessToken: attributes.github_access_token,
-      claudeAuth: attributes.claude_auth,
+      claudeAuth: attributes.claude_auth ? (typeof attributes.claude_auth === 'string' ? JSON.parse(attributes.claude_auth) : attributes.claude_auth) : null,
     };
   },
 });
@@ -30,14 +30,7 @@ declare module 'lucia' {
       email: string;
       github_id: string | null;
       github_access_token: string | null;
-      claude_auth: {
-        accessToken: string;
-        refreshToken: string;
-        expiresAt: number;
-        scopes: string[];
-        subscriptionType: string;
-        rateLimitTier: string;
-      } | null;
+      claude_auth: string | null;
     };
   }
 }

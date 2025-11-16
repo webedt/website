@@ -48,7 +48,7 @@ router.get('/execute', requireAuth, async (req, res) => {
       await db.insert(messages).values({
         chatSessionId: chatSession.id,
         type: 'user',
-        content: userRequest,
+        content: userRequest as string,
       });
     }
 
