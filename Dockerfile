@@ -31,8 +31,12 @@ RUN pnpm --filter @webedt/server build
 # Production stage
 FROM node:20-alpine AS production
 
-# Install build dependencies for native modules
-RUN apk add --no-cache python3 make g++
+# Install build dependencies for native modules and SQLite
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    sqlite-dev
 
 # Install pnpm
 RUN npm install -g pnpm
@@ -51,8 +55,9 @@ COPY apps/server/package.json ./apps/server/
 # Install all dependencies (needed for rebuilding native modules)
 RUN pnpm install --frozen-lockfile
 
-# Rebuild native modules for Alpine Linux
-RUN pnpm rebuild better-sqlite3 bcrypt
+# Manually rebuild native modules using npm in pnpm store
+RUN cd /app/node_modules/.pnpm/better-sqlite3@*/node_modules/better-sqlite3 && npm run build-release
+RUN cd /app/node_modules/.pnpm/bcrypt@*/node_modules/bcrypt && npm rebuild
 
 # Copy built artifacts from build stage
 COPY --from=build /app/apps/client/dist ./apps/client/dist
