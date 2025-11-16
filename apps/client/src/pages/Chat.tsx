@@ -344,6 +344,11 @@ export default function Chat() {
       params.append('autoCommit', 'true');
     }
 
+    // Resume session if we have an AI worker session ID
+    if (currentSessionData?.data?.aiWorkerSessionId) {
+      params.append('resumeSessionId', currentSessionData.data.aiWorkerSessionId);
+    }
+
     setStreamUrl(`/api/execute?${params}`);
     setInput('');
   };
