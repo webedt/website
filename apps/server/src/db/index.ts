@@ -171,8 +171,8 @@ if (usePostgres) {
 
   // Add locked column if it doesn't exist (migration)
   try {
-    const tableInfo = sqlite.pragma('table_info(chat_sessions)');
-    const hasLockedColumn = tableInfo.some((col: any) => col.name === 'locked');
+    const tableInfo = sqlite.pragma('table_info(chat_sessions)') as Array<{ name: string }>;
+    const hasLockedColumn = tableInfo.some((col) => col.name === 'locked');
     if (!hasLockedColumn) {
       sqlite.exec('ALTER TABLE chat_sessions ADD COLUMN locked INTEGER NOT NULL DEFAULT 0;');
       console.log('SQLite migration: Added locked column to chat_sessions');
