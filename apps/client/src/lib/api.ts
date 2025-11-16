@@ -35,13 +35,13 @@ export const authApi = {
   register: (email: string, password: string) =>
     fetchApi('/api/auth/register', {
       method: 'POST',
-      body: { email, password },
+      body: { email: email.toLowerCase().trim(), password },
     }),
 
   login: (email: string, password: string) =>
     fetchApi('/api/auth/login', {
       method: 'POST',
-      body: { email, password },
+      body: { email: email.toLowerCase().trim(), password },
     }),
 
   logout: () =>
