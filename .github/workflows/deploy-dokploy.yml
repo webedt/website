@@ -479,6 +479,7 @@ jobs:
           DOKPLOY_URL: ${{ vars.DOKPLOY_URL }}
           DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
           APPLICATION_ID: ${{ steps.dokploy_app.outputs.application_id }}
+          APP_DOMAIN: ${{ steps.dokploy_app.outputs.domain }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
           GITHUB_OAUTH_CLIENT_ID: ${{ secrets.GITHUB_OAUTH_CLIENT_ID }}
@@ -550,6 +551,16 @@ jobs:
             fi
             ENV_VARS="${ENV_VARS}AI_WORKER_URL=${AI_WORKER_URL}"
             echo "  ✅ AI_WORKER_URL configured"
+            ENV_COUNT=$((ENV_COUNT + 1))
+          fi
+
+          # Add ALLOWED_ORIGINS using the application domain
+          if [ -n "$APP_DOMAIN" ]; then
+            if [ -n "$ENV_VARS" ]; then
+              ENV_VARS="${ENV_VARS}\n"
+            fi
+            ENV_VARS="${ENV_VARS}ALLOWED_ORIGINS=https://${APP_DOMAIN}"
+            echo "  ✅ ALLOWED_ORIGINS configured"
             ENV_COUNT=$((ENV_COUNT + 1))
           fi
 
