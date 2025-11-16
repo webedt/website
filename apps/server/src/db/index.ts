@@ -30,7 +30,8 @@ if (usePostgres) {
     max: 20,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 2000,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    // Only use SSL if explicitly required in the connection string
+    ssl: process.env.DATABASE_URL?.includes('sslmode=require') ? { rejectUnauthorized: false } : false,
   });
 
   db = drizzlePg(pool, { schema: schemaPg, logger: process.env.NODE_ENV === 'development' });
