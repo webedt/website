@@ -90,27 +90,48 @@ async function getDeploymentLogs(sessionId) {
 
 ### Displaying Links to Users
 
-When completing tasks that involve deployment or repository access, display the relevant links in this format:
+**CRITICAL REQUIREMENT:** After completing ANY task that involves code changes, commits, or pushes, you MUST ALWAYS display clickable links to:
 
-**Repository:**
-```
-GitHub: https://github.com/webedt/website
-```
+1. The GitHub repository (linked to the specific branch)
+2. The deployment site (using the session ID pattern)
 
-**Deployment** (if applicable):
+**Required Format:**
+
 ```
+**Links:**
+
+GitHub Branch: https://github.com/webedt/website/tree/{branch-name}
 Live Site: https://{deployment-identifier}.etdofresh.com/
 ```
 
-Example:
+**How to construct the deployment URL:**
+
+The deployment identifier follows this pattern:
+- Format: `website-{branch-name-with-dashes}-{sessionId}`
+- The branch name should have slashes replaced with dashes
+- The sessionId is provided in the task context
+
+**Example 1 - Branch: claude/fix-delete-modal-enter-01D495CooAjG8DPVRonWJ3tb**
 ```
+**Links:**
+
+GitHub Branch: https://github.com/webedt/website/tree/claude/fix-delete-modal-enter-01D495CooAjG8DPVRonWJ3tb
+Live Site: https://website-claude-fix-delete-modal-enter-01d495cooajg8dpvronwj3tb.etdofresh.com/
+```
+
+**Example 2 - Branch: claude/fix-sessions-api-error-01jbd4reujegugqwvnzhs8ae**
+```
+**Links:**
+
+GitHub Branch: https://github.com/webedt/website/tree/claude/fix-sessions-api-error-01jbd4reujegugqwvnzhs8ae
 Live Site: https://website-claude-fix-sessions-api-error-01jbd4reujegugqwvnzhs8ae.etdofresh.com/
 ```
 
-**Logs** (if applicable):
-```
-Deployment Logs: https://logs.etdofresh.com/{deployment-identifier}/
-```
+**Important Notes:**
+- ALWAYS show these links at the end of your response when completing a task
+- The deployment URL should be lowercase
+- Do NOT skip this step - users rely on these links for quick access
+- If logs are relevant, also include: `Deployment Logs: https://logs.etdofresh.com/{deployment-identifier}/`
 
 ## Project Overview
 
