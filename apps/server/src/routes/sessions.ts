@@ -114,6 +114,54 @@ router.get('/:id/messages', requireAuth, async (req, res) => {
   }
 });
 
+// Update a chat session
+router.patch('/:id', requireAuth, async (req, res) => {
+  try {
+    const authReq = req as AuthRequest;
+    const sessionId = parseInt(req.params.id);
+    const { userRequest } = req.body;
+
+    if (isNaN(sessionId)) {
+      res.status(400).json({ success: false, error: 'Invalid session ID' });
+      return;
+    }
+
+    if (!userRequest || typeof userRequest !== 'string' || userRequest.trim().length === 0) {
+      res.status(400).json({ success: false, error: 'Invalid title' });
+      return;
+    }
+
+    // Verify session ownership
+    const [session] = await db
+      .select()
+      .from(chatSessions)
+      .where(eq(chatSessions.id, sessionId))
+      .limit(1);
+
+    if (!session) {
+      res.status(404).json({ success: false, error: 'Session not found' });
+      return;
+    }
+
+    if (session.userId !== authReq.user!.id) {
+      res.status(403).json({ success: false, error: 'Access denied' });
+      return;
+    }
+
+    // Update session
+    const [updatedSession] = await db
+      .update(chatSessions)
+      .set({ userRequest: userRequest.trim() })
+      .where(eq(chatSessions.id, sessionId))
+      .returning();
+
+    res.json({ success: true, data: updatedSession });
+  } catch (error) {
+    console.error('Update session error:', error);
+    res.status(500).json({ success: false, error: 'Failed to update session' });
+  }
+});
+
 // Delete a chat session
 router.delete('/:id', requireAuth, async (req, res) => {
   try {

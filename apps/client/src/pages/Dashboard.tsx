@@ -1,15 +1,67 @@
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { sessionsApi } from '@/lib/api';
 import type { ChatSession } from '@webedt/shared';
 
 export default function Dashboard() {
+  const queryClient = useQueryClient();
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+
   const { data, isLoading, error } = useQuery({
     queryKey: ['sessions'],
     queryFn: sessionsApi.list,
   });
 
   const sessions: ChatSession[] = data?.data?.sessions || [];
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, title }: { id: number; title: string }) =>
+      sessionsApi.update(id, title),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      setEditingId(null);
+      setEditTitle('');
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => sessionsApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      setDeletingId(null);
+    },
+  });
+
+  const handleEdit = (session: ChatSession) => {
+    setEditingId(session.id);
+    setEditTitle(session.userRequest);
+  };
+
+  const handleSaveEdit = (id: number) => {
+    if (editTitle.trim()) {
+      updateMutation.mutate({ id, title: editTitle.trim() });
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditTitle('');
+  };
+
+  const handleDelete = (id: number) => {
+    setDeletingId(id);
+  };
+
+  const confirmDelete = (id: number) => {
+    deleteMutation.mutate(id);
+  };
+
+  const cancelDelete = () => {
+    setDeletingId(null);
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -73,44 +125,143 @@ export default function Dashboard() {
           <ul className="divide-y divide-gray-200 dark:divide-gray-700">
             {sessions.map((session) => (
               <li key={session.id}>
-                <Link
-                  to={`/chat/${session.id}`}
-                  className="block hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  <div className="px-4 py-4 sm:px-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-blue-600 dark:text-blue-400 truncate">
-                          {session.userRequest}
-                        </p>
-                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                          {session.repositoryUrl || 'No repository'}
-                        </p>
-                      </div>
-                      <div className="ml-4 flex-shrink-0 flex items-center space-x-4">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            session.status === 'completed'
-                              ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                              : session.status === 'running'
-                              ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
-                              : session.status === 'error'
-                              ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-                              : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
-                          }`}
-                        >
-                          {session.status}
-                        </span>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
-                          {new Date(session.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
+                <div className="px-4 py-4 sm:px-6 hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 min-w-0">
+                      {editingId === session.id ? (
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="text"
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            className="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSaveEdit(session.id);
+                              if (e.key === 'Escape') handleCancelEdit();
+                            }}
+                          />
+                          <button
+                            onClick={() => handleSaveEdit(session.id)}
+                            className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-green-600 hover:bg-green-700"
+                            disabled={updateMutation.isPending}
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={handleCancelEdit}
+                            className="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <Link to={`/chat/${session.id}`}>
+                          <p className="text-sm font-medium text-blue-600 dark:text-blue-400 truncate">
+                            {session.userRequest}
+                          </p>
+                          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                            {session.repositoryUrl || 'No repository'}
+                          </p>
+                        </Link>
+                      )}
+                    </div>
+                    <div className="ml-4 flex-shrink-0 flex items-center space-x-4">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          session.status === 'completed'
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                            : session.status === 'running'
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                            : session.status === 'error'
+                            ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                            : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
+                        }`}
+                      >
+                        {session.status}
+                      </span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        {new Date(session.createdAt).toLocaleDateString()}
+                      </span>
+                      {editingId !== session.id && (
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleEdit(session);
+                            }}
+                            className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
+                            title="Edit session title"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-5 w-5"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                            >
+                              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleDelete(session.id);
+                            }}
+                            className="text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
+                            title="Delete session"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-5 w-5"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
-                </Link>
+                </div>
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {/* Delete confirmation modal */}
+      {deletingId && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 dark:bg-gray-900 dark:bg-opacity-80 overflow-y-auto h-full w-full flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+              Delete Session
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+              Are you sure you want to delete this session? This action cannot be undone and will
+              delete all messages in this session.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={cancelDelete}
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                disabled={deleteMutation.isPending}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => confirmDelete(deletingId)}
+                className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50"
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
