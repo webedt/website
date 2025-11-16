@@ -327,6 +327,12 @@ export default function Chat() {
         setCurrentSessionId(data.chatSessionId);
         // Invalidate the query to refetch session data with aiWorkerSessionId
         queryClient.invalidateQueries({ queryKey: ['currentSession', data.chatSessionId] });
+
+        // Navigate to the session URL if not already there
+        if (!sessionId || Number(sessionId) !== data.chatSessionId) {
+          console.log('[Chat] Navigating to session:', data.chatSessionId);
+          navigate(`/chat/${data.chatSessionId}`, { replace: true });
+        }
       }
     },
     onError: (error) => {
