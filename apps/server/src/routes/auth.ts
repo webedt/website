@@ -24,8 +24,11 @@ router.post('/register', async (req, res) => {
       return;
     }
 
+    // Normalize email to lowercase for case-insensitive comparison
+    const normalizedEmail = email.toLowerCase().trim();
+
     // Check if user already exists
-    const existingUser = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    const existingUser = await db.select().from(users).where(eq(users.email, normalizedEmail)).limit(1);
 
     if (existingUser.length > 0) {
       res.status(400).json({ success: false, error: 'Email already in use' });
@@ -43,7 +46,7 @@ router.post('/register', async (req, res) => {
       .insert(users)
       .values({
         id: userId,
-        email,
+        email: normalizedEmail,
         passwordHash,
       })
       .returning();
@@ -83,8 +86,11 @@ router.post('/login', async (req, res) => {
       return;
     }
 
+    // Normalize email to lowercase for case-insensitive comparison
+    const normalizedEmail = email.toLowerCase().trim();
+
     // Find user
-    const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    const [user] = await db.select().from(users).where(eq(users.email, normalizedEmail)).limit(1);
 
     if (!user) {
       res.status(400).json({ success: false, error: 'Invalid email or password' });
