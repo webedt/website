@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { sessionsApi, githubApi } from '@/lib/api';
@@ -164,6 +164,21 @@ export default function Dashboard() {
       setIsExecuting(false);
     }
   };
+
+  // Handle Enter key in delete modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (deletingId && e.key === 'Enter' && !deleteMutation.isPending) {
+        e.preventDefault();
+        confirmDelete(deletingId);
+      }
+    };
+
+    if (deletingId) {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [deletingId, deleteMutation.isPending]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

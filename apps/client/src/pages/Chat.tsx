@@ -118,6 +118,21 @@ export default function Chat() {
     setDeletingSession(false);
   };
 
+  // Handle Enter key in delete modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (deletingSession && e.key === 'Enter' && !deleteMutation.isPending) {
+        e.preventDefault();
+        confirmDelete();
+      }
+    };
+
+    if (deletingSession) {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [deletingSession, deleteMutation.isPending]);
+
   useEffect(() => {
     if (sessionData?.data?.messages) {
       setMessages(sessionData.data.messages);
@@ -141,6 +156,25 @@ export default function Chat() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Reset state when navigating to new chat (sessionId becomes undefined)
+  useEffect(() => {
+    if (!sessionId) {
+      setMessages([]);
+      setInput('');
+      setSelectedRepo('');
+      setBranch('');
+      setAutoCommit(true);
+      setIsExecuting(false);
+      setStreamUrl(null);
+      setEditingTitle(false);
+      setEditTitle('');
+      setDeletingSession(false);
+      setCurrentSessionId(null);
+      setIsLocked(false);
+      messageIdCounter.current = 0;
+    }
+  }, [sessionId]);
 
   const { isConnected } = useEventSource(streamUrl, {
     onMessage: (event) => {
@@ -343,6 +377,11 @@ export default function Chat() {
 
     if (autoCommit) {
       params.append('autoCommit', 'true');
+    }
+
+    // Resume session if we have an AI worker session ID
+    if (currentSessionData?.data?.aiWorkerSessionId) {
+      params.append('resumeSessionId', currentSessionData.data.aiWorkerSessionId);
     }
 
     setStreamUrl(`/api/execute?${params}`);
