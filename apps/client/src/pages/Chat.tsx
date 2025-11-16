@@ -323,7 +323,10 @@ export default function Chat() {
       setStreamUrl(null);
       // Capture session ID from completion event
       if (data?.chatSessionId) {
+        console.log('[Chat] Execution completed, setting currentSessionId:', data.chatSessionId);
         setCurrentSessionId(data.chatSessionId);
+        // Invalidate the query to refetch session data with aiWorkerSessionId
+        queryClient.invalidateQueries({ queryKey: ['currentSession', data.chatSessionId] });
       }
     },
     onError: (error) => {
@@ -380,8 +383,17 @@ export default function Chat() {
     }
 
     // Resume session if we have an AI worker session ID
+    console.log('[Chat] Session resumption check:', {
+      currentSessionId,
+      hasCurrentSessionData: !!currentSessionData,
+      aiWorkerSessionId: currentSessionData?.data?.aiWorkerSessionId,
+    });
+
     if (currentSessionData?.data?.aiWorkerSessionId) {
       params.append('resumeSessionId', currentSessionData.data.aiWorkerSessionId);
+      console.log('[Chat] Resuming session with ID:', currentSessionData.data.aiWorkerSessionId);
+    } else {
+      console.log('[Chat] Starting new session - no aiWorkerSessionId available');
     }
 
     setStreamUrl(`/api/execute?${params}`);

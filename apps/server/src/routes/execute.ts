@@ -128,8 +128,17 @@ router.get('/execute', requireAuth, async (req, res) => {
       codingAssistantAuthentication: claudeAuth,
     };
 
+    console.log(`[Execute] Session resumption debug:
+      - resumeSessionId from query: ${resumeSessionId || 'N/A'}
+      - chatSession.id: ${chatSession.id}
+      - chatSession.aiWorkerSessionId: ${chatSession.aiWorkerSessionId || 'N/A'}
+    `);
+
     if (resumeSessionId) {
       executePayload.resumeSessionId = resumeSessionId;
+      console.log(`[Execute] Added resumeSessionId to payload: ${resumeSessionId}`);
+    } else {
+      console.log(`[Execute] No resumeSessionId provided, starting new session`);
     }
 
     if (repositoryUrl && authReq.user.githubAccessToken) {
@@ -228,11 +237,23 @@ router.get('/execute', requireAuth, async (req, res) => {
               }
 
               // Store ai-worker session ID
-              if (eventData.sessionId && !chatSession.aiWorkerSessionId) {
-                await db
-                  .update(chatSessions)
-                  .set({ aiWorkerSessionId: eventData.sessionId })
-                  .where(eq(chatSessions.id, chatSession.id));
+              if (eventData.sessionId) {
+                console.log(`[Execute] Received sessionId from AI worker: ${eventData.sessionId}, current aiWorkerSessionId: ${chatSession.aiWorkerSessionId || 'N/A'}`);
+
+                if (!chatSession.aiWorkerSessionId) {
+                  await db
+                    .update(chatSessions)
+                    .set({ aiWorkerSessionId: eventData.sessionId })
+                    .where(eq(chatSessions.id, chatSession.id));
+
+                  // Update local chatSession object
+                  chatSession.aiWorkerSessionId = eventData.sessionId;
+                  console.log(`[Execute] Stored aiWorkerSessionId: ${eventData.sessionId} for chatSession: ${chatSession.id}`);
+                } else {
+                  console.log(`[Execute] aiWorkerSessionId already set, skipping update`);
+                }
+              } else {
+                console.log(`[Execute] No sessionId in event data:`, JSON.stringify(eventData).substring(0, 200));
               }
 
               // Store assistant messages (for any event with content)
