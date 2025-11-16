@@ -81,6 +81,7 @@ export default function Chat() {
     onMessage: (event) => {
       // Log all events to see what we're receiving
       console.log('Received SSE event:', event);
+      console.log('Full event data structure:', JSON.stringify(event, null, 2));
 
       const { eventType, data } = event;
 
@@ -115,8 +116,12 @@ export default function Chat() {
           eventLabel = '';
       }
 
+      // If data is a string, use it directly
+      if (typeof data === 'string') {
+        content = data;
+      }
       // Extract from direct message property
-      if (data.message) {
+      else if (data.message) {
         content = data.message;
       }
       // Extract from direct content property
@@ -153,10 +158,31 @@ export default function Chat() {
           content += `\nInput: ${JSON.stringify(data.input, null, 2)}`;
         }
       }
+      // If data has a type field, try to extract based on that
+      else if (data.type) {
+        if (data.type === 'text' && data.text) {
+          content = data.text;
+        } else if (data.type === 'tool_use') {
+          eventLabel = '🔧 Using tool';
+          content = `Tool: ${data.name || 'unknown'}`;
+          if (data.input) {
+            content += `\nInput: ${JSON.stringify(data.input, null, 2)}`;
+          }
+        } else if (data.type === 'tool_result') {
+          eventLabel = '✅ Result';
+          content = data.content || data.output || JSON.stringify(data, null, 2);
+        }
+      }
+      // Last resort: if data is an object with any meaningful fields, stringify it
+      else if (typeof data === 'object' && Object.keys(data).length > 0) {
+        console.log('Using fallback stringification for data with keys:', Object.keys(data));
+        content = JSON.stringify(data, null, 2);
+      }
 
       // Skip if no meaningful content
       if (!content) {
         console.log('Skipping event with no content:', event);
+        console.log('Data keys:', typeof data === 'object' ? Object.keys(data) : typeof data);
         return;
       }
 
