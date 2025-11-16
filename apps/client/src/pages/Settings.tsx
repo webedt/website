@@ -46,6 +46,17 @@ export default function Settings() {
     },
   });
 
+  const removeClaudeAuth = useMutation({
+    mutationFn: userApi.removeClaudeAuth,
+    onSuccess: async () => {
+      await refreshUserSession();
+      alert('Claude authentication removed successfully');
+    },
+    onError: (error) => {
+      alert(`Failed to remove Claude authentication: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    },
+  });
+
   const handleClaudeAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setClaudeError('');
@@ -137,7 +148,7 @@ export default function Settings() {
 
           {user?.claudeAuth ? (
             <div className="space-y-4">
-              <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-md">
+              <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-md">
                 <div className="flex items-center space-x-2">
                   <svg
                     className="h-5 w-5 text-green-600 dark:text-green-400"
@@ -154,6 +165,13 @@ export default function Settings() {
                     Claude credentials configured
                   </span>
                 </div>
+                <button
+                  onClick={() => removeClaudeAuth.mutate()}
+                  disabled={removeClaudeAuth.isPending}
+                  className="text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 font-medium"
+                >
+                  Remove
+                </button>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 Subscription: {user.claudeAuth.subscriptionType} | Rate Limit:{' '}
