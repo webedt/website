@@ -72,4 +72,23 @@ app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV}`);
   console.log(`AI Worker URL: ${process.env.AI_WORKER_URL}`);
+
+  // Log environment variables (redacting sensitive values)
+  const redactKeys = ['GITHUB_CLIENT_SECRET', 'SESSION_SECRET'];
+  const envVars = Object.keys(process.env)
+    .filter(key => key.startsWith('PORT') || key.startsWith('NODE_ENV') ||
+                   key.startsWith('AI_') || key.startsWith('ALLOWED_') ||
+                   key.startsWith('GITHUB_') || key.startsWith('SESSION_'))
+    .sort()
+    .map(key => {
+      const value = process.env[key];
+      const redactedValue = redactKeys.includes(key) && value
+        ? `${value.substring(0, 4)}...${value.substring(value.length - 4)}`
+        : value;
+      return `  ${key}=${redactedValue}`;
+    })
+    .join('\n');
+
+  console.log('Environment Variables:');
+  console.log(envVars);
 });
