@@ -9,6 +9,7 @@ import { useAuthStore } from '@/lib/store';
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
+  rememberMe: z.boolean().default(false),
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
@@ -29,7 +30,7 @@ export default function Login() {
   const onSubmit = async (data: LoginForm) => {
     try {
       setError('');
-      const response = await authApi.login(data.email, data.password);
+      const response = await authApi.login(data.email, data.password, data.rememberMe);
       setUser(response.data.user);
       navigate('/');
     } catch (err) {
@@ -92,6 +93,21 @@ export default function Login() {
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.password.message}</p>
               )}
             </div>
+          </div>
+
+          <div className="flex items-center">
+            <input
+              {...register('rememberMe')}
+              type="checkbox"
+              id="rememberMe"
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-700 rounded"
+            />
+            <label
+              htmlFor="rememberMe"
+              className="ml-2 block text-sm text-gray-900 dark:text-gray-300"
+            >
+              Remember me for 90 days
+            </label>
           </div>
 
           <div>

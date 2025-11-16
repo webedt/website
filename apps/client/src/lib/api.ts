@@ -38,10 +38,10 @@ export const authApi = {
       body: { email, password },
     }),
 
-  login: (email: string, password: string) =>
+  login: (email: string, password: string, rememberMe: boolean = false) =>
     fetchApi('/api/auth/login', {
       method: 'POST',
-      body: { email, password },
+      body: { email, password, rememberMe },
     }),
 
   logout: () =>

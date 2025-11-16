@@ -76,7 +76,7 @@ router.post('/register', async (req, res) => {
 // Login
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, rememberMe } = req.body;
 
     if (!email || !password) {
       res.status(400).json({ success: false, error: 'Email and password are required' });
@@ -99,9 +99,21 @@ router.post('/login', async (req, res) => {
       return;
     }
 
-    // Create session
+    // Create session with extended expiration if remember me is checked
+    // Default Lucia session: 30 days, Remember me: 90 days
     const session = await lucia.createSession(user.id, {});
-    const sessionCookie = lucia.createSessionCookie(session.id);
+
+    // Create session cookie with custom maxAge if remember me is checked
+    let sessionCookie;
+    if (rememberMe) {
+      // 90 days in seconds
+      const ninetyDaysInSeconds = 90 * 24 * 60 * 60;
+      sessionCookie = lucia.createSessionCookie(session.id);
+      // Override the maxAge for remember me
+      sessionCookie.attributes.maxAge = ninetyDaysInSeconds;
+    } else {
+      sessionCookie = lucia.createSessionCookie(session.id);
+    }
 
     res
       .appendHeader('Set-Cookie', sessionCookie.serialize())
