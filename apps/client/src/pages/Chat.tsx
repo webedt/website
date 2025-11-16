@@ -156,6 +156,25 @@ export default function Chat() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Reset state when navigating to new chat (sessionId becomes undefined)
+  useEffect(() => {
+    if (!sessionId) {
+      setMessages([]);
+      setInput('');
+      setSelectedRepo('');
+      setBranch('');
+      setAutoCommit(true);
+      setIsExecuting(false);
+      setStreamUrl(null);
+      setEditingTitle(false);
+      setEditTitle('');
+      setDeletingSession(false);
+      setCurrentSessionId(null);
+      setIsLocked(false);
+      messageIdCounter.current = 0;
+    }
+  }, [sessionId]);
+
   const { isConnected } = useEventSource(streamUrl, {
     onMessage: (event) => {
       // Log all events to see what we're receiving
