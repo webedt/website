@@ -8,11 +8,11 @@ import { requireAuth } from '../middleware/auth';
 const router = Router();
 
 // Execute AI coding task with SSE
-router.post('/execute', requireAuth, async (req, res) => {
+router.get('/execute', requireAuth, async (req, res) => {
   const authReq = req as AuthRequest;
 
   try {
-    const { userRequest, repositoryUrl, branch, autoCommit, resumeSessionId } = req.body;
+    const { userRequest, repositoryUrl, branch, autoCommit, resumeSessionId } = req.query;
 
     if (!userRequest && !resumeSessionId) {
       res.status(400).json({ success: false, error: 'userRequest or resumeSessionId is required' });
@@ -27,16 +27,19 @@ router.post('/execute', requireAuth, async (req, res) => {
       return;
     }
 
+    // Parse autoCommit from string to boolean
+    const autoCommitBool = autoCommit === 'true';
+
     // Create chat session in database
     const [chatSession] = await db
       .insert(chatSessions)
       .values({
         userId: authReq.user.id,
-        userRequest: userRequest || 'Resumed session',
+        userRequest: (userRequest as string) || 'Resumed session',
         status: 'pending',
-        repositoryUrl: repositoryUrl || null,
-        branch: branch || null,
-        autoCommit: autoCommit || false,
+        repositoryUrl: (repositoryUrl as string) || null,
+        branch: (branch as string) || null,
+        autoCommit: autoCommitBool,
       })
       .returning();
 
@@ -58,7 +61,7 @@ router.post('/execute', requireAuth, async (req, res) => {
 
     // Prepare request to ai-coding-worker
     const executePayload: any = {
-      userRequest: userRequest || 'Resume previous session',
+      userRequest: (userRequest as string) || 'Resume previous session',
       codingAssistantProvider: 'ClaudeAgentSDK',
       codingAssistantAuthentication: authReq.user.claudeAuth,
     };
@@ -69,11 +72,11 @@ router.post('/execute', requireAuth, async (req, res) => {
 
     if (repositoryUrl && authReq.user.githubAccessToken) {
       executePayload.github = {
-        repoUrl: repositoryUrl,
-        branch: branch || undefined,
+        repoUrl: repositoryUrl as string,
+        branch: (branch as string) || undefined,
         accessToken: authReq.user.githubAccessToken,
       };
-      executePayload.autoCommit = autoCommit || false;
+      executePayload.autoCommit = autoCommitBool;
     }
 
     // Forward to ai-coding-worker
@@ -196,7 +199,16 @@ router.post('/execute', requireAuth, async (req, res) => {
     }
   } catch (error) {
     console.error('Execute error:', error);
-    res.status(500).json({ success: false, error: 'Internal server error' });
+
+    // Check if headers were already sent (SSE stream started)
+    if (res.headersSent) {
+      // Send error through SSE stream
+      res.write(`data: ${JSON.stringify({ error: 'Internal server error' })}\n\n`);
+      res.end();
+    } else {
+      // Send JSON error response
+      res.status(500).json({ success: false, error: 'Internal server error' });
+    }
   }
 });
 

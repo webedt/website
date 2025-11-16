@@ -1,9 +1,11 @@
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import Database from 'better-sqlite3';
 import * as schema from './schema-sqlite';
+import path from 'path';
 
-// Use in-memory database for development
-const sqlite = new Database(':memory:');
+// Use persistent database file for development
+const dbPath = path.join(process.cwd(), 'dev.db');
+const sqlite = new Database(dbPath);
 
 // Enable foreign keys
 sqlite.pragma('foreign_keys = ON');

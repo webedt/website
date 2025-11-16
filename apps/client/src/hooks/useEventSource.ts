@@ -83,7 +83,11 @@ export function useEventSource(url: string | null, options: UseEventSourceOption
         setIsConnected(false);
         const err = new Error('Connection lost');
         setError(err);
-        onError?.(err);
+
+        // Only call onError if we're not auto-reconnecting or if we've exhausted retries
+        if (!autoReconnect || reconnectAttemptRef.current >= maxReconnectAttempts) {
+          onError?.(err);
+        }
 
         if (autoReconnect && reconnectAttemptRef.current < maxReconnectAttempts) {
           reconnectAttemptRef.current += 1;

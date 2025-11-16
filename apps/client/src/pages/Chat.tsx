@@ -46,7 +46,7 @@ export default function Chat() {
 
   const { isConnected, error: streamError } = useEventSource(streamUrl, {
     onMessage: (data) => {
-      if (data.message || data.content) {
+      if (data && (data.message || data.content)) {
         setMessages((prev) => [
           ...prev,
           {
@@ -67,19 +67,22 @@ export default function Chat() {
       setStreamUrl(null);
     },
     onError: (error) => {
-      console.error('Stream error:', error);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now(),
-          chatSessionId: Number(sessionId) || 0,
-          type: 'error',
-          content: error.message,
-          timestamp: new Date(),
-        },
-      ]);
-      setIsExecuting(false);
-      setStreamUrl(null);
+      // Only show error if we actually have a stream URL (user initiated a request)
+      if (streamUrl) {
+        console.error('Stream error:', error);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now(),
+            chatSessionId: Number(sessionId) || 0,
+            type: 'error',
+            content: error.message,
+            timestamp: new Date(),
+          },
+        ]);
+        setIsExecuting(false);
+        setStreamUrl(null);
+      }
     },
   });
 
