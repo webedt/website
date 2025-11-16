@@ -108,16 +108,35 @@ Live Site: [https://{deployment-identifier}.etdofresh.com/](https://{deployment-
 
 **How to construct the deployment URL:**
 
-The deployment identifier follows this pattern:
-- Format: `{owner}-{repo}-{sessionId}`
-- Example: `webedt-website-01adzpk5b5h4bkydcmwtolgv`
-- The sessionId is extracted from the branch name (typically the last 24-26 characters, a ULID)
-- All lowercase in the URL
+The deployment identifier is generated using a progressive fallback strategy (based on DNS 63-character subdomain limit) from `.github/workflows/deploy-dokploy.yml`:
 
-**Extracting the sessionId from branch name:**
-- Branch name pattern: `claude/{description}-{sessionId}`
-- Extract the sessionId portion after the last meaningful separator
-- For example, `claude/debug-session-resumption-01AdzpK5b5h4BkyDcMWtoLGV` → sessionId is `01AdzpK5b5h4BkyDcMWtoLGV`
+**Branch Name Processing:**
+1. Convert to lowercase
+2. Replace slashes with dashes
+3. Example: `claude/debug-session-resumption-01AdzpK5b5h4BkyDcMWtoLGV` → `claude-debug-session-resumption-01adzpk5b5h4bkydcmwtolgv`
+
+**Progressive Fallback Strategy:**
+The workflow tries these formats in order, using the first one that fits within 63 characters:
+
+1. **Strategy 1**: `{owner}-{repo}-{branch}` (most specific)
+2. **Strategy 2**: `{repo}-{branch}` (drop owner)
+3. **Strategy 3**: `{owner}-{repo}-{branchpart}` (extract unique ID from branch)
+4. **Strategy 4**: `{repo}-{branchpart}`
+5. **Strategy 5**: `{owner}-{repo}` (drop branch)
+6. **Strategy 6**: `{repo}` (minimal)
+7. **Strategy 7**: hash (last resort)
+
+**For claude/ branches** (like `claude/description-{sessionId}`):
+- The branch name typically contains a ULID session ID at the end
+- When using Strategy 3+, `{branchpart}` is the session ID (extracted as the last segment after the last dash)
+- Most common result: `{owner}-{repo}-{sessionId}`
+- Example: `webedt-website-01adzpk5b5h4bkydcmwtolgv`
+
+**Quick Reference for claude/ branches:**
+- Extract the session ID: last ~26 characters of branch name (ULID format)
+- Format: `webedt-website-{sessionId-lowercase}`
+- Example branch: `claude/debug-session-resumption-01AdzpK5b5h4BkyDcMWtoLGV`
+- Resulting URL: `https://webedt-website-01adzpk5b5h4bkydcmwtolgv.etdofresh.com/`
 
 **Example 1 - Branch: claude/fix-delete-modal-enter-01D495CooAjG8DPVRonWJ3tb**
 ```
