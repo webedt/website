@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import { db } from '../db/index';
-import { chatSessions, messages } from '../db/index';
+import { chatSessions, messages, users } from '../db/index';
 import { eq, and } from 'drizzle-orm';
 import type { AuthRequest } from '../middleware/auth';
 import { requireAuth } from '../middleware/auth';
+import { ensureValidToken } from '../lib/claudeAuth';
+import type { ClaudeAuth } from '@webedt/shared';
 
 const router = Router();
 
@@ -85,6 +87,33 @@ router.get('/execute', requireAuth, async (req, res) => {
       }
     }
 
+    // Ensure Claude token is valid, refresh if needed
+    let claudeAuth: ClaudeAuth = authReq.user.claudeAuth;
+    let tokenWasRefreshed = false;
+
+    try {
+      const refreshedAuth = await ensureValidToken(claudeAuth);
+      if (refreshedAuth !== claudeAuth) {
+        claudeAuth = refreshedAuth;
+        tokenWasRefreshed = true;
+
+        // Save refreshed token to database
+        await db
+          .update(users)
+          .set({ claudeAuth: refreshedAuth })
+          .where(eq(users.id, authReq.user.id));
+
+        console.log(`[Execute] Refreshed and saved Claude token for user ${authReq.user.id}`);
+      }
+    } catch (error) {
+      console.error('[Execute] Failed to refresh Claude token:', error);
+      res.status(401).json({
+        success: false,
+        error: 'Failed to refresh Claude authentication. Please re-authenticate with Claude.',
+      });
+      return;
+    }
+
     // Setup SSE manually
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
@@ -96,7 +125,7 @@ router.get('/execute', requireAuth, async (req, res) => {
     const executePayload: any = {
       userRequest: (userRequest as string) || 'Resume previous session',
       codingAssistantProvider: 'ClaudeAgentSDK',
-      codingAssistantAuthentication: authReq.user.claudeAuth,
+      codingAssistantAuthentication: claudeAuth,
     };
 
     if (resumeSessionId) {
