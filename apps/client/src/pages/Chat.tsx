@@ -27,7 +27,7 @@ export default function Chat() {
   });
 
   // Load repositories
-  const { data: reposData } = useQuery({
+  const { data: reposData, isLoading: isLoadingRepos } = useQuery({
     queryKey: ['repos'],
     queryFn: githubApi.getRepos,
     enabled: !!user?.githubAccessToken,
@@ -201,7 +201,7 @@ export default function Chat() {
       {/* Messages or Centered Input */}
       {messages.length === 0 ? (
         /* Centered input for new session */
-        <div className="flex-1 flex items-center justify-center p-6">
+        <div className="flex-1 flex items-start justify-center p-6 pt-32">
           <form onSubmit={handleSubmit} className="max-w-4xl w-full">
             {/* Multi-line input with controls and submit button inside */}
             <div className="relative">
@@ -222,41 +222,53 @@ export default function Chat() {
               />
 
               {/* Controls inside the box */}
-              {user?.githubAccessToken && repositories.length > 0 && (
+              {user?.githubAccessToken && (
                 <div className="absolute bottom-3 left-3 right-14 flex flex-wrap gap-2 items-center">
-                  <select
-                    value={selectedRepo}
-                    onChange={(e) => setSelectedRepo(e.target.value)}
-                    className="text-xs rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-600 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1 px-2"
-                    disabled={isExecuting}
-                  >
-                    <option value="">No repository</option>
-                    {repositories.map((repo) => (
-                      <option key={repo.id} value={repo.cloneUrl}>
-                        {repo.fullName}
-                      </option>
-                    ))}
-                  </select>
+                  {isLoadingRepos ? (
+                    /* Skeleton loading state */
+                    <>
+                      <div className="h-6 w-32 bg-gray-300 dark:bg-gray-600 rounded-md animate-pulse"></div>
+                      <div className="h-6 w-24 bg-gray-300 dark:bg-gray-600 rounded-md animate-pulse"></div>
+                      <div className="h-4 w-28 bg-gray-300 dark:bg-gray-600 rounded-md animate-pulse"></div>
+                    </>
+                  ) : repositories.length > 0 ? (
+                    /* Actual controls */
+                    <>
+                      <select
+                        value={selectedRepo}
+                        onChange={(e) => setSelectedRepo(e.target.value)}
+                        className="text-xs rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-600 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1 px-2"
+                        disabled={isExecuting}
+                      >
+                        <option value="">No repository</option>
+                        {repositories.map((repo) => (
+                          <option key={repo.id} value={repo.cloneUrl}>
+                            {repo.fullName}
+                          </option>
+                        ))}
+                      </select>
 
-                  <input
-                    type="text"
-                    value={branch}
-                    onChange={(e) => setBranch(e.target.value)}
-                    placeholder="main"
-                    className="text-xs rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-600 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1 px-2 w-24"
-                    disabled={isExecuting}
-                  />
+                      <input
+                        type="text"
+                        value={branch}
+                        onChange={(e) => setBranch(e.target.value)}
+                        placeholder="main"
+                        className="text-xs rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-600 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1 px-2 w-24"
+                        disabled={isExecuting}
+                      />
 
-                  <label className="flex items-center space-x-1">
-                    <input
-                      type="checkbox"
-                      checked={autoCommit}
-                      onChange={(e) => setAutoCommit(e.target.checked)}
-                      className="rounded border-gray-300 dark:border-gray-500 text-blue-600 focus:ring-blue-500"
-                      disabled={isExecuting}
-                    />
-                    <span className="text-xs text-gray-700 dark:text-gray-300">Auto-commit/push</span>
-                  </label>
+                      <label className="flex items-center space-x-1">
+                        <input
+                          type="checkbox"
+                          checked={autoCommit}
+                          onChange={(e) => setAutoCommit(e.target.checked)}
+                          className="rounded border-gray-300 dark:border-gray-500 text-blue-600 focus:ring-blue-500"
+                          disabled={isExecuting}
+                        />
+                        <span className="text-xs text-gray-700 dark:text-gray-300">Auto-commit/push</span>
+                      </label>
+                    </>
+                  ) : null}
                 </div>
               )}
 
@@ -347,41 +359,53 @@ export default function Chat() {
                 />
 
                 {/* Controls inside the box */}
-                {user?.githubAccessToken && repositories.length > 0 && (
+                {user?.githubAccessToken && (
                   <div className="absolute bottom-3 left-3 right-14 flex flex-wrap gap-2 items-center">
-                    <select
-                      value={selectedRepo}
-                      onChange={(e) => setSelectedRepo(e.target.value)}
-                      className="text-xs rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-600 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1 px-2"
-                      disabled={isExecuting}
-                    >
-                      <option value="">No repository</option>
-                      {repositories.map((repo) => (
-                        <option key={repo.id} value={repo.cloneUrl}>
-                          {repo.fullName}
-                        </option>
-                      ))}
-                    </select>
+                    {isLoadingRepos ? (
+                      /* Skeleton loading state */
+                      <>
+                        <div className="h-6 w-32 bg-gray-300 dark:bg-gray-600 rounded-md animate-pulse"></div>
+                        <div className="h-6 w-24 bg-gray-300 dark:bg-gray-600 rounded-md animate-pulse"></div>
+                        <div className="h-4 w-28 bg-gray-300 dark:bg-gray-600 rounded-md animate-pulse"></div>
+                      </>
+                    ) : repositories.length > 0 ? (
+                      /* Actual controls */
+                      <>
+                        <select
+                          value={selectedRepo}
+                          onChange={(e) => setSelectedRepo(e.target.value)}
+                          className="text-xs rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-600 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1 px-2"
+                          disabled={isExecuting}
+                        >
+                          <option value="">No repository</option>
+                          {repositories.map((repo) => (
+                            <option key={repo.id} value={repo.cloneUrl}>
+                              {repo.fullName}
+                            </option>
+                          ))}
+                        </select>
 
-                    <input
-                      type="text"
-                      value={branch}
-                      onChange={(e) => setBranch(e.target.value)}
-                      placeholder="main"
-                      className="text-xs rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-600 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1 px-2 w-24"
-                      disabled={isExecuting}
-                    />
+                        <input
+                          type="text"
+                          value={branch}
+                          onChange={(e) => setBranch(e.target.value)}
+                          placeholder="main"
+                          className="text-xs rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-600 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1 px-2 w-24"
+                          disabled={isExecuting}
+                        />
 
-                    <label className="flex items-center space-x-1">
-                      <input
-                        type="checkbox"
-                        checked={autoCommit}
-                        onChange={(e) => setAutoCommit(e.target.checked)}
-                        className="rounded border-gray-300 dark:border-gray-500 text-blue-600 focus:ring-blue-500"
-                        disabled={isExecuting}
-                      />
-                      <span className="text-xs text-gray-700 dark:text-gray-300">Auto-commit/push</span>
-                    </label>
+                        <label className="flex items-center space-x-1">
+                          <input
+                            type="checkbox"
+                            checked={autoCommit}
+                            onChange={(e) => setAutoCommit(e.target.checked)}
+                            className="rounded border-gray-300 dark:border-gray-500 text-blue-600 focus:ring-blue-500"
+                            disabled={isExecuting}
+                          />
+                          <span className="text-xs text-gray-700 dark:text-gray-300">Auto-commit/push</span>
+                        </label>
+                      </>
+                    ) : null}
                   </div>
                 )}
 
