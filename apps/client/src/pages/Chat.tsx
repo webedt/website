@@ -13,7 +13,7 @@ export default function Chat() {
   const [input, setInput] = useState('');
   const [selectedRepo, setSelectedRepo] = useState('');
   const [branch, setBranch] = useState('');
-  const [autoCommit, setAutoCommit] = useState(false);
+  const [autoCommit, setAutoCommit] = useState(true);
   const [isExecuting, setIsExecuting] = useState(false);
   const [streamUrl, setStreamUrl] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -239,16 +239,16 @@ export default function Chat() {
       </div>
 
       {/* Input */}
-      <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-6">
-        <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
-          {/* Multi-line input with submit button inside */}
+      <div className={`bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-6 ${messages.length === 0 ? 'flex items-center justify-center flex-1' : ''}`}>
+        <form onSubmit={handleSubmit} className="max-w-4xl mx-auto w-full">
+          {/* Multi-line input with controls and submit button inside */}
           <div className="relative">
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Describe what you want to code..."
               rows={4}
-              className="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-lg focus:border-blue-500 focus:ring-blue-500 resize-none pr-14 text-base p-4"
+              className="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-lg focus:border-blue-500 focus:ring-blue-500 resize-none pr-14 text-base p-4 pb-16"
               disabled={isExecuting || !user?.claudeAuth}
               onKeyDown={(e) => {
                 // Submit on Cmd/Ctrl + Enter
@@ -258,6 +258,46 @@ export default function Chat() {
                 }
               }}
             />
+
+            {/* Controls inside the box */}
+            {user?.githubAccessToken && repositories.length > 0 && (
+              <div className="absolute bottom-3 left-3 right-14 flex flex-wrap gap-2 items-center">
+                <select
+                  value={selectedRepo}
+                  onChange={(e) => setSelectedRepo(e.target.value)}
+                  className="text-xs rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-600 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1 px-2"
+                  disabled={isExecuting}
+                >
+                  <option value="">No repository</option>
+                  {repositories.map((repo) => (
+                    <option key={repo.id} value={repo.cloneUrl}>
+                      {repo.fullName}
+                    </option>
+                  ))}
+                </select>
+
+                <input
+                  type="text"
+                  value={branch}
+                  onChange={(e) => setBranch(e.target.value)}
+                  placeholder="main"
+                  className="text-xs rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-600 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1 px-2 w-24"
+                  disabled={isExecuting}
+                />
+
+                <label className="flex items-center space-x-1">
+                  <input
+                    type="checkbox"
+                    checked={autoCommit}
+                    onChange={(e) => setAutoCommit(e.target.checked)}
+                    className="rounded border-gray-300 dark:border-gray-500 text-blue-600 focus:ring-blue-500"
+                    disabled={isExecuting}
+                  />
+                  <span className="text-xs text-gray-700 dark:text-gray-300">Auto-commit/push</span>
+                </label>
+              </div>
+            )}
+
             {/* Submit button inside textarea */}
             <button
               type="submit"
@@ -279,57 +319,6 @@ export default function Chat() {
               )}
             </button>
           </div>
-
-          {/* Repository and Branch controls below input */}
-          {user?.githubAccessToken && repositories.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-4">
-              <div className="flex-1 min-w-[200px]">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Repository
-                </label>
-                <select
-                  value={selectedRepo}
-                  onChange={(e) => setSelectedRepo(e.target.value)}
-                  className="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                  disabled={isExecuting}
-                >
-                  <option value="">No repository</option>
-                  {repositories.map((repo) => (
-                    <option key={repo.id} value={repo.cloneUrl}>
-                      {repo.fullName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex-1 min-w-[150px]">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Branch
-                </label>
-                <input
-                  type="text"
-                  value={branch}
-                  onChange={(e) => setBranch(e.target.value)}
-                  placeholder="main"
-                  className="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                  disabled={isExecuting}
-                />
-              </div>
-
-              <div className="flex items-end">
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={autoCommit}
-                    onChange={(e) => setAutoCommit(e.target.checked)}
-                    className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
-                    disabled={isExecuting}
-                  />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Auto-commit</span>
-                </label>
-              </div>
-            </div>
-          )}
         </form>
       </div>
     </div>
