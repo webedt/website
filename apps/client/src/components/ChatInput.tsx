@@ -35,6 +35,11 @@ export default function ChatInput({
   user,
   centered = false,
 }: ChatInputProps) {
+  // Sort repositories alphabetically by fullName
+  const sortedRepositories = [...repositories].sort((a, b) =>
+    a.fullName.localeCompare(b.fullName)
+  );
+
   return (
     <form onSubmit={onSubmit} className={`max-w-4xl ${centered ? 'w-full -mt-12' : 'mx-auto w-full'}`}>
       {/* Multi-line input with controls and submit button inside */}
@@ -75,7 +80,7 @@ export default function ChatInput({
                   disabled={isExecuting || isLocked}
                 >
                   <option value="">No repository</option>
-                  {repositories.map((repo) => (
+                  {sortedRepositories.map((repo) => (
                     <option key={repo.id} value={repo.cloneUrl}>
                       {repo.fullName}
                     </option>

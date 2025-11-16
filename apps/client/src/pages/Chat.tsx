@@ -164,6 +164,28 @@ export default function Chat() {
     }
   }, [currentSessionData]);
 
+  // Load last selected repo from localStorage when repositories are loaded
+  useEffect(() => {
+    // Only load from localStorage if session is not locked and no repo is selected
+    if (repositories.length > 0 && !selectedRepo && !isLocked) {
+      const lastSelectedRepo = localStorage.getItem('lastSelectedRepo');
+      if (lastSelectedRepo) {
+        // Verify the repo still exists in the list
+        const repoExists = repositories.some(repo => repo.cloneUrl === lastSelectedRepo);
+        if (repoExists) {
+          setSelectedRepo(lastSelectedRepo);
+        }
+      }
+    }
+  }, [repositories, selectedRepo, isLocked]);
+
+  // Save selected repo to localStorage whenever it changes
+  useEffect(() => {
+    if (selectedRepo) {
+      localStorage.setItem('lastSelectedRepo', selectedRepo);
+    }
+  }, [selectedRepo]);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
