@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
 
 // Load environment variables first
 dotenv.config();
@@ -16,7 +17,7 @@ import sessionsRoutes from './routes/sessions';
 import userRoutes from './routes/user';
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(
@@ -42,6 +43,17 @@ app.use('/api/sessions', sessionsRoutes);
 app.get('/health', (req, res) => {
   res.json({ success: true, data: { status: 'ok' } });
 });
+
+// Serve static files in production
+if (process.env.NODE_ENV === 'production') {
+  const clientDistPath = path.join(__dirname, '../../client/dist');
+  app.use(express.static(clientDistPath));
+
+  // Handle client-side routing - send index.html for non-API routes
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(clientDistPath, 'index.html'));
+  });
+}
 
 // Error handler
 app.use(
