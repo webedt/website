@@ -19,18 +19,20 @@ This project uses Dokploy for deployments. Each deployment gets a unique HTTPS s
 https://{deployment-identifier}.etdofresh.com/
 ```
 
-The deployment identifier is typically constructed from the repository name, branch name, and session ID.
+The deployment identifier is constructed from the repository owner, repository name, and session ID.
 
 **Examples:**
 ```
 https://webedt-website-01signhofzrrwp1vhsy58pmw.etdofresh.com/
-https://website-claude-fix-sessions-api-error-01jbd4reujegugqwvnzhs8ae.etdofresh.com/
-https://website-claude-delete-auth-option-016smpbawcs5dvprtnhaz4cc.etdofresh.com/
+https://webedt-website-01adzpk5b5h4bkydcmwtolgv.etdofresh.com/
+https://webedt-website-01d495cooajg8dpvronwj3tb.etdofresh.com/
 ```
 
-**Pattern breakdown:**
-- `webedt-website-{sessionId}` - Repository + Session ID
-- `website-{branch-name}-{sessionId}` - Repository + Branch + Session ID
+**Pattern:**
+- Format: `{owner}-{repo}-{sessionId}`
+- Example: `webedt-website-01adzpk5b5h4bkydcmwtolgv`
+- The sessionId is a ULID extracted from the branch name
+- All lowercase in the URL
 
 ### Viewing Deployment Logs
 
@@ -107,24 +109,30 @@ Live Site: [https://{deployment-identifier}.etdofresh.com/](https://{deployment-
 **How to construct the deployment URL:**
 
 The deployment identifier follows this pattern:
-- Format: `website-{branch-name-with-dashes}-{sessionId}`
-- The branch name should have slashes replaced with dashes
-- The sessionId is provided in the task context
+- Format: `{owner}-{repo}-{sessionId}`
+- Example: `webedt-website-01adzpk5b5h4bkydcmwtolgv`
+- The sessionId is extracted from the branch name (typically the last 24-26 characters, a ULID)
+- All lowercase in the URL
+
+**Extracting the sessionId from branch name:**
+- Branch name pattern: `claude/{description}-{sessionId}`
+- Extract the sessionId portion after the last meaningful separator
+- For example, `claude/debug-session-resumption-01AdzpK5b5h4BkyDcMWtoLGV` → sessionId is `01AdzpK5b5h4BkyDcMWtoLGV`
 
 **Example 1 - Branch: claude/fix-delete-modal-enter-01D495CooAjG8DPVRonWJ3tb**
 ```
 **Links:**
 
 GitHub Branch: [https://github.com/webedt/website/tree/claude/fix-delete-modal-enter-01D495CooAjG8DPVRonWJ3tb](https://github.com/webedt/website/tree/claude/fix-delete-modal-enter-01D495CooAjG8DPVRonWJ3tb)
-Live Site: [https://website-claude-fix-delete-modal-enter-01d495cooajg8dpvronwj3tb.etdofresh.com/](https://website-claude-fix-delete-modal-enter-01d495cooajg8dpvronwj3tb.etdofresh.com/)
+Live Site: [https://webedt-website-01d495cooajg8dpvronwj3tb.etdofresh.com/](https://webedt-website-01d495cooajg8dpvronwj3tb.etdofresh.com/)
 ```
 
-**Example 2 - Branch: claude/fix-sessions-api-error-01jbd4reujegugqwvnzhs8ae**
+**Example 2 - Branch: claude/debug-session-resumption-01AdzpK5b5h4BkyDcMWtoLGV**
 ```
 **Links:**
 
-GitHub Branch: [https://github.com/webedt/website/tree/claude/fix-sessions-api-error-01jbd4reujegugqwvnzhs8ae](https://github.com/webedt/website/tree/claude/fix-sessions-api-error-01jbd4reujegugqwvnzhs8ae)
-Live Site: [https://website-claude-fix-sessions-api-error-01jbd4reujegugqwvnzhs8ae.etdofresh.com/](https://website-claude-fix-sessions-api-error-01jbd4reujegugqwvnzhs8ae.etdofresh.com/)
+GitHub Branch: [https://github.com/webedt/website/tree/claude/debug-session-resumption-01AdzpK5b5h4BkyDcMWtoLGV](https://github.com/webedt/website/tree/claude/debug-session-resumption-01AdzpK5b5h4BkyDcMWtoLGV)
+Live Site: [https://webedt-website-01adzpk5b5h4bkydcmwtolgv.etdofresh.com/](https://webedt-website-01adzpk5b5h4bkydcmwtolgv.etdofresh.com/)
 ```
 
 **Important Notes:**
