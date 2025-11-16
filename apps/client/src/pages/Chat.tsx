@@ -210,11 +210,11 @@ export default function Chat() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex flex-col h-[calc(100vh-4rem)]">
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">AI Coding Assistant</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Chat Session</h1>
 
           {/* Repository selection */}
           {user?.githubAccessToken && repositories.length > 0 && (
