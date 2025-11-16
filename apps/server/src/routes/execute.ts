@@ -193,6 +193,11 @@ router.get('/execute', requireAuth, async (req, res) => {
             try {
               const eventData = JSON.parse(data);
 
+              // If no event type was set from event: line, check data.type
+              if (!currentEvent && eventData.type) {
+                currentEvent = eventData.type;
+              }
+
               // Store ai-worker session ID
               if (eventData.sessionId && !chatSession.aiWorkerSessionId) {
                 await db

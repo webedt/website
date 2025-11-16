@@ -112,21 +112,71 @@ export default function Chat() {
         case 'assistant_message':
           eventLabel = '🤖 Assistant';
           break;
+        case 'session_name':
+          eventLabel = '📝 Session';
+          break;
         default:
           eventLabel = '';
       }
 
-      // If data is a string, use it directly
-      if (typeof data === 'string') {
-        content = data;
-      }
-      // Extract from direct message property
-      else if (data.message) {
+      // Handle AI worker event structure: data.type with nested data.data
+      if (data.type === 'message' && data.message) {
+        // Simple message with data.message
         content = data.message;
+      } else if (data.type === 'session_name' && data.sessionName) {
+        // Session name
+        content = `Session: ${data.sessionName}`;
+      } else if (data.type === 'assistant_message' && data.data) {
+        // Nested assistant message structure
+        const messageData = data.data;
+
+        if (messageData.type === 'assistant' && messageData.message?.content) {
+          // Extract text from content blocks
+          const contentBlocks = messageData.message.content;
+          if (Array.isArray(contentBlocks)) {
+            const textBlocks = contentBlocks
+              .filter((block: any) => block.type === 'text' && block.text)
+              .map((block: any) => block.text);
+
+            if (textBlocks.length > 0) {
+              content = textBlocks.join('\n');
+            }
+
+            // Also show tool uses
+            const toolUses = contentBlocks
+              .filter((block: any) => block.type === 'tool_use')
+              .map((block: any) => `🔧 Using ${block.name}`);
+
+            if (toolUses.length > 0 && !content) {
+              content = toolUses.join('\n');
+            }
+          }
+        } else if (messageData.type === 'user' && messageData.message?.content) {
+          // Tool results
+          const contentBlocks = messageData.message.content;
+          if (Array.isArray(contentBlocks)) {
+            const results = contentBlocks
+              .filter((block: any) => block.type === 'tool_result')
+              .map((block: any) => block.content)
+              .filter(Boolean);
+
+            if (results.length > 0) {
+              eventLabel = '✅ Tool Result';
+              content = results.join('\n');
+            }
+          }
+        } else if (messageData.type === 'result' && messageData.result) {
+          // Final result
+          eventLabel = '✅ Complete';
+          content = messageData.result;
+        }
       }
-      // Extract from direct content property
-      else if (data.content) {
-        // Handle array content (Claude message format)
+      // Fallback to original extraction logic
+      else if (typeof data === 'string') {
+        content = data;
+      } else if (data.message) {
+        content = data.message;
+      } else if (data.content) {
         if (Array.isArray(data.content)) {
           const textBlocks = data.content
             .filter((block: any) => block.type === 'text' && block.text)
@@ -138,45 +188,10 @@ export default function Chat() {
         } else if (typeof data.content === 'string') {
           content = data.content;
         }
-      }
-      // Extract from text property
-      else if (data.text) {
+      } else if (data.text) {
         content = data.text;
-      }
-      // Extract from status property
-      else if (data.status) {
-        content = data.status;
-      }
-      // Extract from result property
-      else if (data.result) {
+      } else if (data.result) {
         content = typeof data.result === 'string' ? data.result : JSON.stringify(data.result, null, 2);
-      }
-      // For tool_use events, show tool name and parameters
-      else if (eventType === 'tool_use' && data.name) {
-        content = `Tool: ${data.name}`;
-        if (data.input) {
-          content += `\nInput: ${JSON.stringify(data.input, null, 2)}`;
-        }
-      }
-      // If data has a type field, try to extract based on that
-      else if (data.type) {
-        if (data.type === 'text' && data.text) {
-          content = data.text;
-        } else if (data.type === 'tool_use') {
-          eventLabel = '🔧 Using tool';
-          content = `Tool: ${data.name || 'unknown'}`;
-          if (data.input) {
-            content += `\nInput: ${JSON.stringify(data.input, null, 2)}`;
-          }
-        } else if (data.type === 'tool_result') {
-          eventLabel = '✅ Result';
-          content = data.content || data.output || JSON.stringify(data, null, 2);
-        }
-      }
-      // Last resort: if data is an object with any meaningful fields, stringify it
-      else if (typeof data === 'object' && Object.keys(data).length > 0) {
-        console.log('Using fallback stringification for data with keys:', Object.keys(data));
-        content = JSON.stringify(data, null, 2);
       }
 
       // Skip if no meaningful content
