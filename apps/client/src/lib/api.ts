@@ -91,6 +91,12 @@ export const sessionsApi = {
 
   getMessages: (id: number) => fetchApi(`/api/sessions/${id}/messages`),
 
+  update: (id: number, userRequest: string) =>
+    fetchApi(`/api/sessions/${id}`, {
+      method: 'PATCH',
+      body: { userRequest },
+    }),
+
   delete: (id: number) =>
     fetchApi(`/api/sessions/${id}`, {
       method: 'DELETE',
