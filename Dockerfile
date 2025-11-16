@@ -64,9 +64,6 @@ RUN cd /app/node_modules/.pnpm/bcrypt@*/node_modules/bcrypt && npm rebuild
 COPY --from=build /app/apps/client/dist ./apps/client/dist
 COPY --from=build /app/apps/server/dist ./apps/server/dist
 
-# Copy server source files that may be needed at runtime
-COPY apps/server/.env* ./apps/server/
-
 # Expose port 3000 (unified server port)
 EXPOSE 3000
 
