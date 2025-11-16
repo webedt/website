@@ -143,11 +143,14 @@ router.get('/execute', requireAuth, async (req, res) => {
         const lines = buffer.split('\n');
         buffer = lines.pop() || '';
 
+        let currentEvent = '';
         for (const line of lines) {
           if (!line.trim()) continue;
 
           // Parse SSE format
           if (line.startsWith('event:')) {
+            currentEvent = line.substring(6).trim();
+            res.write(`${line}\n`); // Forward event type
             continue;
           }
 
@@ -165,12 +168,12 @@ router.get('/execute', requireAuth, async (req, res) => {
                   .where(eq(chatSessions.id, chatSession.id));
               }
 
-              // Store assistant messages
-              if (eventData.message || eventData.content) {
+              // Store assistant messages (for any event with content)
+              if (eventData.message || eventData.content || eventData.text) {
                 await db.insert(messages).values({
                   chatSessionId: chatSession.id,
                   type: 'assistant',
-                  content: eventData.message || eventData.content || JSON.stringify(eventData),
+                  content: eventData.message || eventData.content || eventData.text || JSON.stringify(eventData),
                 });
               }
 
@@ -180,6 +183,8 @@ router.get('/execute', requireAuth, async (req, res) => {
               // Forward non-JSON data as-is
               res.write(`data: ${data}\n\n`);
             }
+
+            currentEvent = ''; // Reset event type
           }
         }
       }

@@ -62,13 +62,18 @@ export function useEventSource(url: string | null, options: UseEventSourceOption
         }
       });
 
-      es.addEventListener('assistant_message', (event: MessageEvent) => {
-        try {
-          const data = JSON.parse(event.data);
-          onMessage?.(data);
-        } catch {
-          onMessage?.(event.data);
-        }
+      // Listen to various event types the AI worker sends
+      const eventTypes = ['assistant_message', 'status', 'thought', 'tool_use', 'result'];
+
+      eventTypes.forEach(eventType => {
+        es.addEventListener(eventType, (event: MessageEvent) => {
+          try {
+            const data = JSON.parse(event.data);
+            onMessage?.(data);
+          } catch {
+            onMessage?.(event.data);
+          }
+        });
       });
 
       es.addEventListener('completed', (event: MessageEvent) => {

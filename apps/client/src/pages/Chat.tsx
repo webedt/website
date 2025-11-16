@@ -47,19 +47,43 @@ export default function Chat() {
 
   const { isConnected, error: streamError } = useEventSource(streamUrl, {
     onMessage: (data) => {
-      if (data && (data.message || data.content)) {
-        messageIdCounter.current += 1;
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: Date.now() + messageIdCounter.current,
-            chatSessionId: Number(sessionId) || 0,
-            type: 'assistant',
-            content: data.message || data.content || JSON.stringify(data),
-            timestamp: new Date(),
-          },
-        ]);
+      // Log all events to see what we're receiving
+      console.log('Received SSE event:', data);
+
+      // Extract content from various possible locations
+      let content = null;
+
+      if (data.message) {
+        content = data.message;
+      } else if (data.content) {
+        content = data.content;
+      } else if (data.data) {
+        // For nested data (like assistant_message events)
+        if (typeof data.data === 'object') {
+          content = data.data.text || data.data.content || data.data.message || JSON.stringify(data.data, null, 2);
+        } else {
+          content = data.data;
+        }
+      } else if (data.status) {
+        content = data.status;
       }
+
+      // Skip events without content or system events
+      if (!content || data.type === 'connected' || data.type === 'completed') {
+        return;
+      }
+
+      messageIdCounter.current += 1;
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now() + messageIdCounter.current,
+          chatSessionId: Number(sessionId) || 0,
+          type: 'assistant',
+          content: typeof content === 'string' ? content : JSON.stringify(content, null, 2),
+          timestamp: new Date(),
+        },
+      ]);
     },
     onConnected: () => {
       setIsExecuting(true);
