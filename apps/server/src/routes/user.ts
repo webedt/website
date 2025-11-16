@@ -11,7 +11,12 @@ const router = Router();
 router.post('/claude-auth', requireAuth, async (req, res) => {
   try {
     const authReq = req as AuthRequest;
-    const { claudeAuth } = req.body;
+    let claudeAuth = req.body.claudeAuth || req.body;
+
+    // Handle wrapped format: extract from claudeAiOauth if present
+    if (claudeAuth.claudeAiOauth) {
+      claudeAuth = claudeAuth.claudeAiOauth;
+    }
 
     // Validate Claude auth structure
     if (!claudeAuth || !claudeAuth.accessToken || !claudeAuth.refreshToken) {

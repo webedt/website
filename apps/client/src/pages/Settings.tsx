@@ -1,18 +1,33 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { githubApi, userApi } from '@/lib/api';
+import { githubApi, userApi, authApi } from '@/lib/api';
 import { useAuthStore } from '@/lib/store';
 
 export default function Settings() {
   const user = useAuthStore((state) => state.user);
+  const setUser = useAuthStore((state) => state.setUser);
   const [claudeAuthJson, setClaudeAuthJson] = useState('');
   const [claudeError, setClaudeError] = useState('');
   const queryClient = useQueryClient();
 
+  const refreshUserSession = async () => {
+    try {
+      const response = await authApi.getSession();
+      setUser(response.data.user);
+    } catch (error) {
+      console.error('Failed to refresh session:', error);
+    }
+  };
+
+  // Refresh user data when page loads (for OAuth redirects)
+  useEffect(() => {
+    refreshUserSession();
+  }, []);
+
   const disconnectGitHub = useMutation({
     mutationFn: githubApi.disconnect,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['session'] });
+    onSuccess: async () => {
+      await refreshUserSession();
       alert('GitHub disconnected successfully');
     },
     onError: (error) => {
@@ -22,8 +37,8 @@ export default function Settings() {
 
   const saveClaudeAuth = useMutation({
     mutationFn: userApi.updateClaudeAuth,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['session'] });
+    onSuccess: async () => {
+      await refreshUserSession();
       setClaudeAuthJson('');
       alert('Claude authentication saved successfully');
     },
@@ -37,15 +52,9 @@ export default function Settings() {
     setClaudeError('');
 
     try {
-      const claudeAuth = JSON.parse(claudeAuthJson);
-
-      // Validate structure
-      if (!claudeAuth.accessToken || !claudeAuth.refreshToken) {
-        setClaudeError('Invalid Claude auth JSON. Must include accessToken and refreshToken.');
-        return;
-      }
-
-      saveClaudeAuth.mutate(claudeAuth);
+      const parsed = JSON.parse(claudeAuthJson);
+      // Just validate it's valid JSON - send entire object to backend
+      saveClaudeAuth.mutate(parsed);
     } catch (error) {
       setClaudeError('Invalid JSON format');
     }
@@ -155,22 +164,21 @@ export default function Settings() {
           ) : (
             <div className="space-y-4">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Add your Claude OAuth credentials to enable AI coding assistance. You can obtain these
-                from the browser DevTools while logged into claude.ai (see ai-coding-worker
-                CREDENTIALS.md).
+                Paste the entire contents of your Claude credentials JSON file from ai-coding-worker.
+                The system will automatically extract the authentication details.
               </p>
 
               <form onSubmit={handleClaudeAuthSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Claude Auth JSON
+                    Claude Auth JSON (paste the entire file contents)
                   </label>
                   <textarea
                     value={claudeAuthJson}
                     onChange={(e) => setClaudeAuthJson(e.target.value)}
-                    placeholder='{"accessToken": "...", "refreshToken": "...", "expiresAt": 123456789, "scopes": [...], "subscriptionType": "...", "rateLimitTier": "..."}'
-                    rows={6}
-                    className="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm font-mono"
+                    placeholder='{"claudeAiOauth":{"accessToken":"...","refreshToken":"...","expiresAt":123456789,"scopes":[...],"subscriptionType":"...","rateLimitTier":"..."}}'
+                    rows={8}
+                    className="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm font-mono text-xs"
                   />
                   {claudeError && (
                     <p className="mt-1 text-sm text-red-600 dark:text-red-400">{claudeError}</p>

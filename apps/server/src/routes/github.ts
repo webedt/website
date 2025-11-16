@@ -21,10 +21,16 @@ router.get('/oauth', requireAuth, (req, res) => {
 });
 
 // GitHub OAuth callback
-router.get('/oauth/callback', requireAuth, async (req, res) => {
+router.get('/oauth/callback', async (req, res) => {
   try {
     const { code, state } = req.query;
     const authReq = req as AuthRequest;
+
+    // Check if user is authenticated
+    if (!authReq.user) {
+      res.redirect(`${process.env.ALLOWED_ORIGINS?.split(',')[0]}/login?error=not_authenticated`);
+      return;
+    }
 
     if (!code) {
       res.redirect(`${process.env.ALLOWED_ORIGINS?.split(',')[0]}/settings?error=no_code`);
@@ -67,7 +73,7 @@ router.get('/oauth/callback', requireAuth, async (req, res) => {
         githubId: String(githubUser.id),
         githubAccessToken: accessToken,
       })
-      .where(eq(users.id, authReq.user!.id));
+      .where(eq(users.id, authReq.user.id));
 
     res.redirect(`${process.env.ALLOWED_ORIGINS?.split(',')[0]}/settings?success=github_connected`);
   } catch (error) {

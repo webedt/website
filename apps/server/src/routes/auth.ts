@@ -150,10 +150,28 @@ router.get('/session', async (req, res) => {
       return;
     }
 
+    // Fetch fresh user data from database to get latest credentials
+    const [freshUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, authReq.user.id))
+      .limit(1);
+
+    if (!freshUser) {
+      res.status(401).json({ success: false, error: 'User not found' });
+      return;
+    }
+
     res.json({
       success: true,
       data: {
-        user: authReq.user,
+        user: {
+          id: freshUser.id,
+          email: freshUser.email,
+          githubId: freshUser.githubId,
+          githubAccessToken: freshUser.githubAccessToken,
+          claudeAuth: freshUser.claudeAuth,
+        },
         session: authReq.session,
       },
     });
