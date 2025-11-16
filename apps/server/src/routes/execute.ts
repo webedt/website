@@ -105,13 +105,19 @@ router.get('/execute', requireAuth, async (req, res) => {
         content: errorText || 'AI worker request failed',
       });
 
+      res.write(`event: error\n`);
       res.write(`data: ${JSON.stringify({ error: errorText })}\n\n`);
+      res.write(`event: completed\n`);
+      res.write(`data: ${JSON.stringify({ completed: true })}\n\n`);
       res.end();
       return;
     }
 
     if (!response.body) {
+      res.write(`event: error\n`);
       res.write(`data: ${JSON.stringify({ error: 'No response body' })}\n\n`);
+      res.write(`event: completed\n`);
+      res.write(`data: ${JSON.stringify({ completed: true })}\n\n`);
       res.end();
       return;
     }
@@ -184,6 +190,7 @@ router.get('/execute', requireAuth, async (req, res) => {
         .set({ status: 'completed', completedAt: new Date() })
         .where(eq(chatSessions.id, chatSession.id));
 
+      res.write(`event: completed\n`);
       res.write(`data: ${JSON.stringify({ chatSessionId: chatSession.id, completed: true })}\n\n`);
       res.end();
     } catch (streamError) {
@@ -194,7 +201,10 @@ router.get('/execute', requireAuth, async (req, res) => {
         .set({ status: 'error', completedAt: new Date() })
         .where(eq(chatSessions.id, chatSession.id));
 
+      res.write(`event: error\n`);
       res.write(`data: ${JSON.stringify({ error: 'Streaming failed' })}\n\n`);
+      res.write(`event: completed\n`);
+      res.write(`data: ${JSON.stringify({ completed: true })}\n\n`);
       res.end();
     }
   } catch (error) {
@@ -203,7 +213,10 @@ router.get('/execute', requireAuth, async (req, res) => {
     // Check if headers were already sent (SSE stream started)
     if (res.headersSent) {
       // Send error through SSE stream
+      res.write(`event: error\n`);
       res.write(`data: ${JSON.stringify({ error: 'Internal server error' })}\n\n`);
+      res.write(`event: completed\n`);
+      res.write(`data: ${JSON.stringify({ completed: true })}\n\n`);
       res.end();
     } else {
       // Send JSON error response

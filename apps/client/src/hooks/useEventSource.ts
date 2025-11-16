@@ -24,14 +24,20 @@ export function useEventSource(url: string | null, options: UseEventSourceOption
   const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectAttemptRef = useRef(0);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+  const hasExplicitlyClosedRef = useRef(false);
+  const isConnectingRef = useRef(false);
 
   const connect = useCallback(() => {
-    if (!url || eventSourceRef.current) return;
+    // Prevent duplicate connections
+    if (!url || eventSourceRef.current || isConnectingRef.current) return;
 
     try {
+      isConnectingRef.current = true;
+      hasExplicitlyClosedRef.current = false;
       const es = new EventSource(url);
 
       es.onopen = () => {
+        isConnectingRef.current = false;
         setIsConnected(true);
         setError(null);
         reconnectAttemptRef.current = 0;
@@ -66,6 +72,8 @@ export function useEventSource(url: string | null, options: UseEventSourceOption
       });
 
       es.addEventListener('completed', (event: MessageEvent) => {
+        setIsConnected(false);
+        hasExplicitlyClosedRef.current = true;
         onCompleted?.();
         disconnect();
       });
@@ -73,13 +81,22 @@ export function useEventSource(url: string | null, options: UseEventSourceOption
       es.addEventListener('error', (event: MessageEvent) => {
         try {
           const data = JSON.parse(event.data);
+          setIsConnected(false);
+          hasExplicitlyClosedRef.current = true;
           onError?.(new Error(data.error || 'Stream error'));
+          // Don't auto-reconnect on explicit error events
+          disconnect();
         } catch {
           onMessage?.(event.data);
         }
       });
 
       es.onerror = () => {
+        // Don't handle if we've already explicitly closed the connection
+        if (hasExplicitlyClosedRef.current) {
+          return;
+        }
+
         setIsConnected(false);
         const err = new Error('Connection lost');
         setError(err);
@@ -104,6 +121,7 @@ export function useEventSource(url: string | null, options: UseEventSourceOption
 
       eventSourceRef.current = es;
     } catch (err) {
+      isConnectingRef.current = false;
       const error = err instanceof Error ? err : new Error('Failed to connect');
       setError(error);
       onError?.(error);
@@ -111,6 +129,8 @@ export function useEventSource(url: string | null, options: UseEventSourceOption
   }, [url, onMessage, onError, onConnected, onCompleted, autoReconnect, maxReconnectAttempts]);
 
   const disconnect = useCallback(() => {
+    isConnectingRef.current = false;
+
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
     }
@@ -130,7 +150,8 @@ export function useEventSource(url: string | null, options: UseEventSourceOption
     return () => {
       disconnect();
     };
-  }, [url, connect, disconnect]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [url]);
 
   return {
     isConnected,

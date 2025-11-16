@@ -17,6 +17,7 @@ export default function Chat() {
   const [isExecuting, setIsExecuting] = useState(false);
   const [streamUrl, setStreamUrl] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messageIdCounter = useRef(0);
 
   // Load existing session if sessionId provided
   const { data: sessionData } = useQuery({
@@ -47,10 +48,11 @@ export default function Chat() {
   const { isConnected, error: streamError } = useEventSource(streamUrl, {
     onMessage: (data) => {
       if (data && (data.message || data.content)) {
+        messageIdCounter.current += 1;
         setMessages((prev) => [
           ...prev,
           {
-            id: Date.now(),
+            id: Date.now() + messageIdCounter.current,
             chatSessionId: Number(sessionId) || 0,
             type: 'assistant',
             content: data.message || data.content || JSON.stringify(data),
@@ -67,23 +69,22 @@ export default function Chat() {
       setStreamUrl(null);
     },
     onError: (error) => {
-      // Only show error if we actually have a stream URL (user initiated a request)
-      if (streamUrl) {
-        console.error('Stream error:', error);
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: Date.now(),
-            chatSessionId: Number(sessionId) || 0,
-            type: 'error',
-            content: error.message,
-            timestamp: new Date(),
-          },
-        ]);
-        setIsExecuting(false);
-        setStreamUrl(null);
-      }
+      console.error('Stream error:', error);
+      messageIdCounter.current += 1;
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now() + messageIdCounter.current,
+          chatSessionId: Number(sessionId) || 0,
+          type: 'error',
+          content: error.message,
+          timestamp: new Date(),
+        },
+      ]);
+      setIsExecuting(false);
+      setStreamUrl(null);
     },
+    autoReconnect: false, // Disable auto-reconnect to prevent infinite loops
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -92,8 +93,9 @@ export default function Chat() {
     if (!input.trim() || isExecuting) return;
 
     // Add user message
+    messageIdCounter.current += 1;
     const userMessage: Message = {
-      id: Date.now(),
+      id: Date.now() + messageIdCounter.current,
       chatSessionId: Number(sessionId) || 0,
       type: 'user',
       content: input,

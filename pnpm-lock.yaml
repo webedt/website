@@ -94,7 +94,7 @@ importers:
         specifier: ^5.1.1
         version: 5.1.1(encoding@0.1.13)
       better-sqlite3:
-        specifier: ^11.8.1
+        specifier: ^11.10.0
         version: 11.10.0
       better-sse:
         specifier: ^0.13.0
@@ -113,7 +113,7 @@ importers:
         version: 16.6.1
       drizzle-orm:
         specifier: ^0.38.3
-        version: 0.38.4(@types/pg@8.15.6)(@types/react@18.3.26)(better-sqlite3@11.10.0)(pg@8.16.3)(react@18.3.1)(sqlite3@5.1.7)
+        version: 0.38.4(@types/better-sqlite3@7.6.13)(@types/pg@8.15.6)(@types/react@18.3.26)(better-sqlite3@11.10.0)(pg@8.16.3)(react@18.3.1)(sqlite3@5.1.7)
       eventsource-parser:
         specifier: ^3.0.0
         version: 3.0.6
@@ -133,6 +133,9 @@ importers:
       '@types/bcrypt':
         specifier: ^5.0.2
         version: 5.0.2
+      '@types/better-sqlite3':
+        specifier: ^7.6.13
+        version: 7.6.13
       '@types/cors':
         specifier: ^2.8.17
         version: 2.8.19
@@ -1313,6 +1316,9 @@ packages:
 
   '@types/bcrypt@5.0.2':
     resolution: {integrity: sha512-6atioO8Y75fNcbmj0G7UjI9lXN2pQ/IGJ2FWT4a/btd0Lk9lQalHLKhkgKVZ3r+spnmWUKfbMi1GEe9wyHQfNQ==}
+
+  '@types/better-sqlite3@7.6.13':
+    resolution: {integrity: sha512-NMv9ASNARoKksWtsq/SHakpYAYnhBrQgGD8zkLYk/jaK8jUGn08CfEdTRgYhMypUQAfzSP8W6gNLe0q19/t4VA==}
 
   '@types/body-parser@1.19.6':
     resolution: {integrity: sha512-HLFeCYgz89uk22N5Qg3dvGvsv46B8GLvKKo1zKG4NybA8U2DiEO3w9lqGg29t/tfLRJpJ6iQxnVw4OnB7MoM9g==}
@@ -3914,6 +3920,10 @@ snapshots:
     dependencies:
       '@types/node': 22.19.1
 
+  '@types/better-sqlite3@7.6.13':
+    dependencies:
+      '@types/node': 22.19.1
+
   '@types/body-parser@1.19.6':
     dependencies:
       '@types/connect': 3.4.38
@@ -4315,8 +4325,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  drizzle-orm@0.38.4(@types/pg@8.15.6)(@types/react@18.3.26)(better-sqlite3@11.10.0)(pg@8.16.3)(react@18.3.1)(sqlite3@5.1.7):
+  drizzle-orm@0.38.4(@types/better-sqlite3@7.6.13)(@types/pg@8.15.6)(@types/react@18.3.26)(better-sqlite3@11.10.0)(pg@8.16.3)(react@18.3.1)(sqlite3@5.1.7):
     optionalDependencies:
+      '@types/better-sqlite3': 7.6.13
       '@types/pg': 8.15.6
       '@types/react': 18.3.26
       better-sqlite3: 11.10.0
