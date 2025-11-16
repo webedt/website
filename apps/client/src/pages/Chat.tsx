@@ -201,7 +201,7 @@ export default function Chat() {
       {/* Messages or Centered Input */}
       {messages.length === 0 ? (
         /* Centered input for new session */
-        <div className="flex-1 flex items-start justify-center p-6 pt-32">
+        <div className="flex-1 flex items-start justify-center p-6 pt-8">
           <form onSubmit={handleSubmit} className="max-w-4xl w-full">
             {/* Multi-line input with controls and submit button inside */}
             <div className="relative">
