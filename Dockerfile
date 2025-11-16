@@ -31,6 +31,9 @@ RUN pnpm --filter @webedt/server build
 # Production stage
 FROM node:20-alpine AS production
 
+# Install build dependencies for native modules (better-sqlite3, bcrypt)
+RUN apk add --no-cache python3 make g++
+
 # Install pnpm
 RUN npm install -g pnpm
 
@@ -47,6 +50,9 @@ COPY apps/server/package.json ./apps/server/
 
 # Install production dependencies only
 RUN pnpm install --frozen-lockfile --prod
+
+# Rebuild native modules for the target platform
+RUN pnpm rebuild better-sqlite3 bcrypt
 
 # Copy built artifacts from build stage
 COPY --from=build /app/apps/client/dist ./apps/client/dist
