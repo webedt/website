@@ -78,56 +78,90 @@ export default function Chat() {
   }, [messages]);
 
   const { isConnected } = useEventSource(streamUrl, {
-    onMessage: (data) => {
+    onMessage: (event) => {
       // Log all events to see what we're receiving
-      console.log('Received SSE event:', data);
+      console.log('Received SSE event:', event);
+
+      const { eventType, data } = event;
+
+      // Skip system events
+      if (eventType === 'connected' || eventType === 'completed') {
+        return;
+      }
 
       // Extract content from various possible locations
       let content = null;
       let messageType: 'assistant' | 'system' = 'assistant';
+      let eventLabel = '';
 
-      // Skip system events
-      if (data.type === 'connected' || data.type === 'completed') {
-        return;
+      // Set event label for different types
+      switch (eventType) {
+        case 'status':
+          eventLabel = '📊 Status';
+          break;
+        case 'thought':
+          eventLabel = '💭 Thinking';
+          break;
+        case 'tool_use':
+          eventLabel = '🔧 Using tool';
+          break;
+        case 'result':
+          eventLabel = '✅ Result';
+          break;
+        case 'assistant_message':
+          eventLabel = '🤖 Assistant';
+          break;
+        default:
+          eventLabel = '';
       }
 
       // Extract from direct message property
       if (data.message) {
         content = data.message;
       }
-      // Extract from github_pull_progress
-      else if (data.type === 'github_pull_progress' && data.data?.message) {
-        content = data.data.message;
-      }
-      // Extract from Claude API response format (assistant_message)
-      else if (data.data && typeof data.data === 'object') {
-        // Skip system/init messages
-        if (data.data.type === 'system' || data.data.subtype === 'init') {
-          return;
-        }
-
-        // Extract from Claude message format
-        if (data.data.content && Array.isArray(data.data.content)) {
-          const textBlocks = data.data.content
+      // Extract from direct content property
+      else if (data.content) {
+        // Handle array content (Claude message format)
+        if (Array.isArray(data.content)) {
+          const textBlocks = data.content
             .filter((block: any) => block.type === 'text' && block.text)
             .map((block: any) => block.text);
 
           if (textBlocks.length > 0) {
             content = textBlocks.join('\n');
           }
+        } else if (typeof data.content === 'string') {
+          content = data.content;
         }
-        // Extract from tool result or other formats
-        else if (data.data.result) {
-          content = data.data.result;
-        } else if (data.data.text) {
-          content = data.data.text;
+      }
+      // Extract from text property
+      else if (data.text) {
+        content = data.text;
+      }
+      // Extract from status property
+      else if (data.status) {
+        content = data.status;
+      }
+      // Extract from result property
+      else if (data.result) {
+        content = typeof data.result === 'string' ? data.result : JSON.stringify(data.result, null, 2);
+      }
+      // For tool_use events, show tool name and parameters
+      else if (eventType === 'tool_use' && data.name) {
+        content = `Tool: ${data.name}`;
+        if (data.input) {
+          content += `\nInput: ${JSON.stringify(data.input, null, 2)}`;
         }
       }
 
       // Skip if no meaningful content
       if (!content) {
+        console.log('Skipping event with no content:', event);
         return;
       }
+
+      // Add event label if present
+      const finalContent = eventLabel ? `${eventLabel}\n${content}` : content;
 
       messageIdCounter.current += 1;
       setMessages((prev) => [
@@ -136,7 +170,7 @@ export default function Chat() {
           id: Date.now() + messageIdCounter.current,
           chatSessionId: Number(sessionId) || 0,
           type: messageType,
-          content: content,
+          content: finalContent,
           timestamp: new Date(),
         },
       ]);
