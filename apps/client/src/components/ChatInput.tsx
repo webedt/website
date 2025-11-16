@@ -66,41 +66,64 @@ export default function ChatInput({
                 <div className="h-4 w-28 bg-gray-300 dark:bg-gray-600 rounded-md animate-pulse"></div>
               </>
             ) : repositories.length > 0 ? (
-              /* Actual controls */
+              /* Actual controls or labels */
               <>
-                <select
-                  value={selectedRepo}
-                  onChange={(e) => setSelectedRepo(e.target.value)}
-                  className="text-xs rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-600 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1 px-2"
-                  disabled={isExecuting || isLocked}
-                >
-                  <option value="">No repository</option>
-                  {repositories.map((repo) => (
-                    <option key={repo.id} value={repo.cloneUrl}>
-                      {repo.fullName}
-                    </option>
-                  ))}
-                </select>
+                {isExecuting ? (
+                  /* Show as text labels when executing */
+                  <>
+                    <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-md text-gray-700 dark:text-gray-300">
+                      {selectedRepo
+                        ? repositories.find((r) => r.cloneUrl === selectedRepo)?.fullName ||
+                          'No repository'
+                        : 'No repository'}
+                    </span>
+                    {branch && (
+                      <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-md text-gray-700 dark:text-gray-300">
+                        {branch}
+                      </span>
+                    )}
+                    <span className="text-xs text-gray-700 dark:text-gray-300">
+                      {autoCommit ? '✓ Auto-commit/push' : '✗ Auto-commit/push'}
+                    </span>
+                  </>
+                ) : (
+                  /* Show as editable controls when not executing */
+                  <>
+                    <select
+                      value={selectedRepo}
+                      onChange={(e) => setSelectedRepo(e.target.value)}
+                      className="text-xs rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-600 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1 px-2"
+                      disabled={isLocked}
+                    >
+                      <option value="">No repository</option>
+                      {repositories.map((repo) => (
+                        <option key={repo.id} value={repo.cloneUrl}>
+                          {repo.fullName}
+                        </option>
+                      ))}
+                    </select>
 
-                <input
-                  type="text"
-                  value={branch}
-                  onChange={(e) => setBranch(e.target.value)}
-                  placeholder="main"
-                  className="text-xs rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-600 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1 px-2 w-24"
-                  disabled={isExecuting || isLocked}
-                />
+                    <input
+                      type="text"
+                      value={branch}
+                      onChange={(e) => setBranch(e.target.value)}
+                      placeholder="main"
+                      className="text-xs rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-600 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1 px-2 w-24"
+                      disabled={isLocked}
+                    />
 
-                <label className="flex items-center space-x-1">
-                  <input
-                    type="checkbox"
-                    checked={autoCommit}
-                    onChange={(e) => setAutoCommit(e.target.checked)}
-                    className="rounded border-gray-300 dark:border-gray-500 text-blue-600 focus:ring-blue-500"
-                    disabled={isExecuting || isLocked}
-                  />
-                  <span className="text-xs text-gray-700 dark:text-gray-300">Auto-commit/push</span>
-                </label>
+                    <label className="flex items-center space-x-1">
+                      <input
+                        type="checkbox"
+                        checked={autoCommit}
+                        onChange={(e) => setAutoCommit(e.target.checked)}
+                        className="rounded border-gray-300 dark:border-gray-500 text-blue-600 focus:ring-blue-500"
+                        disabled={isLocked}
+                      />
+                      <span className="text-xs text-gray-700 dark:text-gray-300">Auto-commit/push</span>
+                    </label>
+                  </>
+                )}
               </>
             ) : null}
           </div>
