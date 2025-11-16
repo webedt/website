@@ -126,28 +126,50 @@ The workflow tries these formats in order, using the first one that fits within 
 6. **Strategy 6**: `{repo}` (minimal)
 7. **Strategy 7**: hash (last resort)
 
-**For claude/ branches** (like `claude/description-{sessionId}`):
-- The branch name typically contains a ULID session ID at the end
-- When using Strategy 3+, `{branchpart}` is the session ID (extracted as the last segment after the last dash)
-- Most common result: `{owner}-{repo}-{sessionId}`
-- Example: `webedt-website-01adzpk5b5h4bkydcmwtolgv`
+**For claude/ branches:**
 
-**Quick Reference for claude/ branches:**
-- Extract the session ID: last ~26 characters of branch name (ULID format)
-- Format: `webedt-website-{sessionId-lowercase}`
-- Example branch: `claude/debug-session-resumption-01AdzpK5b5h4BkyDcMWtoLGV`
-- Resulting URL: `https://webedt-website-01adzpk5b5h4bkydcmwtolgv.etdofresh.com/`
+The deployment identifier depends on the total length after processing:
 
-**Example 1 - Branch: claude/fix-delete-modal-enter-01D495CooAjG8DPVRonWJ3tb**
+1. **Process the branch name:**
+   - Convert to lowercase
+   - Replace slashes with dashes
+   - Example: `claude/ideal-user-flow-01Ca8egaVDRvUdzutNsFZeAJ` → `claude-ideal-user-flow-01ca8egavdrvudzutnsfzeaj`
+
+2. **Construct the deployment identifier:**
+   - Try `{owner}-{repo}-{processed-branch}` first
+   - Example: `webedt-website-claude-ideal-user-flow-01ca8egavdrvudzutnsfzeaj`
+   - If this fits within 63 characters, use it
+   - If it exceeds 63 characters, the workflow falls back to extracting just the session ID
+
+3. **Check the length:**
+   - Count characters in the full identifier
+   - If ≤ 63 characters: use the full identifier with complete branch name
+   - If > 63 characters: the workflow will extract just the session ID portion
+
+**Simple Rule:**
+- Start with: `webedt-website-{branch-name-with-slashes-replaced-by-dashes-and-lowercased}`
+- If it fits in 63 characters, that's your deployment URL
+- Most claude/ branches fit within this limit
+
+**Example 1 - Short branch name (fits with full branch):**
 ```
+Branch: claude/ideal-user-flow-01Ca8egaVDRvUdzutNsFZeAJ
+Processed: claude-ideal-user-flow-01ca8egavdrvudzutnsfzeaj
+Full identifier: webedt-website-claude-ideal-user-flow-01ca8egavdrvudzutnsfzeaj (61 chars ✓)
+
 **Links:**
 
-GitHub Branch: [https://github.com/webedt/website/tree/claude/fix-delete-modal-enter-01D495CooAjG8DPVRonWJ3tb](https://github.com/webedt/website/tree/claude/fix-delete-modal-enter-01D495CooAjG8DPVRonWJ3tb)
-Live Site: [https://webedt-website-01d495cooajg8dpvronwj3tb.etdofresh.com/](https://webedt-website-01d495cooajg8dpvronwj3tb.etdofresh.com/)
+GitHub Branch: [https://github.com/webedt/website/tree/claude/ideal-user-flow-01Ca8egaVDRvUdzutNsFZeAJ](https://github.com/webedt/website/tree/claude/ideal-user-flow-01Ca8egaVDRvUdzutNsFZeAJ)
+Live Site: [https://webedt-website-claude-ideal-user-flow-01ca8egavdrvudzutnsfzeaj.etdofresh.com/](https://webedt-website-claude-ideal-user-flow-01ca8egavdrvudzutnsfzeaj.etdofresh.com/)
 ```
 
-**Example 2 - Branch: claude/debug-session-resumption-01AdzpK5b5h4BkyDcMWtoLGV**
+**Example 2 - Long branch name (requires session ID fallback):**
 ```
+Branch: claude/debug-session-resumption-01AdzpK5b5h4BkyDcMWtoLGV
+Processed: claude-debug-session-resumption-01adzpk5b5h4bkydcmwtolgv
+Full would be: webedt-website-claude-debug-session-resumption-01adzpk5b5h4bkydcmwtolgv (65 chars ✗ exceeds 63)
+Fallback to session ID: webedt-website-01adzpk5b5h4bkydcmwtolgv (43 chars ✓)
+
 **Links:**
 
 GitHub Branch: [https://github.com/webedt/website/tree/claude/debug-session-resumption-01AdzpK5b5h4BkyDcMWtoLGV](https://github.com/webedt/website/tree/claude/debug-session-resumption-01AdzpK5b5h4BkyDcMWtoLGV)

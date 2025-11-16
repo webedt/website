@@ -116,13 +116,37 @@ export default function Dashboard() {
       });
 
       let sessionId: number | null = null;
+      let hasNavigated = false;
+
+      // Navigate immediately when session is created
+      eventSource.addEventListener('session-created', (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          console.log('Session created:', data);
+
+          if (data.chatSessionId && !hasNavigated) {
+            sessionId = data.chatSessionId;
+            hasNavigated = true;
+            setInput('');
+            setIsExecuting(false);
+
+            // Navigate to the session page immediately
+            navigate(`/chat/${sessionId}`);
+
+            // Keep the connection open so the Chat page can continue receiving updates
+            // The Chat page will handle displaying the live processing
+          }
+        } catch (err) {
+          console.error('Error parsing session-created event:', err);
+        }
+      });
 
       eventSource.addEventListener('message', (event) => {
         try {
           const data = JSON.parse(event.data);
           console.log('Dashboard SSE event:', data);
 
-          // Capture the session ID if available
+          // Capture the session ID if available (fallback)
           if (data.chatSessionId) {
             sessionId = data.chatSessionId;
           }
@@ -142,22 +166,28 @@ export default function Dashboard() {
         }
 
         eventSource.close();
-        setInput('');
-        setIsExecuting(false);
 
-        // Navigate to the session if we got an ID
-        if (sessionId) {
-          navigate(`/chat/${sessionId}`);
-        } else {
-          // Fallback to general chat page
-          navigate('/chat');
+        // If we haven't navigated yet (shouldn't happen), navigate now
+        if (!hasNavigated) {
+          setInput('');
+          setIsExecuting(false);
+
+          if (sessionId) {
+            navigate(`/chat/${sessionId}`);
+          } else {
+            // Fallback to general chat page
+            navigate('/chat');
+          }
         }
       });
 
       eventSource.addEventListener('error', (err) => {
         console.error('SSE error:', err);
         eventSource.close();
-        setIsExecuting(false);
+
+        if (!hasNavigated) {
+          setIsExecuting(false);
+        }
       });
     } catch (error) {
       console.error('Error starting chat:', error);

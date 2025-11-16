@@ -30,18 +30,28 @@ export default function Chat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageIdCounter = useRef(0);
 
-  // Load existing session if sessionId provided
-  const { data: sessionData } = useQuery({
-    queryKey: ['session', sessionId],
-    queryFn: () => sessionsApi.getMessages(Number(sessionId)),
-    enabled: !!sessionId,
-  });
-
-  // Load session details
+  // Load session details first to check status
   const { data: sessionDetailsData } = useQuery({
     queryKey: ['session-details', sessionId],
     queryFn: () => sessionsApi.get(Number(sessionId)),
     enabled: !!sessionId,
+    // Poll every 2 seconds if session is running or pending
+    refetchInterval: (query) => {
+      const session = query.state.data?.data;
+      return session?.status === 'running' || session?.status === 'pending' ? 2000 : false;
+    },
+  });
+
+  // Load existing session messages if sessionId provided
+  const { data: sessionData } = useQuery({
+    queryKey: ['session', sessionId],
+    queryFn: () => sessionsApi.getMessages(Number(sessionId)),
+    enabled: !!sessionId,
+    // Poll every 2 seconds if session is running or pending
+    refetchInterval: () => {
+      const session = sessionDetailsData?.data;
+      return session?.status === 'running' || session?.status === 'pending' ? 2000 : false;
+    },
   });
 
   const session: ChatSession | undefined = sessionDetailsData?.data;

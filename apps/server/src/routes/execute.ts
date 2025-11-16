@@ -122,6 +122,10 @@ router.get('/execute', requireAuth, async (req, res) => {
       'Connection': 'keep-alive',
     });
 
+    // Send session ID immediately so client can navigate
+    res.write(`event: session-created\n`);
+    res.write(`data: ${JSON.stringify({ chatSessionId: chatSession.id })}\n\n`);
+
     // Prepare request to ai-coding-worker
     const executePayload: any = {
       userRequest: (userRequest as string) || 'Resume previous session',
