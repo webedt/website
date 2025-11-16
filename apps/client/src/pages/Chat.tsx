@@ -52,24 +52,48 @@ export default function Chat() {
 
       // Extract content from various possible locations
       let content = null;
+      let messageType: 'assistant' | 'system' = 'assistant';
 
-      if (data.message) {
-        content = data.message;
-      } else if (data.content) {
-        content = data.content;
-      } else if (data.data) {
-        // For nested data (like assistant_message events)
-        if (typeof data.data === 'object') {
-          content = data.data.text || data.data.content || data.data.message || JSON.stringify(data.data, null, 2);
-        } else {
-          content = data.data;
-        }
-      } else if (data.status) {
-        content = data.status;
+      // Skip system events
+      if (data.type === 'connected' || data.type === 'completed') {
+        return;
       }
 
-      // Skip events without content or system events
-      if (!content || data.type === 'connected' || data.type === 'completed') {
+      // Extract from direct message property
+      if (data.message) {
+        content = data.message;
+      }
+      // Extract from github_pull_progress
+      else if (data.type === 'github_pull_progress' && data.data?.message) {
+        content = data.data.message;
+      }
+      // Extract from Claude API response format (assistant_message)
+      else if (data.data && typeof data.data === 'object') {
+        // Skip system/init messages
+        if (data.data.type === 'system' || data.data.subtype === 'init') {
+          return;
+        }
+
+        // Extract from Claude message format
+        if (data.data.content && Array.isArray(data.data.content)) {
+          const textBlocks = data.data.content
+            .filter((block: any) => block.type === 'text' && block.text)
+            .map((block: any) => block.text);
+
+          if (textBlocks.length > 0) {
+            content = textBlocks.join('\n');
+          }
+        }
+        // Extract from tool result or other formats
+        else if (data.data.result) {
+          content = data.data.result;
+        } else if (data.data.text) {
+          content = data.data.text;
+        }
+      }
+
+      // Skip if no meaningful content
+      if (!content) {
         return;
       }
 
@@ -79,8 +103,8 @@ export default function Chat() {
         {
           id: Date.now() + messageIdCounter.current,
           chatSessionId: Number(sessionId) || 0,
-          type: 'assistant',
-          content: typeof content === 'string' ? content : JSON.stringify(content, null, 2),
+          type: messageType,
+          content: content,
           timestamp: new Date(),
         },
       ]);
