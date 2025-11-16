@@ -34,6 +34,7 @@ FROM node:20-alpine AS production
 # Install build dependencies for native modules and SQLite
 RUN apk add --no-cache \
     python3 \
+    py3-setuptools \
     make \
     g++ \
     sqlite-dev
