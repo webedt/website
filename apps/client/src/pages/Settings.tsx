@@ -9,6 +9,30 @@ export default function Settings() {
   const [claudeAuthJson, setClaudeAuthJson] = useState('');
   const [claudeError, setClaudeError] = useState('');
 
+  // Format token expiration time
+  const formatTokenExpiration = (expiresAt: number) => {
+    const date = new Date(expiresAt);
+    return date.toLocaleString();
+  };
+
+  // Check token expiration status
+  const getExpirationStatus = (expiresAt: number) => {
+    const now = Date.now();
+    const timeUntilExpiry = expiresAt - now;
+    const fiveMinutes = 5 * 60 * 1000;
+    const oneHour = 60 * 60 * 1000;
+
+    if (timeUntilExpiry <= 0) {
+      return { text: 'Expired', color: 'text-red-600 dark:text-red-400', urgent: true };
+    } else if (timeUntilExpiry <= fiveMinutes) {
+      return { text: 'Expiring very soon', color: 'text-orange-600 dark:text-orange-400', urgent: true };
+    } else if (timeUntilExpiry <= oneHour) {
+      return { text: 'Expiring soon', color: 'text-yellow-600 dark:text-yellow-400', urgent: false };
+    } else {
+      return { text: 'Active', color: 'text-green-600 dark:text-green-400', urgent: false };
+    }
+  };
+
   const refreshUserSession = async () => {
     try {
       const response = await authApi.getSession();
@@ -173,10 +197,24 @@ export default function Settings() {
                   Remove
                 </button>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Subscription: {user.claudeAuth.subscriptionType} | Rate Limit:{' '}
-                {user.claudeAuth.rateLimitTier}
-              </p>
+              <div className="space-y-2">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Subscription: {user.claudeAuth.subscriptionType} | Rate Limit:{' '}
+                  {user.claudeAuth.rateLimitTier}
+                </p>
+                {user.claudeAuth.expiresAt && (
+                  <div className="text-xs">
+                    <span className="text-gray-500 dark:text-gray-400">Access Token: </span>
+                    <span className={getExpirationStatus(user.claudeAuth.expiresAt).color}>
+                      {getExpirationStatus(user.claudeAuth.expiresAt).text}
+                    </span>
+                    <span className="text-gray-500 dark:text-gray-400">
+                      {' '}
+                      (expires {formatTokenExpiration(user.claudeAuth.expiresAt)})
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
             <div className="space-y-4">
