@@ -16,6 +16,10 @@ export default function Chat() {
   const [autoCommit, setAutoCommit] = useState(true);
   const [isExecuting, setIsExecuting] = useState(false);
   const [streamUrl, setStreamUrl] = useState<string | null>(null);
+  const [currentSessionId, setCurrentSessionId] = useState<number | null>(
+    sessionId ? Number(sessionId) : null
+  );
+  const [isLocked, setIsLocked] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageIdCounter = useRef(0);
 
@@ -24,6 +28,20 @@ export default function Chat() {
     queryKey: ['session', sessionId],
     queryFn: () => sessionsApi.getMessages(Number(sessionId)),
     enabled: !!sessionId,
+  });
+
+  // Load current session details to check if locked
+  const { data: currentSessionData } = useQuery({
+    queryKey: ['currentSession', currentSessionId],
+    queryFn: async () => {
+      if (!currentSessionId) return null;
+      const response = await fetch(`/api/sessions/${currentSessionId}`, {
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Failed to fetch session');
+      return response.json();
+    },
+    enabled: !!currentSessionId,
   });
 
   // Load repositories
@@ -40,6 +58,20 @@ export default function Chat() {
       setMessages(sessionData.data.messages);
     }
   }, [sessionData]);
+
+  // Update locked state when session data changes
+  useEffect(() => {
+    if (currentSessionData?.data?.locked) {
+      setIsLocked(true);
+      // Also set repo/branch from session if locked
+      if (currentSessionData.data.repositoryUrl) {
+        setSelectedRepo(currentSessionData.data.repositoryUrl);
+      }
+      if (currentSessionData.data.branch) {
+        setBranch(currentSessionData.data.branch);
+      }
+    }
+  }, [currentSessionData]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -112,9 +144,13 @@ export default function Chat() {
     onConnected: () => {
       setIsExecuting(true);
     },
-    onCompleted: () => {
+    onCompleted: (data) => {
       setIsExecuting(false);
       setStreamUrl(null);
+      // Capture session ID from completion event
+      if (data?.chatSessionId) {
+        setCurrentSessionId(data.chatSessionId);
+      }
     },
     onError: (error) => {
       console.error('Stream error:', error);
@@ -174,11 +210,19 @@ export default function Chat() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex flex-col h-[calc(100vh-4rem)]">
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">AI Coding Assistant</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Chat Session</h1>
+
+          {isLocked && (
+            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md">
+              <p className="text-sm text-blue-800 dark:text-blue-200">
+                This session is locked to repository {selectedRepo} on branch {branch}. Repository and branch cannot be changed.
+              </p>
+            </div>
+          )}
 
           {!user?.githubAccessToken && (
             <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-md">
@@ -238,7 +282,7 @@ export default function Chat() {
                         value={selectedRepo}
                         onChange={(e) => setSelectedRepo(e.target.value)}
                         className="text-xs rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-600 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1 px-2"
-                        disabled={isExecuting}
+                        disabled={isExecuting || isLocked}
                       >
                         <option value="">No repository</option>
                         {repositories.map((repo) => (
@@ -254,7 +298,7 @@ export default function Chat() {
                         onChange={(e) => setBranch(e.target.value)}
                         placeholder="main"
                         className="text-xs rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-600 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1 px-2 w-24"
-                        disabled={isExecuting}
+                        disabled={isExecuting || isLocked}
                       />
 
                       <label className="flex items-center space-x-1">
@@ -263,7 +307,7 @@ export default function Chat() {
                           checked={autoCommit}
                           onChange={(e) => setAutoCommit(e.target.checked)}
                           className="rounded border-gray-300 dark:border-gray-500 text-blue-600 focus:ring-blue-500"
-                          disabled={isExecuting}
+                          disabled={isExecuting || isLocked}
                         />
                         <span className="text-xs text-gray-700 dark:text-gray-300">Auto-commit/push</span>
                       </label>
@@ -375,7 +419,7 @@ export default function Chat() {
                           value={selectedRepo}
                           onChange={(e) => setSelectedRepo(e.target.value)}
                           className="text-xs rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-600 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1 px-2"
-                          disabled={isExecuting}
+                          disabled={isExecuting || isLocked}
                         >
                           <option value="">No repository</option>
                           {repositories.map((repo) => (
@@ -391,7 +435,7 @@ export default function Chat() {
                           onChange={(e) => setBranch(e.target.value)}
                           placeholder="main"
                           className="text-xs rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-600 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1 px-2 w-24"
-                          disabled={isExecuting}
+                          disabled={isExecuting || isLocked}
                         />
 
                         <label className="flex items-center space-x-1">
@@ -400,7 +444,7 @@ export default function Chat() {
                             checked={autoCommit}
                             onChange={(e) => setAutoCommit(e.target.checked)}
                             className="rounded border-gray-300 dark:border-gray-500 text-blue-600 focus:ring-blue-500"
-                            disabled={isExecuting}
+                            disabled={isExecuting || isLocked}
                           />
                           <span className="text-xs text-gray-700 dark:text-gray-300">Auto-commit/push</span>
                         </label>

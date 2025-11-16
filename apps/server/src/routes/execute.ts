@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db/index';
 import { chatSessions, messages } from '../db/index';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import type { AuthRequest } from '../middleware/auth';
 import { requireAuth } from '../middleware/auth';
 
@@ -30,6 +30,30 @@ router.get('/execute', requireAuth, async (req, res) => {
     // Parse autoCommit from string to boolean
     const autoCommitBool = autoCommit === 'true';
 
+    // Check if there's already a locked session for this repo/branch combination
+    if (repositoryUrl && branch) {
+      const existingLockedSession = await db
+        .select()
+        .from(chatSessions)
+        .where(
+          and(
+            eq(chatSessions.userId, authReq.user.id),
+            eq(chatSessions.repositoryUrl, repositoryUrl as string),
+            eq(chatSessions.branch, branch as string),
+            eq(chatSessions.locked, true)
+          )
+        )
+        .limit(1);
+
+      if (existingLockedSession.length > 0) {
+        res.status(400).json({
+          success: false,
+          error: `Repository ${repositoryUrl} on branch ${branch} is locked by an existing session. Please complete or delete the existing session first.`,
+        });
+        return;
+      }
+    }
+
     // Create chat session in database
     const [chatSession] = await db
       .insert(chatSessions)
@@ -40,16 +64,25 @@ router.get('/execute', requireAuth, async (req, res) => {
         repositoryUrl: (repositoryUrl as string) || null,
         branch: (branch as string) || null,
         autoCommit: autoCommitBool,
+        locked: false, // Will be locked after first message
       })
       .returning();
 
-    // Store user message
+    // Store user message and lock the session
     if (userRequest) {
       await db.insert(messages).values({
         chatSessionId: chatSession.id,
         type: 'user',
         content: userRequest as string,
       });
+
+      // Lock the session after first message if it has a repository
+      if (repositoryUrl && branch) {
+        await db
+          .update(chatSessions)
+          .set({ locked: true })
+          .where(eq(chatSessions.id, chatSession.id));
+      }
     }
 
     // Setup SSE manually
