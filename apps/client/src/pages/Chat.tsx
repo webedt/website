@@ -16,6 +16,10 @@ export default function Chat() {
   const [autoCommit, setAutoCommit] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
   const [streamUrl, setStreamUrl] = useState<string | null>(null);
+  const [currentSessionId, setCurrentSessionId] = useState<number | null>(
+    sessionId ? Number(sessionId) : null
+  );
+  const [isLocked, setIsLocked] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageIdCounter = useRef(0);
 
@@ -24,6 +28,20 @@ export default function Chat() {
     queryKey: ['session', sessionId],
     queryFn: () => sessionsApi.getMessages(Number(sessionId)),
     enabled: !!sessionId,
+  });
+
+  // Load current session details to check if locked
+  const { data: currentSessionData } = useQuery({
+    queryKey: ['currentSession', currentSessionId],
+    queryFn: async () => {
+      if (!currentSessionId) return null;
+      const response = await fetch(`/api/sessions/${currentSessionId}`, {
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Failed to fetch session');
+      return response.json();
+    },
+    enabled: !!currentSessionId,
   });
 
   // Load repositories
@@ -40,6 +58,20 @@ export default function Chat() {
       setMessages(sessionData.data.messages);
     }
   }, [sessionData]);
+
+  // Update locked state when session data changes
+  useEffect(() => {
+    if (currentSessionData?.data?.locked) {
+      setIsLocked(true);
+      // Also set repo/branch from session if locked
+      if (currentSessionData.data.repositoryUrl) {
+        setSelectedRepo(currentSessionData.data.repositoryUrl);
+      }
+      if (currentSessionData.data.branch) {
+        setBranch(currentSessionData.data.branch);
+      }
+    }
+  }, [currentSessionData]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -112,9 +144,13 @@ export default function Chat() {
     onConnected: () => {
       setIsExecuting(true);
     },
-    onCompleted: () => {
+    onCompleted: (data) => {
       setIsExecuting(false);
       setStreamUrl(null);
+      // Capture session ID from completion event
+      if (data?.chatSessionId) {
+        setCurrentSessionId(data.chatSessionId);
+      }
     },
     onError: (error) => {
       console.error('Stream error:', error);
@@ -191,7 +227,7 @@ export default function Chat() {
                   value={selectedRepo}
                   onChange={(e) => setSelectedRepo(e.target.value)}
                   className="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                  disabled={isExecuting}
+                  disabled={isExecuting || isLocked}
                 >
                   <option value="">No repository</option>
                   {repositories.map((repo) => (
@@ -212,7 +248,7 @@ export default function Chat() {
                   onChange={(e) => setBranch(e.target.value)}
                   placeholder="main"
                   className="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                  disabled={isExecuting}
+                  disabled={isExecuting || isLocked}
                 />
               </div>
 
@@ -223,11 +259,19 @@ export default function Chat() {
                     checked={autoCommit}
                     onChange={(e) => setAutoCommit(e.target.checked)}
                     className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
-                    disabled={isExecuting}
+                    disabled={isExecuting || isLocked}
                   />
                   <span className="text-sm text-gray-700 dark:text-gray-300">Auto-commit</span>
                 </label>
               </div>
+            </div>
+          )}
+
+          {isLocked && (
+            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md">
+              <p className="text-sm text-blue-800 dark:text-blue-200">
+                This session is locked to repository {selectedRepo} on branch {branch}. Repository and branch cannot be changed.
+              </p>
             </div>
           )}
 
