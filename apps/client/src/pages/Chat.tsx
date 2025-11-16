@@ -15,12 +15,16 @@ export default function Chat() {
   const [input, setInput] = useState('');
   const [selectedRepo, setSelectedRepo] = useState('');
   const [branch, setBranch] = useState('');
-  const [autoCommit, setAutoCommit] = useState(false);
+  const [autoCommit, setAutoCommit] = useState(true);
   const [isExecuting, setIsExecuting] = useState(false);
   const [streamUrl, setStreamUrl] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState(false);
   const [editTitle, setEditTitle] = useState('');
   const [deletingSession, setDeletingSession] = useState(false);
+  const [currentSessionId, setCurrentSessionId] = useState<number | null>(
+    sessionId ? Number(sessionId) : null
+  );
+  const [isLocked, setIsLocked] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageIdCounter = useRef(0);
 
@@ -40,8 +44,22 @@ export default function Chat() {
 
   const session: ChatSession | undefined = sessionDetailsData?.data;
 
+  // Load current session details to check if locked
+  const { data: currentSessionData } = useQuery({
+    queryKey: ['currentSession', currentSessionId],
+    queryFn: async () => {
+      if (!currentSessionId) return null;
+      const response = await fetch(`/api/sessions/${currentSessionId}`, {
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Failed to fetch session');
+      return response.json();
+    },
+    enabled: !!currentSessionId,
+  });
+
   // Load repositories
-  const { data: reposData } = useQuery({
+  const { data: reposData, isLoading: isLoadingRepos } = useQuery({
     queryKey: ['repos'],
     queryFn: githubApi.getRepos,
     enabled: !!user?.githubAccessToken,
@@ -104,6 +122,20 @@ export default function Chat() {
       setMessages(sessionData.data.messages);
     }
   }, [sessionData]);
+
+  // Update locked state when session data changes
+  useEffect(() => {
+    if (currentSessionData?.data?.locked) {
+      setIsLocked(true);
+      // Also set repo/branch from session if locked
+      if (currentSessionData.data.repositoryUrl) {
+        setSelectedRepo(currentSessionData.data.repositoryUrl);
+      }
+      if (currentSessionData.data.branch) {
+        setBranch(currentSessionData.data.branch);
+      }
+    }
+  }, [currentSessionData]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -176,9 +208,13 @@ export default function Chat() {
     onConnected: () => {
       setIsExecuting(true);
     },
-    onCompleted: () => {
+    onCompleted: (data) => {
       setIsExecuting(false);
       setStreamUrl(null);
+      // Capture session ID from completion event
+      if (data?.chatSessionId) {
+        setCurrentSessionId(data.chatSessionId);
+      }
     },
     onError: (error) => {
       console.error('Stream error:', error);
@@ -238,7 +274,7 @@ export default function Chat() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex flex-col h-[calc(100vh-4rem)]">
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4">
         <div className="max-w-7xl mx-auto">
@@ -273,7 +309,7 @@ export default function Chat() {
             ) : (
               <>
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {session ? session.userRequest : 'AI Coding Assistant'}
+                  {session ? session.userRequest : 'Chat Session'}
                 </h1>
                 {session && (
                   <div className="flex items-center space-x-2">
@@ -315,54 +351,11 @@ export default function Chat() {
             )}
           </div>
 
-          {/* Repository selection */}
-          {user?.githubAccessToken && repositories.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-4">
-              <div className="flex-1 min-w-[200px]">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Repository
-                </label>
-                <select
-                  value={selectedRepo}
-                  onChange={(e) => setSelectedRepo(e.target.value)}
-                  className="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                  disabled={isExecuting}
-                >
-                  <option value="">No repository</option>
-                  {repositories.map((repo) => (
-                    <option key={repo.id} value={repo.cloneUrl}>
-                      {repo.fullName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex-1 min-w-[150px]">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Branch
-                </label>
-                <input
-                  type="text"
-                  value={branch}
-                  onChange={(e) => setBranch(e.target.value)}
-                  placeholder="main"
-                  className="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                  disabled={isExecuting}
-                />
-              </div>
-
-              <div className="flex items-end">
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={autoCommit}
-                    onChange={(e) => setAutoCommit(e.target.checked)}
-                    className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
-                    disabled={isExecuting}
-                  />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Auto-commit</span>
-                </label>
-              </div>
+          {isLocked && (
+            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md">
+              <p className="text-sm text-blue-800 dark:text-blue-200">
+                This session is locked to repository {selectedRepo} on branch {branch}. Repository and branch cannot be changed.
+              </p>
             </div>
           )}
 
@@ -384,68 +377,242 @@ export default function Chat() {
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4">
-        <div className="max-w-4xl mx-auto space-y-4">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`max-w-3xl rounded-lg px-4 py-2 ${
-                  message.type === 'user'
-                    ? 'bg-blue-600 text-white'
-                    : message.type === 'error'
-                    ? 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200'
-                    : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700'
-                }`}
-              >
-                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                <p className="text-xs mt-1 opacity-70">
-                  {new Date(message.timestamp).toLocaleTimeString()}
-                </p>
-              </div>
-            </div>
-          ))}
+      {/* Messages or Centered Input */}
+      {messages.length === 0 ? (
+        /* Centered input for new session */
+        <div className="flex-1 flex items-center justify-center p-6">
+          <form onSubmit={handleSubmit} className="max-w-4xl w-full -mt-12">
+            {/* Multi-line input with controls and submit button inside */}
+            <div className="relative">
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Describe what you want to code..."
+                rows={4}
+                className="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-lg focus:border-blue-500 focus:ring-blue-500 resize-none pr-14 text-base p-4 pb-16"
+                disabled={isExecuting || !user?.claudeAuth}
+                onKeyDown={(e) => {
+                  // Submit on Cmd/Ctrl + Enter
+                  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                    e.preventDefault();
+                    handleSubmit(e);
+                  }
+                }}
+              />
 
-          {isConnected && isExecuting && (
-            <div className="flex justify-start">
-              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-2">
-                <div className="flex items-center space-x-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Processing...</span>
+              {/* Controls inside the box */}
+              {user?.githubAccessToken && (
+                <div className="absolute bottom-3 left-3 right-14 flex flex-wrap gap-2 items-center">
+                  {isLoadingRepos ? (
+                    /* Skeleton loading state */
+                    <>
+                      <div className="h-6 w-32 bg-gray-300 dark:bg-gray-600 rounded-md animate-pulse"></div>
+                      <div className="h-6 w-24 bg-gray-300 dark:bg-gray-600 rounded-md animate-pulse"></div>
+                      <div className="h-4 w-28 bg-gray-300 dark:bg-gray-600 rounded-md animate-pulse"></div>
+                    </>
+                  ) : repositories.length > 0 ? (
+                    /* Actual controls */
+                    <>
+                      <select
+                        value={selectedRepo}
+                        onChange={(e) => setSelectedRepo(e.target.value)}
+                        className="text-xs rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-600 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1 px-2"
+                        disabled={isExecuting || isLocked}
+                      >
+                        <option value="">No repository</option>
+                        {repositories.map((repo) => (
+                          <option key={repo.id} value={repo.cloneUrl}>
+                            {repo.fullName}
+                          </option>
+                        ))}
+                      </select>
+
+                      <input
+                        type="text"
+                        value={branch}
+                        onChange={(e) => setBranch(e.target.value)}
+                        placeholder="main"
+                        className="text-xs rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-600 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1 px-2 w-24"
+                        disabled={isExecuting || isLocked}
+                      />
+
+                      <label className="flex items-center space-x-1">
+                        <input
+                          type="checkbox"
+                          checked={autoCommit}
+                          onChange={(e) => setAutoCommit(e.target.checked)}
+                          className="rounded border-gray-300 dark:border-gray-500 text-blue-600 focus:ring-blue-500"
+                          disabled={isExecuting || isLocked}
+                        />
+                        <span className="text-xs text-gray-700 dark:text-gray-300">Auto-commit/push</span>
+                      </label>
+                    </>
+                  ) : null}
                 </div>
-              </div>
+              )}
+
+              {/* Submit button inside textarea */}
+              <button
+                type="submit"
+                disabled={isExecuting || !input.trim() || !user?.claudeAuth}
+                className="absolute bottom-3 right-3 flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                title="Send message (Cmd/Ctrl + Enter)"
+              >
+                {isExecuting ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                ) : (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    className="w-5 h-5"
+                  >
+                    <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
+                  </svg>
+                )}
+              </button>
             </div>
-          )}
-
-          <div ref={messagesEndRef} />
+          </form>
         </div>
-      </div>
+      ) : (
+        /* Messages area with bottom input panel */
+        <>
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="max-w-4xl mx-auto space-y-4">
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-3xl rounded-lg px-4 py-2 ${
+                      message.type === 'user'
+                        ? 'bg-blue-600 text-white'
+                        : message.type === 'error'
+                        ? 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200'
+                        : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700'
+                    }`}
+                  >
+                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    <p className="text-xs mt-1 opacity-70">
+                      {new Date(message.timestamp).toLocaleTimeString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
 
-      {/* Input */}
-      <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
-        <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
-          <div className="flex space-x-4">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Describe what you want to code..."
-              className="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              disabled={isExecuting || !user?.claudeAuth}
-            />
-            <button
-              type="submit"
-              disabled={isExecuting || !input.trim() || !user?.claudeAuth}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isExecuting ? 'Sending...' : 'Send'}
-            </button>
+              {isConnected && isExecuting && (
+                <div className="flex justify-start">
+                  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-2">
+                    <div className="flex items-center space-x-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Processing...</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div ref={messagesEndRef} />
+            </div>
           </div>
-        </form>
-      </div>
+
+          {/* Input panel at bottom when messages exist */}
+          <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-6">
+            <form onSubmit={handleSubmit} className="max-w-4xl mx-auto w-full">
+              {/* Multi-line input with controls and submit button inside */}
+              <div className="relative">
+                <textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Describe what you want to code..."
+                  rows={4}
+                  className="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-lg focus:border-blue-500 focus:ring-blue-500 resize-none pr-14 text-base p-4 pb-16"
+                  disabled={isExecuting || !user?.claudeAuth}
+                  onKeyDown={(e) => {
+                    // Submit on Cmd/Ctrl + Enter
+                    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                      e.preventDefault();
+                      handleSubmit(e);
+                    }
+                  }}
+                />
+
+                {/* Controls inside the box */}
+                {user?.githubAccessToken && (
+                  <div className="absolute bottom-3 left-3 right-14 flex flex-wrap gap-2 items-center">
+                    {isLoadingRepos ? (
+                      /* Skeleton loading state */
+                      <>
+                        <div className="h-6 w-32 bg-gray-300 dark:bg-gray-600 rounded-md animate-pulse"></div>
+                        <div className="h-6 w-24 bg-gray-300 dark:bg-gray-600 rounded-md animate-pulse"></div>
+                        <div className="h-4 w-28 bg-gray-300 dark:bg-gray-600 rounded-md animate-pulse"></div>
+                      </>
+                    ) : repositories.length > 0 ? (
+                      /* Actual controls */
+                      <>
+                        <select
+                          value={selectedRepo}
+                          onChange={(e) => setSelectedRepo(e.target.value)}
+                          className="text-xs rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-600 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1 px-2"
+                          disabled={isExecuting || isLocked}
+                        >
+                          <option value="">No repository</option>
+                          {repositories.map((repo) => (
+                            <option key={repo.id} value={repo.cloneUrl}>
+                              {repo.fullName}
+                            </option>
+                          ))}
+                        </select>
+
+                        <input
+                          type="text"
+                          value={branch}
+                          onChange={(e) => setBranch(e.target.value)}
+                          placeholder="main"
+                          className="text-xs rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-600 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1 px-2 w-24"
+                          disabled={isExecuting || isLocked}
+                        />
+
+                        <label className="flex items-center space-x-1">
+                          <input
+                            type="checkbox"
+                            checked={autoCommit}
+                            onChange={(e) => setAutoCommit(e.target.checked)}
+                            className="rounded border-gray-300 dark:border-gray-500 text-blue-600 focus:ring-blue-500"
+                            disabled={isExecuting || isLocked}
+                          />
+                          <span className="text-xs text-gray-700 dark:text-gray-300">Auto-commit/push</span>
+                        </label>
+                      </>
+                    ) : null}
+                  </div>
+                )}
+
+                {/* Submit button inside textarea */}
+                <button
+                  type="submit"
+                  disabled={isExecuting || !input.trim() || !user?.claudeAuth}
+                  className="absolute bottom-3 right-3 flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  title="Send message (Cmd/Ctrl + Enter)"
+                >
+                  {isExecuting ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  ) : (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      className="w-5 h-5"
+                    >
+                      <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </>
+      )}
 
       {/* Delete confirmation modal */}
       {deletingSession && (

@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import { db } from '../db/index';
-import { chatSessions, messages } from '../db/index';
-import { eq } from 'drizzle-orm';
+import { chatSessions, messages, users } from '../db/index';
+import { eq, and } from 'drizzle-orm';
 import type { AuthRequest } from '../middleware/auth';
 import { requireAuth } from '../middleware/auth';
+import { ensureValidToken } from '../lib/claudeAuth';
+import type { ClaudeAuth } from '@webedt/shared';
 
 const router = Router();
 
@@ -30,6 +32,30 @@ router.get('/execute', requireAuth, async (req, res) => {
     // Parse autoCommit from string to boolean
     const autoCommitBool = autoCommit === 'true';
 
+    // Check if there's already a locked session for this repo/branch combination
+    if (repositoryUrl && branch) {
+      const existingLockedSession = await db
+        .select()
+        .from(chatSessions)
+        .where(
+          and(
+            eq(chatSessions.userId, authReq.user.id),
+            eq(chatSessions.repositoryUrl, repositoryUrl as string),
+            eq(chatSessions.branch, branch as string),
+            eq(chatSessions.locked, true)
+          )
+        )
+        .limit(1);
+
+      if (existingLockedSession.length > 0) {
+        res.status(400).json({
+          success: false,
+          error: `Repository ${repositoryUrl} on branch ${branch} is locked by an existing session. Please complete or delete the existing session first.`,
+        });
+        return;
+      }
+    }
+
     // Create chat session in database
     const [chatSession] = await db
       .insert(chatSessions)
@@ -40,16 +66,52 @@ router.get('/execute', requireAuth, async (req, res) => {
         repositoryUrl: (repositoryUrl as string) || null,
         branch: (branch as string) || null,
         autoCommit: autoCommitBool,
+        locked: false, // Will be locked after first message
       })
       .returning();
 
-    // Store user message
+    // Store user message and lock the session
     if (userRequest) {
       await db.insert(messages).values({
         chatSessionId: chatSession.id,
         type: 'user',
         content: userRequest as string,
       });
+
+      // Lock the session after first message if it has a repository
+      if (repositoryUrl && branch) {
+        await db
+          .update(chatSessions)
+          .set({ locked: true })
+          .where(eq(chatSessions.id, chatSession.id));
+      }
+    }
+
+    // Ensure Claude token is valid, refresh if needed
+    let claudeAuth: ClaudeAuth = authReq.user.claudeAuth;
+    let tokenWasRefreshed = false;
+
+    try {
+      const refreshedAuth = await ensureValidToken(claudeAuth);
+      if (refreshedAuth !== claudeAuth) {
+        claudeAuth = refreshedAuth;
+        tokenWasRefreshed = true;
+
+        // Save refreshed token to database
+        await db
+          .update(users)
+          .set({ claudeAuth: refreshedAuth })
+          .where(eq(users.id, authReq.user.id));
+
+        console.log(`[Execute] Refreshed and saved Claude token for user ${authReq.user.id}`);
+      }
+    } catch (error) {
+      console.error('[Execute] Failed to refresh Claude token:', error);
+      res.status(401).json({
+        success: false,
+        error: 'Failed to refresh Claude authentication. Please re-authenticate with Claude.',
+      });
+      return;
     }
 
     // Setup SSE manually
@@ -63,7 +125,7 @@ router.get('/execute', requireAuth, async (req, res) => {
     const executePayload: any = {
       userRequest: (userRequest as string) || 'Resume previous session',
       codingAssistantProvider: 'ClaudeAgentSDK',
-      codingAssistantAuthentication: authReq.user.claudeAuth,
+      codingAssistantAuthentication: claudeAuth,
     };
 
     if (resumeSessionId) {

@@ -71,6 +71,7 @@ if (usePostgres) {
       repository_url TEXT,
       branch TEXT,
       auto_commit BOOLEAN NOT NULL DEFAULT FALSE,
+      locked BOOLEAN NOT NULL DEFAULT FALSE,
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       completed_at TIMESTAMP
     );
@@ -84,6 +85,20 @@ if (usePostgres) {
     );
   `).then(() => {
     console.log('PostgreSQL tables created successfully!');
+    // Add locked column if it doesn't exist (migration)
+    return pool!.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'chat_sessions' AND column_name = 'locked'
+        ) THEN
+          ALTER TABLE chat_sessions ADD COLUMN locked BOOLEAN NOT NULL DEFAULT FALSE;
+        END IF;
+      END $$;
+    `);
+  }).then(() => {
+    console.log('PostgreSQL migrations applied successfully!');
   }).catch((err) => {
     console.error('Error creating PostgreSQL tables:', err);
   });
@@ -136,6 +151,7 @@ if (usePostgres) {
       repository_url TEXT,
       branch TEXT,
       auto_commit INTEGER NOT NULL DEFAULT 0,
+      locked INTEGER NOT NULL DEFAULT 0,
       created_at INTEGER NOT NULL DEFAULT (unixepoch()),
       completed_at INTEGER,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -152,4 +168,16 @@ if (usePostgres) {
   `);
 
   console.log('SQLite tables created successfully!');
+
+  // Add locked column if it doesn't exist (migration)
+  try {
+    const tableInfo = sqlite.pragma('table_info(chat_sessions)') as Array<{ name: string }>;
+    const hasLockedColumn = tableInfo.some((col) => col.name === 'locked');
+    if (!hasLockedColumn) {
+      sqlite.exec('ALTER TABLE chat_sessions ADD COLUMN locked INTEGER NOT NULL DEFAULT 0;');
+      console.log('SQLite migration: Added locked column to chat_sessions');
+    }
+  } catch (err) {
+    console.error('Error applying SQLite migrations:', err);
+  }
 }

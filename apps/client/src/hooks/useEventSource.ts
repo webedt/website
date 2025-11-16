@@ -4,7 +4,7 @@ interface UseEventSourceOptions {
   onMessage?: (data: any) => void;
   onError?: (error: Error) => void;
   onConnected?: () => void;
-  onCompleted?: () => void;
+  onCompleted?: (data?: any) => void;
   autoReconnect?: boolean;
   maxReconnectAttempts?: number;
 }
@@ -76,10 +76,15 @@ export function useEventSource(url: string | null, options: UseEventSourceOption
         });
       });
 
-      es.addEventListener('completed', () => {
+      es.addEventListener('completed', (event: MessageEvent) => {
         setIsConnected(false);
         hasExplicitlyClosedRef.current = true;
-        onCompleted?.();
+        try {
+          const data = JSON.parse(event.data);
+          onCompleted?.(data);
+        } catch {
+          onCompleted?.();
+        }
         disconnect();
       });
 
