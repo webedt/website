@@ -117,6 +117,21 @@ export default function Chat() {
     setDeletingSession(false);
   };
 
+  // Handle Enter key in delete modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (deletingSession && e.key === 'Enter' && !deleteMutation.isPending) {
+        e.preventDefault();
+        confirmDelete();
+      }
+    };
+
+    if (deletingSession) {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [deletingSession, deleteMutation.isPending]);
+
   useEffect(() => {
     if (sessionData?.data?.messages) {
       setMessages(sessionData.data.messages);
