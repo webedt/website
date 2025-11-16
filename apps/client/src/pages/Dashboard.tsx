@@ -1,14 +1,27 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
-import { sessionsApi } from '@/lib/api';
-import type { ChatSession } from '@webedt/shared';
+import { Link, useNavigate } from 'react-router-dom';
+import { sessionsApi, githubApi } from '@/lib/api';
+import { useAuthStore } from '@/lib/store';
+import ChatInput from '@/components/ChatInput';
+import type { ChatSession, GitHubRepository } from '@webedt/shared';
 
 export default function Dashboard() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const user = useAuthStore((state) => state.user);
+
+  // Session editing and deletion state
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  // Chat input state
+  const [input, setInput] = useState('');
+  const [selectedRepo, setSelectedRepo] = useState('');
+  const [branch, setBranch] = useState('');
+  const [autoCommit, setAutoCommit] = useState(true);
+  const [isExecuting, setIsExecuting] = useState(false);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['sessions'],
@@ -16,6 +29,15 @@ export default function Dashboard() {
   });
 
   const sessions: ChatSession[] = data?.data?.sessions || [];
+
+  // Load repositories
+  const { data: reposData, isLoading: isLoadingRepos } = useQuery({
+    queryKey: ['repos'],
+    queryFn: githubApi.getRepos,
+    enabled: !!user?.githubAccessToken,
+  });
+
+  const repositories: GitHubRepository[] = reposData?.data || [];
 
   const updateMutation = useMutation({
     mutationFn: ({ id, title }: { id: number; title: string }) =>
@@ -63,6 +85,86 @@ export default function Dashboard() {
     setDeletingId(null);
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!input.trim() || isExecuting || !user?.claudeAuth) return;
+
+    setIsExecuting(true);
+
+    try {
+      // Build request URL with query parameters
+      const params = new URLSearchParams({
+        userRequest: input,
+      });
+
+      if (selectedRepo) {
+        params.append('repositoryUrl', selectedRepo);
+      }
+
+      if (branch) {
+        params.append('branch', branch);
+      }
+
+      if (autoCommit) {
+        params.append('autoCommit', 'true');
+      }
+
+      // Start the SSE stream to create and execute the session
+      const eventSource = new EventSource(`/api/execute?${params}`, {
+        withCredentials: true,
+      });
+
+      let sessionId: number | null = null;
+
+      eventSource.addEventListener('message', (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          console.log('Dashboard SSE event:', data);
+
+          // Capture the session ID if available
+          if (data.chatSessionId) {
+            sessionId = data.chatSessionId;
+          }
+        } catch (err) {
+          console.error('Error parsing SSE message:', err);
+        }
+      });
+
+      eventSource.addEventListener('completed', (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.chatSessionId) {
+            sessionId = data.chatSessionId;
+          }
+        } catch (err) {
+          console.error('Error parsing completion event:', err);
+        }
+
+        eventSource.close();
+        setInput('');
+        setIsExecuting(false);
+
+        // Navigate to the session if we got an ID
+        if (sessionId) {
+          navigate(`/chat/${sessionId}`);
+        } else {
+          // Fallback to general chat page
+          navigate('/chat');
+        }
+      });
+
+      eventSource.addEventListener('error', (err) => {
+        console.error('SSE error:', err);
+        eventSource.close();
+        setIsExecuting(false);
+      });
+    } catch (error) {
+      console.error('Error starting chat:', error);
+      setIsExecuting(false);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex justify-between items-center mb-8">
@@ -73,6 +175,27 @@ export default function Dashboard() {
         >
           New Session
         </Link>
+      </div>
+
+      {/* New Chat Input */}
+      <div className="mb-8">
+        <ChatInput
+          input={input}
+          setInput={setInput}
+          onSubmit={handleSubmit}
+          isExecuting={isExecuting}
+          selectedRepo={selectedRepo}
+          setSelectedRepo={setSelectedRepo}
+          branch={branch}
+          setBranch={setBranch}
+          autoCommit={autoCommit}
+          setAutoCommit={setAutoCommit}
+          repositories={repositories}
+          isLoadingRepos={isLoadingRepos}
+          isLocked={false}
+          user={user}
+          centered={false}
+        />
       </div>
 
       {isLoading && (
