@@ -22,9 +22,6 @@ FROM base AS build
 
 WORKDIR /app
 
-# Build shared package first
-RUN pnpm --filter @webedt/shared build
-
 # Build client (React/Vite app)
 RUN pnpm --filter @webedt/client build
 
@@ -52,7 +49,6 @@ COPY apps/server/package.json ./apps/server/
 RUN pnpm install --frozen-lockfile --prod
 
 # Copy built artifacts from build stage
-COPY --from=build /app/packages/shared/dist ./packages/shared/dist
 COPY --from=build /app/apps/client/dist ./apps/client/dist
 COPY --from=build /app/apps/server/dist ./apps/server/dist
 
