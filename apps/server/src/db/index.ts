@@ -11,10 +11,21 @@ const { Pool } = pg;
 // Use PostgreSQL if DATABASE_URL is set, otherwise SQLite
 const usePostgres = !!process.env.DATABASE_URL;
 
+// Declare exports at top level
+export let pool: pg.Pool | null;
+export let sqliteDb: Database.Database | null;
+export let db: any;
+
+// Re-export schemas based on database type
+export let users: any;
+export let sessions: any;
+export let chatSessions: any;
+export let messages: any;
+
 if (usePostgres) {
   console.log('Using PostgreSQL database');
 
-  export const pool = new Pool({
+  pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     max: 20,
     idleTimeoutMillis: 30000,
@@ -22,7 +33,14 @@ if (usePostgres) {
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
   });
 
-  export const db = drizzlePg(pool, { schema: schemaPg, logger: process.env.NODE_ENV === 'development' });
+  db = drizzlePg(pool, { schema: schemaPg, logger: process.env.NODE_ENV === 'development' });
+  sqliteDb = null;
+
+  // Assign PostgreSQL schemas
+  users = schemaPg.users;
+  sessions = schemaPg.sessions;
+  chatSessions = schemaPg.chatSessions;
+  messages = schemaPg.messages;
 
   // Create PostgreSQL tables if they don't exist
   console.log('Creating PostgreSQL tables...');
@@ -68,11 +86,6 @@ if (usePostgres) {
   }).catch((err) => {
     console.error('Error creating PostgreSQL tables:', err);
   });
-
-  export const sqliteDb = null;
-
-  // Re-export schema for routes to use
-  export { users, sessions, chatSessions, messages } from './schema';
 } else {
   console.log('Using SQLite database');
 
@@ -83,8 +96,15 @@ if (usePostgres) {
   // Enable foreign keys
   sqlite.pragma('foreign_keys = ON');
 
-  export const db = drizzleSqlite(sqlite, { schema: schemaSqlite, logger: process.env.NODE_ENV === 'development' });
-  export const sqliteDb: Database.Database = sqlite;
+  db = drizzleSqlite(sqlite, { schema: schemaSqlite, logger: process.env.NODE_ENV === 'development' });
+  sqliteDb = sqlite;
+  pool = null;
+
+  // Assign SQLite schemas
+  users = schemaSqlite.users;
+  sessions = schemaSqlite.sessions;
+  chatSessions = schemaSqlite.chatSessions;
+  messages = schemaSqlite.messages;
 
   // Create SQLite tables
   console.log('Creating SQLite tables...');
@@ -131,9 +151,4 @@ if (usePostgres) {
   `);
 
   console.log('SQLite tables created successfully!');
-
-  export const pool = null;
-
-  // Re-export schema for routes to use
-  export { users, sessions, chatSessions, messages } from './schema-sqlite';
 }
