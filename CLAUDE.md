@@ -147,15 +147,29 @@ The deployment identifier depends on the total length after processing:
    - If > 63 characters: the workflow will extract just the session ID portion
 
 **Simple Rule:**
-- Start with: `webedt-website-{branch-name-with-slashes-replaced-by-dashes-and-lowercased}`
-- If it fits in 63 characters, that's your deployment URL
-- Most claude/ branches fit within this limit
 
-**Example 1 - Short branch name (fits with full branch):**
+Follow these steps to determine the deployment URL:
+
+1. **Process the branch name:**
+   - Convert to lowercase
+   - Replace slashes with dashes
+   - Example: `claude/setup-input-handling-01Prg9bKWaJvxQck5CGEGqUJ` → `claude-setup-input-handling-01prg9bkwajvxqck5cgegquj`
+
+2. **Try Strategy 1:** `{owner}-{repo}-{processed-branch}`
+   - Example: `webedt-website-claude-setup-input-handling-01prg9bkwajvxqck5cgegquj`
+   - Count characters - if ≤ 63, use this
+
+3. **Try Strategy 2:** `{repo}-{processed-branch}`
+   - Example: `website-claude-setup-input-handling-01prg9bkwajvxqck5cgegquj`
+   - Count characters - if ≤ 63, use this
+
+4. **Continue with other fallback strategies** as needed (extracting session ID, etc.)
+
+**Example 1 - Strategy 1 works (short branch name):**
 ```
 Branch: claude/ideal-user-flow-01Ca8egaVDRvUdzutNsFZeAJ
-Processed: claude-ideal-user-flow-01ca8egavdrvudzutnsfzeaj
-Full identifier: webedt-website-claude-ideal-user-flow-01ca8egavdrvudzutnsfzeaj (61 chars ✓)
+Processed: claude-ideal-user-flow-01ca8egavdrvudzutnsfzeaj (52 chars)
+Strategy 1: webedt-website-claude-ideal-user-flow-01ca8egavdrvudzutnsfzeaj (61 chars ✓)
 
 **Links:**
 
@@ -163,17 +177,31 @@ GitHub Branch: [https://github.com/webedt/website/tree/claude/ideal-user-flow-01
 Live Site: [https://webedt-website-claude-ideal-user-flow-01ca8egavdrvudzutnsfzeaj.etdofresh.com/](https://webedt-website-claude-ideal-user-flow-01ca8egavdrvudzutnsfzeaj.etdofresh.com/)
 ```
 
-**Example 2 - Long branch name (requires session ID fallback):**
+**Example 2 - Strategy 2 works (medium branch name):**
+```
+Branch: claude/setup-input-handling-01Prg9bKWaJvxQck5CGEGqUJ
+Processed: claude-setup-input-handling-01prg9bkwajvxqck5cgegquj (52 chars)
+Strategy 1: webedt-website-claude-setup-input-handling-01prg9bkwajvxqck5cgegquj (68 chars ✗)
+Strategy 2: website-claude-setup-input-handling-01prg9bkwajvxqck5cgegquj (60 chars ✓)
+
+**Links:**
+
+GitHub Branch: [https://github.com/webedt/website/tree/claude/setup-input-handling-01Prg9bKWaJvxQck5CGEGqUJ](https://github.com/webedt/website/tree/claude/setup-input-handling-01Prg9bKWaJvxQck5CGEGqUJ)
+Live Site: [https://website-claude-setup-input-handling-01prg9bkwajvxqck5cgegquj.etdofresh.com/](https://website-claude-setup-input-handling-01prg9bkwajvxqck5cgegquj.etdofresh.com/)
+```
+
+**Example 3 - Strategy 3+ needed (long branch name):**
 ```
 Branch: claude/debug-session-resumption-01AdzpK5b5h4BkyDcMWtoLGV
-Processed: claude-debug-session-resumption-01adzpk5b5h4bkydcmwtolgv
-Full would be: webedt-website-claude-debug-session-resumption-01adzpk5b5h4bkydcmwtolgv (65 chars ✗ exceeds 63)
-Fallback to session ID: webedt-website-01adzpk5b5h4bkydcmwtolgv (43 chars ✓)
+Processed: claude-debug-session-resumption-01adzpk5b5h4bkydcmwtolgv (57 chars)
+Strategy 1: webedt-website-claude-debug-session-resumption-01adzpk5b5h4bkydcmwtolgv (73 chars ✗)
+Strategy 2: website-claude-debug-session-resumption-01adzpk5b5h4bkydcmwtolgv (66 chars ✗)
+Fallback to session ID: website-01adzpk5b5h4bkydcmwtolgv (35 chars ✓)
 
 **Links:**
 
 GitHub Branch: [https://github.com/webedt/website/tree/claude/debug-session-resumption-01AdzpK5b5h4BkyDcMWtoLGV](https://github.com/webedt/website/tree/claude/debug-session-resumption-01AdzpK5b5h4BkyDcMWtoLGV)
-Live Site: [https://webedt-website-01adzpk5b5h4bkydcmwtolgv.etdofresh.com/](https://webedt-website-01adzpk5b5h4bkydcmwtolgv.etdofresh.com/)
+Live Site: [https://website-01adzpk5b5h4bkydcmwtolgv.etdofresh.com/](https://website-01adzpk5b5h4bkydcmwtolgv.etdofresh.com/)
 ```
 
 **Important Notes:**
