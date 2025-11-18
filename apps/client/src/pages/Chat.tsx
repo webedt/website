@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { sessionsApi, githubApi } from '@/lib/api';
 import { useEventSource } from '@/hooks/useEventSource';
 import { useAuthStore } from '@/lib/store';
-import ChatInput from '@/components/ChatInput';
+import ChatInput, { type ChatInputRef } from '@/components/ChatInput';
 import type { Message, GitHubRepository, ChatSession } from '@webedt/shared';
 
 export default function Chat() {
@@ -29,6 +29,7 @@ export default function Chat() {
   const [isLocked, setIsLocked] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageIdCounter = useRef(0);
+  const chatInputRef = useRef<ChatInputRef>(null);
 
   // Load session details first to check status
   const { data: sessionDetailsData } = useQuery({
@@ -363,6 +364,10 @@ export default function Chat() {
           navigate(`/chat/${data.chatSessionId}`, { replace: true });
         }
       }
+      // Refocus input after processing completes (with delay to ensure DOM updates)
+      setTimeout(() => {
+        chatInputRef.current?.focus();
+      }, 100);
     },
     onError: (error) => {
       console.error('Stream error:', error);
@@ -379,6 +384,10 @@ export default function Chat() {
       ]);
       setIsExecuting(false);
       setStreamUrl(null);
+      // Refocus input after error (with delay to ensure DOM updates)
+      setTimeout(() => {
+        chatInputRef.current?.focus();
+      }, 100);
     },
     autoReconnect: false, // Disable auto-reconnect to prevent infinite loops
   });
@@ -544,6 +553,7 @@ export default function Chat() {
         /* Centered input for new session */
         <div className="flex-1 flex items-center justify-center p-6">
           <ChatInput
+            ref={chatInputRef}
             input={input}
             setInput={setInput}
             onSubmit={handleSubmit}
@@ -606,6 +616,7 @@ export default function Chat() {
           {/* Input panel at bottom when messages exist */}
           <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-6">
             <ChatInput
+              ref={chatInputRef}
               input={input}
               setInput={setInput}
               onSubmit={handleSubmit}

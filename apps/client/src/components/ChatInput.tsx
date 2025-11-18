@@ -1,3 +1,4 @@
+import { forwardRef, useImperativeHandle, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import type { GitHubRepository, User } from '@webedt/shared';
 
@@ -19,7 +20,11 @@ interface ChatInputProps {
   centered?: boolean;
 }
 
-export default function ChatInput({
+export interface ChatInputRef {
+  focus: () => void;
+}
+
+const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
   input,
   setInput,
   onSubmit,
@@ -35,15 +40,24 @@ export default function ChatInput({
   isLocked,
   user,
   centered = false,
-}: ChatInputProps) {
+}, ref) => {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const hasGithubAuth = !!user?.githubAccessToken;
   const hasClaudeAuth = !!user?.claudeAuth;
+
+  // Expose focus method to parent component
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      textareaRef.current?.focus();
+    },
+  }));
 
   return (
     <form onSubmit={onSubmit} className={`max-w-4xl ${centered ? 'w-full -mt-12' : 'mx-auto w-full'}`}>
       {/* Multi-line input with controls and submit button inside */}
       <div className="relative">
         <textarea
+          ref={textareaRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Describe what you want to code..."
@@ -184,4 +198,8 @@ export default function ChatInput({
       </div>
     </form>
   );
-}
+});
+
+ChatInput.displayName = 'ChatInput';
+
+export default ChatInput;
