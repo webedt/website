@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { sessionsApi, githubApi } from '@/lib/api';
 import { useAuthStore } from '@/lib/store';
 import ChatInput from '@/components/ChatInput';
+import { AuthStatusIndicator } from '@/components/AuthStatusIndicator';
 import type { ChatSession, GitHubRepository } from '@webedt/shared';
 
 export default function Dashboard() {
@@ -221,6 +222,9 @@ export default function Dashboard() {
           New Session
         </Link>
       </div>
+
+      {/* Authentication Status Indicator */}
+      <AuthStatusIndicator user={user} />
 
       {/* New Chat Input */}
       <div className="mb-8">
