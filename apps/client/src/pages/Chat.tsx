@@ -351,8 +351,6 @@ export default function Chat() {
     onCompleted: (data) => {
       setIsExecuting(false);
       setStreamUrl(null);
-      // Refocus input after processing completes
-      chatInputRef.current?.focus();
       // Capture session ID from completion event
       if (data?.chatSessionId) {
         console.log('[Chat] Execution completed, setting currentSessionId:', data.chatSessionId);
@@ -366,6 +364,10 @@ export default function Chat() {
           navigate(`/chat/${data.chatSessionId}`, { replace: true });
         }
       }
+      // Refocus input after processing completes (with delay to ensure DOM updates)
+      setTimeout(() => {
+        chatInputRef.current?.focus();
+      }, 100);
     },
     onError: (error) => {
       console.error('Stream error:', error);
@@ -382,8 +384,10 @@ export default function Chat() {
       ]);
       setIsExecuting(false);
       setStreamUrl(null);
-      // Refocus input after error
-      chatInputRef.current?.focus();
+      // Refocus input after error (with delay to ensure DOM updates)
+      setTimeout(() => {
+        chatInputRef.current?.focus();
+      }, 100);
     },
     autoReconnect: false, // Disable auto-reconnect to prevent infinite loops
   });
