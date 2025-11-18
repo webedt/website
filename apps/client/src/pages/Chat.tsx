@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { sessionsApi, githubApi } from '@/lib/api';
 import { useEventSource } from '@/hooks/useEventSource';
@@ -10,6 +10,7 @@ import type { Message, GitHubRepository, ChatSession } from '@webedt/shared';
 export default function Chat() {
   const { sessionId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -34,7 +35,7 @@ export default function Chat() {
   const { data: sessionDetailsData } = useQuery({
     queryKey: ['session-details', sessionId],
     queryFn: () => sessionsApi.get(Number(sessionId)),
-    enabled: !!sessionId,
+    enabled: !!sessionId && sessionId !== 'new',
     // Poll every 2 seconds if session is running or pending
     refetchInterval: (query) => {
       const session = query.state.data?.data;
@@ -46,7 +47,7 @@ export default function Chat() {
   const { data: sessionData } = useQuery({
     queryKey: ['session', sessionId],
     queryFn: () => sessionsApi.getMessages(Number(sessionId)),
-    enabled: !!sessionId,
+    enabled: !!sessionId && sessionId !== 'new',
     // Poll every 2 seconds if session is running or pending
     refetchInterval: () => {
       const session = sessionDetailsData?.data;
@@ -60,14 +61,14 @@ export default function Chat() {
   const { data: currentSessionData } = useQuery({
     queryKey: ['currentSession', currentSessionId],
     queryFn: async () => {
-      if (!currentSessionId) return null;
+      if (!currentSessionId || currentSessionId === 0) return null;
       const response = await fetch(`/api/sessions/${currentSessionId}`, {
         credentials: 'include',
       });
       if (!response.ok) throw new Error('Failed to fetch session');
       return response.json();
     },
-    enabled: !!currentSessionId,
+    enabled: !!currentSessionId && currentSessionId !== 0,
   });
 
   // Load repositories
@@ -199,6 +200,31 @@ export default function Chat() {
     }
   }, [currentSessionData]);
 
+  // Auto-connect to stream when navigating from Dashboard with stream params
+  useEffect(() => {
+    // Check if we came from Dashboard with stream params
+    const state = location.state as any;
+    if (state?.startStream && state?.streamParams && !streamUrl) {
+      console.log('[Chat] Auto-starting stream from navigation state:', state.streamParams);
+
+      const params = new URLSearchParams();
+      Object.entries(state.streamParams).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          params.append(key, String(value));
+        }
+      });
+
+      // Note: We don't add resumeSessionId here because this is a brand new session
+      // The session was just created by Dashboard, so there's no AI worker session to resume yet
+
+      setStreamUrl(`/api/execute?${params}`);
+      setIsExecuting(true);
+
+      // Clear the navigation state to prevent re-triggering
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, streamUrl, navigate, location.pathname]);
+
   const { isConnected } = useEventSource(streamUrl, {
     onMessage: (event) => {
       // Log all events to see what we're receiving
@@ -206,6 +232,21 @@ export default function Chat() {
       console.log('Full event data structure:', JSON.stringify(event, null, 2));
 
       const { eventType, data } = event;
+
+      // Handle session-created event - update URL to the actual session ID
+      if (eventType === 'session-created' && data?.chatSessionId) {
+        console.log('[Chat] Session created with ID:', data.chatSessionId);
+        setCurrentSessionId(data.chatSessionId);
+
+        // Navigate to the actual session URL if we're on /chat/new
+        if (!sessionId || sessionId === 'new') {
+          console.log('[Chat] Navigating to session:', data.chatSessionId);
+          navigate(`/chat/${data.chatSessionId}`, { replace: true });
+        }
+
+        // Don't display this as a message
+        return;
+      }
 
       // Capture AI worker session ID from connected event
       if (eventType === 'connected' && data?.sessionId) {
