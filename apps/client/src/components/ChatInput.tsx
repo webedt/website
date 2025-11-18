@@ -51,10 +51,29 @@ export default function ChatInput({
           className="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-lg focus:border-blue-500 focus:ring-blue-500 resize-none pr-14 text-base p-4 pb-16"
           disabled={isExecuting || !user?.claudeAuth}
           onKeyDown={(e) => {
-            // Submit on Cmd/Ctrl + Enter
-            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-              e.preventDefault();
-              onSubmit(e);
+            if (e.key === 'Enter') {
+              // Shift+Enter → always insert new line (default behavior)
+              if (e.shiftKey) {
+                return;
+              }
+
+              // Cmd/Ctrl+Enter → always submit
+              if (e.metaKey || e.ctrlKey) {
+                e.preventDefault();
+                onSubmit(e);
+                return;
+              }
+
+              // Plain Enter → submit only if cursor is at the end
+              const textarea = e.currentTarget as HTMLTextAreaElement;
+              const cursorPos = textarea.selectionStart;
+              const textLength = textarea.value.length;
+
+              if (cursorPos === textLength) {
+                e.preventDefault();
+                onSubmit(e);
+              }
+              // Otherwise, allow default behavior (insert new line)
             }
           }}
         />
@@ -147,7 +166,7 @@ export default function ChatInput({
           type="submit"
           disabled={isExecuting || !input.trim() || !user?.claudeAuth}
           className="absolute bottom-3 right-3 flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          title="Send message (Cmd/Ctrl + Enter)"
+          title="Send message (Enter at end, Cmd/Ctrl+Enter, or click)"
         >
           {isExecuting ? (
             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
