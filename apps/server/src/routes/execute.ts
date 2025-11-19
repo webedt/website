@@ -187,14 +187,25 @@ const executeHandler = async (req: any, res: any) => {
     }
 
     // Prepare request to ai-coding-worker
-    // userRequest can be either a string or JSON-encoded array of content blocks
+    // userRequest can be:
+    // - Already an array (from POST JSON body - Express already parsed it)
+    // - A JSON string (from GET query params)
+    // - A plain string
     let parsedUserRequest: string | any[];
-    try {
-      // Try to parse as JSON (for content blocks with images)
-      parsedUserRequest = JSON.parse(userRequest as string);
-    } catch {
-      // If parsing fails, it's a simple string
-      parsedUserRequest = (userRequest as string) || 'Resume previous session';
+
+    if (Array.isArray(userRequest)) {
+      // Already parsed by Express JSON middleware (POST request)
+      parsedUserRequest = userRequest;
+    } else if (typeof userRequest === 'string') {
+      try {
+        // Try to parse as JSON string (from GET query params)
+        parsedUserRequest = JSON.parse(userRequest);
+      } catch {
+        // If parsing fails, it's a plain string
+        parsedUserRequest = userRequest || 'Resume previous session';
+      }
+    } else {
+      parsedUserRequest = 'Resume previous session';
     }
 
     const executePayload: any = {
