@@ -101,6 +101,16 @@ router.get('/:id/messages', requireAuth, async (req, res) => {
       .where(eq(messages.chatSessionId, sessionId))
       .orderBy(messages.timestamp);
 
+    // Debug: Log first message to verify images field is present
+    if (sessionMessages.length > 0) {
+      console.log('[Sessions] Sample message structure:', {
+        id: sessionMessages[0].id,
+        type: sessionMessages[0].type,
+        hasImages: !!sessionMessages[0].images,
+        imagesCount: sessionMessages[0].images?.length || 0,
+      });
+    }
+
     res.json({
       success: true,
       data: {

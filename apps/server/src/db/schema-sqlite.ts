@@ -48,6 +48,12 @@ export const messages = sqliteTable('messages', {
     .references(() => chatSessions.id, { onDelete: 'cascade' }),
   type: text('type').notNull(),
   content: text('content').notNull(),
+  images: text('images', { mode: 'json' }).$type<Array<{
+    id: string;
+    data: string;
+    mediaType: string;
+    fileName: string;
+  }>>(),
   timestamp: integer('timestamp', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
 
