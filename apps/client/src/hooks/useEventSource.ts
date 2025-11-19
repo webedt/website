@@ -63,7 +63,7 @@ export function useEventSource(url: string | null, options: UseEventSourceOption
       });
 
       // Listen to various event types the AI worker sends
-      const eventTypes = ['assistant_message', 'status', 'thought', 'tool_use', 'result', 'session_name'];
+      const eventTypes = ['session-created', 'assistant_message', 'status', 'thought', 'tool_use', 'result', 'session_name'];
 
       eventTypes.forEach(eventType => {
         es.addEventListener(eventType, (event: MessageEvent) => {

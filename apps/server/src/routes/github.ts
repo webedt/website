@@ -10,11 +10,20 @@ const router = Router();
 
 // Initiate GitHub OAuth
 router.get('/oauth', requireAuth, (req, res) => {
+  const authReq = req as AuthRequest;
+
+  // Encode user session ID in state for retrieval in callback
+  const state = Buffer.from(JSON.stringify({
+    sessionId: authReq.session!.id,
+    userId: authReq.user!.id,
+    timestamp: Date.now(),
+  })).toString('base64');
+
   const params = new URLSearchParams({
     client_id: process.env.GITHUB_OAUTH_CLIENT_ID!,
     redirect_uri: process.env.GITHUB_OAUTH_REDIRECT_URL!,
     scope: 'repo user:email',
-    state: Math.random().toString(36).substring(7), // CSRF protection
+    state,
   });
 
   res.redirect(`https://github.com/login/oauth/authorize?${params}`);
@@ -24,16 +33,24 @@ router.get('/oauth', requireAuth, (req, res) => {
 router.get('/oauth/callback', async (req, res) => {
   try {
     const { code, state } = req.query;
-    const authReq = req as AuthRequest;
 
-    // Check if user is authenticated
-    if (!authReq.user) {
-      res.redirect(`${process.env.ALLOWED_ORIGINS?.split(',')[0]}/login?error=not_authenticated`);
+    if (!code || !state) {
+      res.redirect(`${process.env.ALLOWED_ORIGINS?.split(',')[0]}/login?error=missing_params`);
       return;
     }
 
-    if (!code) {
-      res.redirect(`${process.env.ALLOWED_ORIGINS?.split(',')[0]}/settings?error=no_code`);
+    // Decode and validate state parameter
+    let stateData: { sessionId: string; userId: string; timestamp: number };
+    try {
+      stateData = JSON.parse(Buffer.from(state as string, 'base64').toString());
+    } catch (error) {
+      res.redirect(`${process.env.ALLOWED_ORIGINS?.split(',')[0]}/login?error=invalid_state`);
+      return;
+    }
+
+    // Check if state is not too old (prevent replay attacks) - 10 minute timeout
+    if (Date.now() - stateData.timestamp > 10 * 60 * 1000) {
+      res.redirect(`${process.env.ALLOWED_ORIGINS?.split(',')[0]}/login?error=state_expired`);
       return;
     }
 
@@ -69,14 +86,14 @@ router.get('/oauth/callback', async (req, res) => {
     const octokit = new Octokit({ auth: accessToken });
     const { data: githubUser } = await octokit.users.getAuthenticated();
 
-    // Update user with GitHub info
+    // Update user with GitHub info using userId from state
     await db
       .update(users)
       .set({
         githubId: String(githubUser.id),
         githubAccessToken: accessToken,
       })
-      .where(eq(users.id, authReq.user.id));
+      .where(eq(users.id, stateData.userId));
 
     res.redirect(`${process.env.ALLOWED_ORIGINS?.split(',')[0]}/settings?success=github_connected`);
   } catch (error) {
