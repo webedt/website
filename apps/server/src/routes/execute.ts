@@ -9,13 +9,15 @@ import type { ClaudeAuth } from '@webedt/shared';
 
 const router = Router();
 
-// Execute AI coding task with SSE
-router.get('/execute', requireAuth, async (req, res) => {
+// Execute AI coding task with SSE - supports both GET and POST
+const executeHandler = async (req: any, res: any) => {
   const authReq = req as AuthRequest;
   let chatSession: any;
 
   try {
-    const { userRequest, repositoryUrl, branch, autoCommit, resumeSessionId, chatSessionId } = req.query;
+    // Support both GET (query) and POST (body) parameters
+    const params = req.method === 'POST' ? req.body : req.query;
+    const { userRequest, repositoryUrl, branch, autoCommit, resumeSessionId, chatSessionId } = params;
 
     if (!userRequest && !resumeSessionId) {
       res.status(400).json({ success: false, error: 'userRequest or resumeSessionId is required' });
@@ -107,10 +109,61 @@ router.get('/execute', requireAuth, async (req, res) => {
 
     // Store user message and lock the session
     if (userRequest) {
+      // Store the raw userRequest (which could be JSON or string)
+      // For display purposes, if it's a content block array, show a summary
+      let displayContent: string;
+      let imageAttachments: any[] = [];
+
+      // Check if userRequest is already an array (POST) or needs parsing (GET)
+      if (Array.isArray(userRequest)) {
+        // Already parsed by Express (POST request with content blocks)
+        const textBlocks = userRequest.filter((block: any) => block.type === 'text');
+        const imageBlocks = userRequest.filter((block: any) => block.type === 'image');
+        displayContent = textBlocks.map((block: any) => block.text).join('\n');
+        if (imageBlocks.length > 0) {
+          displayContent += `\n[${imageBlocks.length} image${imageBlocks.length > 1 ? 's' : ''} attached]`;
+          // Extract image data for storage
+          imageAttachments = imageBlocks.map((block: any, index: number) => ({
+            id: `img-${Date.now()}-${index}`,
+            data: block.source?.data || '',
+            mediaType: block.source?.media_type || 'image/png',
+            fileName: `image-${index + 1}.png`,
+          }));
+        }
+      } else if (typeof userRequest === 'string') {
+        try {
+          // Try to parse as JSON string (GET with content blocks)
+          const parsed = JSON.parse(userRequest);
+          if (Array.isArray(parsed)) {
+            const textBlocks = parsed.filter((block: any) => block.type === 'text');
+            const imageBlocks = parsed.filter((block: any) => block.type === 'image');
+            displayContent = textBlocks.map((block: any) => block.text).join('\n');
+            if (imageBlocks.length > 0) {
+              displayContent += `\n[${imageBlocks.length} image${imageBlocks.length > 1 ? 's' : ''} attached]`;
+              // Extract image data for storage
+              imageAttachments = imageBlocks.map((block: any, index: number) => ({
+                id: `img-${Date.now()}-${index}`,
+                data: block.source?.data || '',
+                mediaType: block.source?.media_type || 'image/png',
+                fileName: `image-${index + 1}.png`,
+              }));
+            }
+          } else {
+            displayContent = userRequest;
+          }
+        } catch {
+          // Plain string
+          displayContent = userRequest;
+        }
+      } else {
+        displayContent = 'New session';
+      }
+
       await db.insert(messages).values({
         chatSessionId: chatSession.id,
         type: 'user',
-        content: userRequest as string,
+        content: displayContent,
+        images: imageAttachments.length > 0 ? imageAttachments : null,
       });
 
       // Lock the session after first message if it has a repository
@@ -166,8 +219,29 @@ router.get('/execute', requireAuth, async (req, res) => {
     }
 
     // Prepare request to ai-coding-worker
+    // userRequest can be:
+    // - Already an array (from POST JSON body - Express already parsed it)
+    // - A JSON string (from GET query params)
+    // - A plain string
+    let parsedUserRequest: string | any[];
+
+    if (Array.isArray(userRequest)) {
+      // Already parsed by Express JSON middleware (POST request)
+      parsedUserRequest = userRequest;
+    } else if (typeof userRequest === 'string') {
+      try {
+        // Try to parse as JSON string (from GET query params)
+        parsedUserRequest = JSON.parse(userRequest);
+      } catch {
+        // If parsing fails, it's a plain string
+        parsedUserRequest = userRequest || 'Resume previous session';
+      }
+    } else {
+      parsedUserRequest = 'Resume previous session';
+    }
+
     const executePayload: any = {
-      userRequest: (userRequest as string) || 'Resume previous session',
+      userRequest: parsedUserRequest,
       codingAssistantProvider: 'ClaudeAgentSDK',
       codingAssistantAuthentication: claudeAuth,
     };
@@ -440,6 +514,10 @@ router.get('/execute', requireAuth, async (req, res) => {
       res.status(500).json({ success: false, error: 'Internal server error' });
     }
   }
-});
+};
+
+// Register both GET and POST routes
+router.get('/execute', requireAuth, executeHandler);
+router.post('/execute', requireAuth, executeHandler);
 
 export default router;

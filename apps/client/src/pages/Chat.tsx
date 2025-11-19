@@ -4,7 +4,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { sessionsApi, githubApi } from '@/lib/api';
 import { useEventSource } from '@/hooks/useEventSource';
 import { useAuthStore } from '@/lib/store';
-import ChatInput, { type ChatInputRef } from '@/components/ChatInput';
+import ChatInput, { type ChatInputRef, type ImageAttachment } from '@/components/ChatInput';
+import { ImageViewer } from '@/components/ImageViewer';
 import type { Message, GitHubRepository, ChatSession } from '@webedt/shared';
 
 export default function Chat() {
@@ -15,11 +16,14 @@ export default function Chat() {
   const user = useAuthStore((state) => state.user);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
+  const [images, setImages] = useState<ImageAttachment[]>([]);
   const [selectedRepo, setSelectedRepo] = useState('');
   const [branch, setBranch] = useState('');
   const [autoCommit, setAutoCommit] = useState(true);
   const [isExecuting, setIsExecuting] = useState(false);
   const [streamUrl, setStreamUrl] = useState<string | null>(null);
+  const [streamMethod, setStreamMethod] = useState<'GET' | 'POST'>('GET');
+  const [streamBody, setStreamBody] = useState<any>(null);
   const [editingTitle, setEditingTitle] = useState(false);
   const [editTitle, setEditTitle] = useState('');
   const [deletingSession, setDeletingSession] = useState(false);
@@ -38,6 +42,11 @@ export default function Chat() {
     selectedRepo: string;
     branch: string;
     autoCommit: boolean;
+  } | null>(null);
+  const [viewingImage, setViewingImage] = useState<{
+    data: string;
+    mediaType: string;
+    fileName: string;
   } | null>(null);
 
   // Load session details first to check status
@@ -206,6 +215,7 @@ export default function Chat() {
     if (!sessionId) {
       setMessages([]);
       setInput('');
+      setImages([]);
       setSelectedRepo('');
       setBranch('');
       setAutoCommit(true);
@@ -242,17 +252,27 @@ export default function Chat() {
     if (state?.startStream && state?.streamParams && !streamUrl) {
       console.log('[Chat] Auto-starting stream from navigation state:', state.streamParams);
 
-      const params = new URLSearchParams();
-      Object.entries(state.streamParams).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          params.append(key, String(value));
-        }
-      });
+      const { userRequest } = state.streamParams;
 
-      // Note: We don't add resumeSessionId here because this is a brand new session
-      // The session was just created by Dashboard, so there's no AI worker session to resume yet
+      // Check if userRequest is an array (images present)
+      if (Array.isArray(userRequest)) {
+        // Use POST for requests with images
+        setStreamMethod('POST');
+        setStreamBody(state.streamParams);
+        setStreamUrl(`/api/execute`);
+      } else {
+        // Use GET for text-only requests
+        setStreamMethod('GET');
+        setStreamBody(null);
+        const params = new URLSearchParams();
+        Object.entries(state.streamParams).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            params.append(key, String(value));
+          }
+        });
+        setStreamUrl(`/api/execute?${params}`);
+      }
 
-      setStreamUrl(`/api/execute?${params}`);
       setIsExecuting(true);
 
       // Clear the navigation state to prevent re-triggering
@@ -269,6 +289,8 @@ export default function Chat() {
   }, [sessionId]);
 
   const { isConnected } = useEventSource(streamUrl, {
+    method: streamMethod,
+    body: streamBody,
     onMessage: (event) => {
       // Log all events to see what we're receiving
       console.log('Received SSE event:', event);
@@ -306,6 +328,12 @@ export default function Chat() {
       let content: string | null = null;
       let messageType: 'assistant' | 'system' = 'assistant';
       let eventLabel = '';
+
+      // Skip if data is undefined or null
+      if (!data) {
+        console.log('Skipping event with no data:', event);
+        return;
+      }
 
       // Extract content from different event types (matching server-side logic)
       if (data.type === 'message' && data.message) {
@@ -452,7 +480,7 @@ export default function Chat() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!input.trim() || isExecuting) return;
+    if ((!input.trim() && images.length === 0) || isExecuting) return;
 
     // Save last request for retry functionality
     setLastRequest({
@@ -468,36 +496,68 @@ export default function Chat() {
       id: Date.now() + messageIdCounter.current,
       chatSessionId: Number(sessionId) || 0,
       type: 'user',
-      content: input,
+      content: images.length > 0
+        ? `${input}\n[${images.length} image${images.length > 1 ? 's' : ''} attached]`
+        : input,
       timestamp: new Date(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
 
-    // Build stream URL
-    const params = new URLSearchParams({
-      userRequest: input,
-    });
+    // Build userRequest - either string or content blocks
+    let userRequestParam: string | any[];
 
-    // If we have a currentSessionId, pass it to reuse the same chat session
+    if (images.length > 0) {
+      // Create content blocks for multimodal request
+      const contentBlocks: any[] = [];
+
+      // Add text block if there's text
+      if (input.trim()) {
+        contentBlocks.push({
+          type: 'text',
+          text: input.trim(),
+        });
+      }
+
+      // Add image blocks
+      images.forEach((image) => {
+        contentBlocks.push({
+          type: 'image',
+          source: {
+            type: 'base64',
+            media_type: image.mediaType,
+            data: image.data,
+          },
+        });
+      });
+
+      userRequestParam = contentBlocks;
+    } else {
+      userRequestParam = input.trim();
+    }
+
+    // Build request parameters
+    const requestParams: any = {
+      userRequest: userRequestParam,
+    };
+
     if (currentSessionId) {
-      params.append('chatSessionId', String(currentSessionId));
+      requestParams.chatSessionId = currentSessionId;
       console.log('[Chat] Continuing existing chatSession:', currentSessionId);
     }
 
     if (selectedRepo) {
-      params.append('repositoryUrl', selectedRepo);
+      requestParams.repositoryUrl = selectedRepo;
     }
 
     if (branch) {
-      params.append('branch', branch);
+      requestParams.branch = branch;
     }
 
     if (autoCommit) {
-      params.append('autoCommit', 'true');
+      requestParams.autoCommit = true;
     }
 
-    // Resume AI worker session if we have an AI worker session ID
     console.log('[Chat] Session resumption check:', {
       currentSessionId,
       aiWorkerSessionId,
@@ -505,14 +565,33 @@ export default function Chat() {
     });
 
     if (aiWorkerSessionId) {
-      params.append('resumeSessionId', aiWorkerSessionId);
+      requestParams.resumeSessionId = aiWorkerSessionId;
       console.log('[Chat] Resuming AI worker session with ID:', aiWorkerSessionId);
     } else {
       console.log('[Chat] Starting new AI worker session - no aiWorkerSessionId available');
     }
 
-    setStreamUrl(`/api/execute?${params}`);
+    // Use POST for requests with images to avoid URL length limits
+    if (images.length > 0) {
+      // Use POST for large requests with images
+      setStreamMethod('POST');
+      setStreamBody(requestParams);
+      setStreamUrl(`/api/execute`);
+    } else {
+      // Use GET with query params for text-only requests
+      setStreamMethod('GET');
+      setStreamBody(null);
+      const params = new URLSearchParams();
+      Object.entries(requestParams).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          params.append(key, String(value));
+        }
+      });
+      setStreamUrl(`/api/execute?${params}`);
+    }
+
     setInput('');
+    setImages([]);
   };
 
   const handleRetry = () => {
@@ -672,6 +751,8 @@ export default function Chat() {
             ref={chatInputRef}
             input={input}
             setInput={setInput}
+            images={images}
+            setImages={setImages}
             onSubmit={handleSubmit}
             isExecuting={isExecuting}
             selectedRepo={selectedRepo}
@@ -707,6 +788,46 @@ export default function Chat() {
                     }`}
                   >
                     <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+
+                    {/* Display images if present */}
+                    {message.images && message.images.length > 0 && (
+                      <div className="mt-2 grid grid-cols-2 gap-2">
+                        {message.images.map((image) => (
+                          <div
+                            key={image.id}
+                            className="relative group cursor-pointer"
+                            onClick={() => setViewingImage({
+                              data: image.data,
+                              mediaType: image.mediaType,
+                              fileName: image.fileName,
+                            })}
+                          >
+                            <img
+                              src={`data:${image.mediaType};base64,${image.data}`}
+                              alt={image.fileName}
+                              className="w-full h-32 object-cover rounded border border-white/20 group-hover:border-white/40 transition-colors"
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded flex items-center justify-center">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
+                                />
+                              </svg>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     <p className="text-xs mt-1 opacity-70">
                       {new Date(message.timestamp).toLocaleTimeString()}
                     </p>
@@ -755,6 +876,8 @@ export default function Chat() {
               ref={chatInputRef}
               input={input}
               setInput={setInput}
+              images={images}
+              setImages={setImages}
               onSubmit={handleSubmit}
               isExecuting={isExecuting}
               selectedRepo={selectedRepo}
@@ -802,6 +925,16 @@ export default function Chat() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Image Viewer Modal */}
+      {viewingImage && (
+        <ImageViewer
+          imageData={viewingImage.data}
+          mediaType={viewingImage.mediaType}
+          fileName={viewingImage.fileName}
+          onClose={() => setViewingImage(null)}
+        />
       )}
     </div>
   );

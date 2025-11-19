@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { sessionsApi, githubApi } from '@/lib/api';
 import { useAuthStore } from '@/lib/store';
-import ChatInput from '@/components/ChatInput';
+import ChatInput, { type ImageAttachment } from '@/components/ChatInput';
 import type { ChatSession, GitHubRepository } from '@webedt/shared';
 
 export default function Dashboard() {
@@ -18,6 +18,7 @@ export default function Dashboard() {
 
   // Chat input state
   const [input, setInput] = useState('');
+  const [images, setImages] = useState<ImageAttachment[]>([]);
   const [selectedRepo, setSelectedRepo] = useState('');
   const [branch, setBranch] = useState('');
   const [autoCommit, setAutoCommit] = useState(true);
@@ -108,14 +109,46 @@ export default function Dashboard() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!input.trim() || !user?.claudeAuth) return;
+    if ((!input.trim() && images.length === 0) || !user?.claudeAuth) return;
+
+    // Build userRequest - either string or content blocks
+    let userRequestParam: string | any[];
+
+    if (images.length > 0) {
+      // Create content blocks for multimodal request
+      const contentBlocks: any[] = [];
+
+      // Add text block if there's text
+      if (input.trim()) {
+        contentBlocks.push({
+          type: 'text',
+          text: input.trim(),
+        });
+      }
+
+      // Add image blocks
+      images.forEach((image) => {
+        contentBlocks.push({
+          type: 'image',
+          source: {
+            type: 'base64',
+            media_type: image.mediaType,
+            data: image.data,
+          },
+        });
+      });
+
+      userRequestParam = contentBlocks;
+    } else {
+      userRequestParam = input.trim();
+    }
 
     // Navigate to Chat with execute params - let Chat create the session and handle streaming
     navigate('/chat/new', {
       state: {
         startStream: true,
         streamParams: {
-          userRequest: input,
+          userRequest: userRequestParam,
           repositoryUrl: selectedRepo || undefined,
           branch: branch || undefined,
           autoCommit: autoCommit || undefined,
@@ -124,6 +157,7 @@ export default function Dashboard() {
     });
 
     setInput('');
+    setImages([]);
   };
 
   // Handle Enter key in delete modal
@@ -158,6 +192,8 @@ export default function Dashboard() {
         <ChatInput
           input={input}
           setInput={setInput}
+          images={images}
+          setImages={setImages}
           onSubmit={handleSubmit}
           isExecuting={false}
           selectedRepo={selectedRepo}

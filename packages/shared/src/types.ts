@@ -34,11 +34,19 @@ export interface ChatSession {
 export type SessionStatus = 'pending' | 'running' | 'completed' | 'error';
 
 // Message types
+export interface ImageAttachment {
+  id: string;
+  data: string; // base64 data
+  mediaType: string;
+  fileName: string;
+}
+
 export interface Message {
   id: number;
   chatSessionId: number;
   type: MessageType;
   content: string;
+  images?: ImageAttachment[] | null;
   timestamp: Date;
 }
 
