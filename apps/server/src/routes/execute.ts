@@ -9,13 +9,15 @@ import type { ClaudeAuth } from '@webedt/shared';
 
 const router = Router();
 
-// Execute AI coding task with SSE
-router.get('/execute', requireAuth, async (req, res) => {
+// Execute AI coding task with SSE - supports both GET and POST
+const executeHandler = async (req: any, res: any) => {
   const authReq = req as AuthRequest;
   let chatSession: any;
 
   try {
-    const { userRequest, repositoryUrl, branch, autoCommit, resumeSessionId, chatSessionId } = req.query;
+    // Support both GET (query) and POST (body) parameters
+    const params = req.method === 'POST' ? req.body : req.query;
+    const { userRequest, repositoryUrl, branch, autoCommit, resumeSessionId, chatSessionId } = params;
 
     if (!userRequest && !resumeSessionId) {
       res.status(400).json({ success: false, error: 'userRequest or resumeSessionId is required' });
@@ -469,6 +471,10 @@ router.get('/execute', requireAuth, async (req, res) => {
       res.status(500).json({ success: false, error: 'Internal server error' });
     }
   }
-});
+};
+
+// Register both GET and POST routes
+router.get('/execute', requireAuth, executeHandler);
+router.post('/execute', requireAuth, executeHandler);
 
 export default router;

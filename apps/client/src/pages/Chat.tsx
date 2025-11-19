@@ -21,6 +21,8 @@ export default function Chat() {
   const [autoCommit, setAutoCommit] = useState(true);
   const [isExecuting, setIsExecuting] = useState(false);
   const [streamUrl, setStreamUrl] = useState<string | null>(null);
+  const [streamMethod, setStreamMethod] = useState<'GET' | 'POST'>('GET');
+  const [streamBody, setStreamBody] = useState<any>(null);
   const [editingTitle, setEditingTitle] = useState(false);
   const [editTitle, setEditTitle] = useState('');
   const [deletingSession, setDeletingSession] = useState(false);
@@ -244,17 +246,27 @@ export default function Chat() {
     if (state?.startStream && state?.streamParams && !streamUrl) {
       console.log('[Chat] Auto-starting stream from navigation state:', state.streamParams);
 
-      const params = new URLSearchParams();
-      Object.entries(state.streamParams).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          params.append(key, String(value));
-        }
-      });
+      const { userRequest } = state.streamParams;
 
-      // Note: We don't add resumeSessionId here because this is a brand new session
-      // The session was just created by Dashboard, so there's no AI worker session to resume yet
+      // Check if userRequest is an array (images present)
+      if (Array.isArray(userRequest)) {
+        // Use POST for requests with images
+        setStreamMethod('POST');
+        setStreamBody(state.streamParams);
+        setStreamUrl(`/api/execute`);
+      } else {
+        // Use GET for text-only requests
+        setStreamMethod('GET');
+        setStreamBody(null);
+        const params = new URLSearchParams();
+        Object.entries(state.streamParams).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            params.append(key, String(value));
+          }
+        });
+        setStreamUrl(`/api/execute?${params}`);
+      }
 
-      setStreamUrl(`/api/execute?${params}`);
       setIsExecuting(true);
 
       // Clear the navigation state to prevent re-triggering
@@ -271,6 +283,8 @@ export default function Chat() {
   }, [sessionId]);
 
   const { isConnected } = useEventSource(streamUrl, {
+    method: streamMethod,
+    body: streamBody,
     onMessage: (event) => {
       // Log all events to see what we're receiving
       console.log('Received SSE event:', event);
@@ -308,6 +322,12 @@ export default function Chat() {
       let content: string | null = null;
       let messageType: 'assistant' | 'system' = 'assistant';
       let eventLabel = '';
+
+      // Skip if data is undefined or null
+      if (!data) {
+        console.log('Skipping event with no data:', event);
+        return;
+      }
 
       // Extract content from different event types (matching server-side logic)
       if (data.type === 'message' && data.message) {
@@ -479,7 +499,7 @@ export default function Chat() {
     setMessages((prev) => [...prev, userMessage]);
 
     // Build userRequest - either string or content blocks
-    let userRequestParam: string;
+    let userRequestParam: string | any[];
 
     if (images.length > 0) {
       // Create content blocks for multimodal request
@@ -505,37 +525,33 @@ export default function Chat() {
         });
       });
 
-      // JSON encode the content blocks
-      userRequestParam = JSON.stringify(contentBlocks);
+      userRequestParam = contentBlocks;
     } else {
-      // Simple text request
       userRequestParam = input.trim();
     }
 
-    // Build stream URL
-    const params = new URLSearchParams({
+    // Build request parameters
+    const requestParams: any = {
       userRequest: userRequestParam,
-    });
+    };
 
-    // If we have a currentSessionId, pass it to reuse the same chat session
     if (currentSessionId) {
-      params.append('chatSessionId', String(currentSessionId));
+      requestParams.chatSessionId = currentSessionId;
       console.log('[Chat] Continuing existing chatSession:', currentSessionId);
     }
 
     if (selectedRepo) {
-      params.append('repositoryUrl', selectedRepo);
+      requestParams.repositoryUrl = selectedRepo;
     }
 
     if (branch) {
-      params.append('branch', branch);
+      requestParams.branch = branch;
     }
 
     if (autoCommit) {
-      params.append('autoCommit', 'true');
+      requestParams.autoCommit = true;
     }
 
-    // Resume AI worker session if we have an AI worker session ID
     console.log('[Chat] Session resumption check:', {
       currentSessionId,
       aiWorkerSessionId,
@@ -543,13 +559,31 @@ export default function Chat() {
     });
 
     if (aiWorkerSessionId) {
-      params.append('resumeSessionId', aiWorkerSessionId);
+      requestParams.resumeSessionId = aiWorkerSessionId;
       console.log('[Chat] Resuming AI worker session with ID:', aiWorkerSessionId);
     } else {
       console.log('[Chat] Starting new AI worker session - no aiWorkerSessionId available');
     }
 
-    setStreamUrl(`/api/execute?${params}`);
+    // Use POST for requests with images to avoid URL length limits
+    if (images.length > 0) {
+      // Use POST for large requests with images
+      setStreamMethod('POST');
+      setStreamBody(requestParams);
+      setStreamUrl(`/api/execute`);
+    } else {
+      // Use GET with query params for text-only requests
+      setStreamMethod('GET');
+      setStreamBody(null);
+      const params = new URLSearchParams();
+      Object.entries(requestParams).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          params.append(key, String(value));
+        }
+      });
+      setStreamUrl(`/api/execute?${params}`);
+    }
+
     setInput('');
     setImages([]);
   };

@@ -112,7 +112,7 @@ export default function Dashboard() {
     if ((!input.trim() && images.length === 0) || !user?.claudeAuth) return;
 
     // Build userRequest - either string or content blocks
-    let userRequestParam: string;
+    let userRequestParam: string | any[];
 
     if (images.length > 0) {
       // Create content blocks for multimodal request
@@ -138,10 +138,8 @@ export default function Dashboard() {
         });
       });
 
-      // JSON encode the content blocks
-      userRequestParam = JSON.stringify(contentBlocks);
+      userRequestParam = contentBlocks;
     } else {
-      // Simple text request
       userRequestParam = input.trim();
     }
 
