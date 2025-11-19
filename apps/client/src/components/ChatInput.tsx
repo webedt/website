@@ -45,6 +45,11 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
   const hasGithubAuth = !!user?.githubAccessToken;
   const hasClaudeAuth = !!user?.claudeAuth;
 
+  // Sort repositories alphabetically by fullName
+  const sortedRepositories = [...repositories].sort((a, b) =>
+    a.fullName.localeCompare(b.fullName)
+  );
+
   // Expose focus method to parent component
   useImperativeHandle(ref, () => ({
     focus: () => {
@@ -111,7 +116,7 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
                     <>
                       <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-md text-gray-700 dark:text-gray-300">
                         {selectedRepo
-                          ? repositories.find((r) => r.cloneUrl === selectedRepo)?.fullName ||
+                          ? sortedRepositories.find((r) => r.cloneUrl === selectedRepo)?.fullName ||
                             'No repository'
                           : 'No repository'}
                       </span>
@@ -134,7 +139,7 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
                         disabled={isLocked}
                       >
                         <option value="">No repository</option>
-                        {repositories.map((repo) => (
+                        {sortedRepositories.map((repo) => (
                           <option key={repo.id} value={repo.cloneUrl}>
                             {repo.fullName}
                           </option>
