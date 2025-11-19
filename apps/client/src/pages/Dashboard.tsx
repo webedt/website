@@ -21,7 +21,6 @@ export default function Dashboard() {
   const [selectedRepo, setSelectedRepo] = useState('');
   const [branch, setBranch] = useState('');
   const [autoCommit, setAutoCommit] = useState(true);
-  const [isExecuting, setIsExecuting] = useState(false);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['sessions'],
@@ -88,111 +87,22 @@ export default function Dashboard() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!input.trim() || isExecuting || !user?.claudeAuth) return;
+    if (!input.trim() || !user?.claudeAuth) return;
 
-    setIsExecuting(true);
-
-    try {
-      // Build request URL with query parameters
-      const params = new URLSearchParams({
-        userRequest: input,
-      });
-
-      if (selectedRepo) {
-        params.append('repositoryUrl', selectedRepo);
+    // Navigate to Chat with execute params - let Chat create the session and handle streaming
+    navigate('/chat/new', {
+      state: {
+        startStream: true,
+        streamParams: {
+          userRequest: input,
+          repositoryUrl: selectedRepo || undefined,
+          branch: branch || undefined,
+          autoCommit: autoCommit || undefined,
+        }
       }
+    });
 
-      if (branch) {
-        params.append('branch', branch);
-      }
-
-      if (autoCommit) {
-        params.append('autoCommit', 'true');
-      }
-
-      // Start the SSE stream to create and execute the session
-      const eventSource = new EventSource(`/api/execute?${params}`, {
-        withCredentials: true,
-      });
-
-      let sessionId: number | null = null;
-      let hasNavigated = false;
-
-      // Navigate immediately when session is created
-      eventSource.addEventListener('session-created', (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          console.log('Session created:', data);
-
-          if (data.chatSessionId && !hasNavigated) {
-            sessionId = data.chatSessionId;
-            hasNavigated = true;
-            setInput('');
-            setIsExecuting(false);
-
-            // Navigate to the session page immediately
-            navigate(`/chat/${sessionId}`);
-
-            // Keep the connection open so the Chat page can continue receiving updates
-            // The Chat page will handle displaying the live processing
-          }
-        } catch (err) {
-          console.error('Error parsing session-created event:', err);
-        }
-      });
-
-      eventSource.addEventListener('message', (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          console.log('Dashboard SSE event:', data);
-
-          // Capture the session ID if available (fallback)
-          if (data.chatSessionId) {
-            sessionId = data.chatSessionId;
-          }
-        } catch (err) {
-          console.error('Error parsing SSE message:', err);
-        }
-      });
-
-      eventSource.addEventListener('completed', (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.chatSessionId) {
-            sessionId = data.chatSessionId;
-          }
-        } catch (err) {
-          console.error('Error parsing completion event:', err);
-        }
-
-        eventSource.close();
-
-        // If we haven't navigated yet (shouldn't happen), navigate now
-        if (!hasNavigated) {
-          setInput('');
-          setIsExecuting(false);
-
-          if (sessionId) {
-            navigate(`/chat/${sessionId}`);
-          } else {
-            // Fallback to general chat page
-            navigate('/chat');
-          }
-        }
-      });
-
-      eventSource.addEventListener('error', (err) => {
-        console.error('SSE error:', err);
-        eventSource.close();
-
-        if (!hasNavigated) {
-          setIsExecuting(false);
-        }
-      });
-    } catch (error) {
-      console.error('Error starting chat:', error);
-      setIsExecuting(false);
-    }
+    setInput('');
   };
 
   // Handle Enter key in delete modal
@@ -228,7 +138,7 @@ export default function Dashboard() {
           input={input}
           setInput={setInput}
           onSubmit={handleSubmit}
-          isExecuting={isExecuting}
+          isExecuting={false}
           selectedRepo={selectedRepo}
           setSelectedRepo={setSelectedRepo}
           branch={branch}

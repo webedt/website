@@ -15,7 +15,7 @@ router.get('/execute', requireAuth, async (req, res) => {
   let chatSession: any;
 
   try {
-    const { userRequest, repositoryUrl, branch, autoCommit, resumeSessionId } = req.query;
+    const { userRequest, repositoryUrl, branch, autoCommit, resumeSessionId, chatSessionId } = req.query;
 
     if (!userRequest && !resumeSessionId) {
       res.status(400).json({ success: false, error: 'userRequest or resumeSessionId is required' });
@@ -33,43 +33,77 @@ router.get('/execute', requireAuth, async (req, res) => {
     // Parse autoCommit from string to boolean
     const autoCommitBool = autoCommit === 'true';
 
-    // Check if there's already a locked session for this repo/branch combination
-    if (repositoryUrl && branch) {
-      const existingLockedSession = await db
+    // Check if we're continuing an existing session or creating a new one
+    if (chatSessionId) {
+      // Load existing session
+      const existingSessions = await db
         .select()
         .from(chatSessions)
         .where(
           and(
-            eq(chatSessions.userId, authReq.user.id),
-            eq(chatSessions.repositoryUrl, repositoryUrl as string),
-            eq(chatSessions.branch, branch as string),
-            eq(chatSessions.locked, true)
+            eq(chatSessions.id, Number(chatSessionId)),
+            eq(chatSessions.userId, authReq.user.id)
           )
         )
         .limit(1);
 
-      if (existingLockedSession.length > 0) {
-        res.status(400).json({
+      if (existingSessions.length === 0) {
+        res.status(404).json({
           success: false,
-          error: `Repository ${repositoryUrl} on branch ${branch} is locked by an existing session. Please complete or delete the existing session first.`,
+          error: 'Chat session not found',
         });
         return;
       }
-    }
 
-    // Create chat session in database
-    chatSession = (await db
-      .insert(chatSessions)
-      .values({
-        userId: authReq.user.id,
-        userRequest: (userRequest as string) || 'Resumed session',
-        status: 'pending',
-        repositoryUrl: (repositoryUrl as string) || null,
-        branch: (branch as string) || null,
-        autoCommit: autoCommitBool,
-        locked: false, // Will be locked after first message
-      })
-      .returning())[0];
+      chatSession = existingSessions[0];
+      console.log(`[Execute] Resuming existing chatSession: ${chatSession.id}`);
+
+      // Update session status to running
+      await db
+        .update(chatSessions)
+        .set({ status: 'running' })
+        .where(eq(chatSessions.id, chatSession.id));
+    } else {
+      // Check if there's already a locked session for this repo/branch combination
+      if (repositoryUrl && branch) {
+        const existingLockedSession = await db
+          .select()
+          .from(chatSessions)
+          .where(
+            and(
+              eq(chatSessions.userId, authReq.user.id),
+              eq(chatSessions.repositoryUrl, repositoryUrl as string),
+              eq(chatSessions.branch, branch as string),
+              eq(chatSessions.locked, true)
+            )
+          )
+          .limit(1);
+
+        if (existingLockedSession.length > 0) {
+          res.status(400).json({
+            success: false,
+            error: `Repository ${repositoryUrl} on branch ${branch} is locked by an existing session. Please complete or delete the existing session first.`,
+          });
+          return;
+        }
+      }
+
+      // Create new chat session in database
+      chatSession = (await db
+        .insert(chatSessions)
+        .values({
+          userId: authReq.user.id,
+          userRequest: (userRequest as string) || 'New session',
+          status: 'pending',
+          repositoryUrl: (repositoryUrl as string) || null,
+          branch: (branch as string) || null,
+          autoCommit: autoCommitBool,
+          locked: false, // Will be locked after first message
+        })
+        .returning())[0];
+
+      console.log(`[Execute] Created new chatSession: ${chatSession.id}`);
+    }
 
     // Store user message and lock the session
     if (userRequest) {
@@ -122,9 +156,14 @@ router.get('/execute', requireAuth, async (req, res) => {
       'Connection': 'keep-alive',
     });
 
-    // Send session ID immediately so client can navigate
-    res.write(`event: session-created\n`);
-    res.write(`data: ${JSON.stringify({ chatSessionId: chatSession.id })}\n\n`);
+    // Send session-created event only if this is a new session (not resuming existing chatSession)
+    if (!chatSessionId) {
+      res.write(`event: session-created\n`);
+      res.write(`data: ${JSON.stringify({ chatSessionId: chatSession.id })}\n\n`);
+      console.log(`[Execute] Sent session-created event for new chatSession: ${chatSession.id}`);
+    } else {
+      console.log(`[Execute] Resuming chatSession ${chatSession.id}, not sending session-created event`);
+    }
 
     // Prepare request to ai-coding-worker
     const executePayload: any = {
@@ -261,12 +300,49 @@ router.get('/execute', requireAuth, async (req, res) => {
                 console.log(`[Execute] No sessionId in event data:`, JSON.stringify(eventData).substring(0, 200));
               }
 
-              // Store assistant messages (for any event with content)
-              if (eventData.message || eventData.content || eventData.text) {
+              // Store assistant messages (extract content from various event structures)
+              let messageContent: string | null = null;
+
+              // Extract content from different event types
+              if (eventData.type === 'message' && eventData.message) {
+                messageContent = eventData.message;
+              } else if (eventData.type === 'session_name' && eventData.sessionName) {
+                messageContent = `Session: ${eventData.sessionName}`;
+              } else if (eventData.type === 'assistant_message' && eventData.data) {
+                const msgData = eventData.data;
+
+                // Handle assistant message with Claude response
+                if (msgData.type === 'assistant' && msgData.message?.content) {
+                  const contentBlocks = msgData.message.content;
+                  if (Array.isArray(contentBlocks)) {
+                    const textParts = contentBlocks
+                      .filter((block: any) => block.type === 'text' && block.text)
+                      .map((block: any) => block.text);
+                    if (textParts.length > 0) {
+                      messageContent = textParts.join('\n');
+                    }
+                  }
+                }
+                // Handle result type
+                else if (msgData.type === 'result' && msgData.result) {
+                  messageContent = typeof msgData.result === 'string' ? msgData.result : JSON.stringify(msgData.result);
+                }
+              }
+              // Fallback to direct fields
+              else if (eventData.message) {
+                messageContent = eventData.message;
+              } else if (eventData.content) {
+                messageContent = typeof eventData.content === 'string' ? eventData.content : JSON.stringify(eventData.content);
+              } else if (eventData.text) {
+                messageContent = eventData.text;
+              }
+
+              // Save to database if we extracted content
+              if (messageContent) {
                 await db.insert(messages).values({
                   chatSessionId: chatSession.id,
                   type: 'assistant',
-                  content: eventData.message || eventData.content || eventData.text || JSON.stringify(eventData),
+                  content: messageContent,
                 });
               }
 

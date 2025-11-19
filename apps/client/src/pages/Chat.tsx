@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { sessionsApi, githubApi } from '@/lib/api';
 import { useEventSource } from '@/hooks/useEventSource';
@@ -10,6 +10,7 @@ import type { Message, GitHubRepository, ChatSession } from '@webedt/shared';
 export default function Chat() {
   const { sessionId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -37,7 +38,7 @@ export default function Chat() {
   const { data: sessionDetailsData } = useQuery({
     queryKey: ['session-details', sessionId],
     queryFn: () => sessionsApi.get(Number(sessionId)),
-    enabled: !!sessionId,
+    enabled: !!sessionId && sessionId !== 'new',
     // Poll every 2 seconds if session is running or pending
     refetchInterval: (query) => {
       const session = query.state.data?.data;
@@ -49,7 +50,7 @@ export default function Chat() {
   const { data: sessionData } = useQuery({
     queryKey: ['session', sessionId],
     queryFn: () => sessionsApi.getMessages(Number(sessionId)),
-    enabled: !!sessionId,
+    enabled: !!sessionId && sessionId !== 'new',
     // Poll every 2 seconds if session is running or pending
     refetchInterval: () => {
       const session = sessionDetailsData?.data;
@@ -63,14 +64,14 @@ export default function Chat() {
   const { data: currentSessionData } = useQuery({
     queryKey: ['currentSession', currentSessionId],
     queryFn: async () => {
-      if (!currentSessionId) return null;
+      if (!currentSessionId || currentSessionId === 0) return null;
       const response = await fetch(`/api/sessions/${currentSessionId}`, {
         credentials: 'include',
       });
       if (!response.ok) throw new Error('Failed to fetch session');
       return response.json();
     },
-    enabled: !!currentSessionId,
+    enabled: !!currentSessionId && currentSessionId !== 0,
   });
 
   // Load repositories
@@ -205,6 +206,31 @@ export default function Chat() {
     }
   }, [currentSessionData]);
 
+  // Auto-connect to stream when navigating from Dashboard with stream params
+  useEffect(() => {
+    // Check if we came from Dashboard with stream params
+    const state = location.state as any;
+    if (state?.startStream && state?.streamParams && !streamUrl) {
+      console.log('[Chat] Auto-starting stream from navigation state:', state.streamParams);
+
+      const params = new URLSearchParams();
+      Object.entries(state.streamParams).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          params.append(key, String(value));
+        }
+      });
+
+      // Note: We don't add resumeSessionId here because this is a brand new session
+      // The session was just created by Dashboard, so there's no AI worker session to resume yet
+
+      setStreamUrl(`/api/execute?${params}`);
+      setIsExecuting(true);
+
+      // Clear the navigation state to prevent re-triggering
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, streamUrl, navigate, location.pathname]);
+
   // Reset title edit tracking when switching to a different session
   useEffect(() => {
     if (sessionId) {
@@ -221,6 +247,21 @@ export default function Chat() {
 
       const { eventType, data } = event;
 
+      // Handle session-created event - update URL to the actual session ID
+      if (eventType === 'session-created' && data?.chatSessionId) {
+        console.log('[Chat] Session created with ID:', data.chatSessionId);
+        setCurrentSessionId(data.chatSessionId);
+
+        // Navigate to the actual session URL if we're on /chat/new
+        if (!sessionId || sessionId === 'new') {
+          console.log('[Chat] Navigating to session:', data.chatSessionId);
+          navigate(`/chat/${data.chatSessionId}`, { replace: true });
+        }
+
+        // Don't display this as a message
+        return;
+      }
+
       // Capture AI worker session ID from connected event
       if (eventType === 'connected' && data?.sessionId) {
         console.log('[Chat] Captured aiWorkerSessionId from connected event:', data.sessionId);
@@ -233,42 +274,19 @@ export default function Chat() {
       }
 
       // Extract content from various possible locations
-      let content = null;
+      let content: string | null = null;
       let messageType: 'assistant' | 'system' = 'assistant';
       let eventLabel = '';
 
-      // Set event label for different types
-      switch (eventType) {
-        case 'status':
-          eventLabel = '📊 Status';
-          break;
-        case 'thought':
-          eventLabel = '💭 Thinking';
-          break;
-        case 'tool_use':
-          eventLabel = '🔧 Using tool';
-          break;
-        case 'result':
-          eventLabel = '✅ Result';
-          break;
-        case 'assistant_message':
-          eventLabel = '🤖 Assistant';
-          break;
-        case 'session_name':
-          eventLabel = '📝 Session';
-          break;
-        default:
-          eventLabel = '';
-      }
-
-      // Handle AI worker event structure: data.type with nested data.data
+      // Extract content from different event types (matching server-side logic)
       if (data.type === 'message' && data.message) {
-        // Simple message with data.message
         content = data.message;
+        eventLabel = '💬';
       } else if (data.type === 'session_name' && data.sessionName) {
         // Session name - auto-save if not manually edited
         const newTitle = data.sessionName;
         content = `Session: ${newTitle}`;
+        eventLabel = '📝';
 
         // Auto-update the session title if:
         // 1. User hasn't manually edited the title
@@ -285,51 +303,33 @@ export default function Chat() {
           }
         }
       } else if (data.type === 'assistant_message' && data.data) {
-        // Nested assistant message structure
-        const messageData = data.data;
+        const msgData = data.data;
 
-        if (messageData.type === 'assistant' && messageData.message?.content) {
-          // Extract text from content blocks
-          const contentBlocks = messageData.message.content;
+        // Handle assistant message with Claude response
+        if (msgData.type === 'assistant' && msgData.message?.content) {
+          const contentBlocks = msgData.message.content;
           if (Array.isArray(contentBlocks)) {
-            const textBlocks = contentBlocks
+            const textParts = contentBlocks
               .filter((block: any) => block.type === 'text' && block.text)
               .map((block: any) => block.text);
-
-            if (textBlocks.length > 0) {
-              content = textBlocks.join('\n');
-            }
-
-            // Also show tool uses
-            const toolUses = contentBlocks
-              .filter((block: any) => block.type === 'tool_use')
-              .map((block: any) => `🔧 Using ${block.name}`);
-
-            if (toolUses.length > 0 && !content) {
-              content = toolUses.join('\n');
+            if (textParts.length > 0) {
+              content = textParts.join('\n');
+              eventLabel = '🤖';
             }
           }
-        } else if (messageData.type === 'user' && messageData.message?.content) {
-          // Tool results
-          const contentBlocks = messageData.message.content;
-          if (Array.isArray(contentBlocks)) {
-            const results = contentBlocks
-              .filter((block: any) => block.type === 'tool_result')
-              .map((block: any) => block.content)
-              .filter(Boolean);
-
-            if (results.length > 0) {
-              eventLabel = '✅ Tool Result';
-              content = results.join('\n');
-            }
-          }
-        } else if (messageData.type === 'result' && messageData.result) {
-          // Final result
-          eventLabel = '✅ Complete';
-          content = messageData.result;
+        }
+        // Handle result type (final response)
+        else if (msgData.type === 'result' && msgData.result) {
+          content = typeof msgData.result === 'string' ? msgData.result : JSON.stringify(msgData.result, null, 2);
+          eventLabel = '✅';
+        }
+        // Skip system init messages
+        else if (msgData.type === 'system' && msgData.subtype === 'init') {
+          console.log('[Chat] Skipping system init message');
+          return;
         }
       }
-      // Fallback to original extraction logic
+      // Fallback to direct fields
       else if (typeof data === 'string') {
         content = data;
       } else if (data.message) {
@@ -339,7 +339,6 @@ export default function Chat() {
           const textBlocks = data.content
             .filter((block: any) => block.type === 'text' && block.text)
             .map((block: any) => block.text);
-
           if (textBlocks.length > 0) {
             content = textBlocks.join('\n');
           }
@@ -443,6 +442,12 @@ export default function Chat() {
       userRequest: input,
     });
 
+    // If we have a currentSessionId, pass it to reuse the same chat session
+    if (currentSessionId) {
+      params.append('chatSessionId', String(currentSessionId));
+      console.log('[Chat] Continuing existing chatSession:', currentSessionId);
+    }
+
     if (selectedRepo) {
       params.append('repositoryUrl', selectedRepo);
     }
@@ -455,7 +460,7 @@ export default function Chat() {
       params.append('autoCommit', 'true');
     }
 
-    // Resume session if we have an AI worker session ID
+    // Resume AI worker session if we have an AI worker session ID
     console.log('[Chat] Session resumption check:', {
       currentSessionId,
       aiWorkerSessionId,
@@ -464,9 +469,9 @@ export default function Chat() {
 
     if (aiWorkerSessionId) {
       params.append('resumeSessionId', aiWorkerSessionId);
-      console.log('[Chat] Resuming session with ID:', aiWorkerSessionId);
+      console.log('[Chat] Resuming AI worker session with ID:', aiWorkerSessionId);
     } else {
-      console.log('[Chat] Starting new session - no aiWorkerSessionId available');
+      console.log('[Chat] Starting new AI worker session - no aiWorkerSessionId available');
     }
 
     setStreamUrl(`/api/execute?${params}`);
