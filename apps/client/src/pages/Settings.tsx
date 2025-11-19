@@ -23,13 +23,13 @@ export default function Settings() {
     const oneHour = 60 * 60 * 1000;
 
     if (timeUntilExpiry <= 0) {
-      return { text: 'Expired', color: 'text-red-600 dark:text-red-400', urgent: true };
+      return { text: 'Expired', color: 'text-error', urgent: true };
     } else if (timeUntilExpiry <= fiveMinutes) {
-      return { text: 'Expiring very soon', color: 'text-orange-600 dark:text-orange-400', urgent: true };
+      return { text: 'Expiring very soon', color: 'text-warning', urgent: true };
     } else if (timeUntilExpiry <= oneHour) {
-      return { text: 'Expiring soon', color: 'text-yellow-600 dark:text-yellow-400', urgent: false };
+      return { text: 'Expiring soon', color: 'text-warning', urgent: false };
     } else {
-      return { text: 'Active', color: 'text-green-600 dark:text-green-400', urgent: false };
+      return { text: 'Active', color: 'text-success', urgent: false };
     }
   };
 
