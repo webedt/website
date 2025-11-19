@@ -48,6 +48,12 @@ export const messages = pgTable('messages', {
     .references(() => chatSessions.id, { onDelete: 'cascade' }),
   type: text('type').notNull(), // 'user' | 'assistant' | 'system' | 'error'
   content: text('content').notNull(),
+  images: json('images').$type<Array<{
+    id: string;
+    data: string;
+    mediaType: string;
+    fileName: string;
+  }>>(),
   timestamp: timestamp('timestamp').defaultNow().notNull(),
 });
 

@@ -112,15 +112,23 @@ const executeHandler = async (req: any, res: any) => {
       // Store the raw userRequest (which could be JSON or string)
       // For display purposes, if it's a content block array, show a summary
       let displayContent: string;
+      let imageAttachments: any[] = [];
 
       // Check if userRequest is already an array (POST) or needs parsing (GET)
       if (Array.isArray(userRequest)) {
         // Already parsed by Express (POST request with content blocks)
         const textBlocks = userRequest.filter((block: any) => block.type === 'text');
-        const imageCount = userRequest.filter((block: any) => block.type === 'image').length;
+        const imageBlocks = userRequest.filter((block: any) => block.type === 'image');
         displayContent = textBlocks.map((block: any) => block.text).join('\n');
-        if (imageCount > 0) {
-          displayContent += `\n[${imageCount} image${imageCount > 1 ? 's' : ''} attached]`;
+        if (imageBlocks.length > 0) {
+          displayContent += `\n[${imageBlocks.length} image${imageBlocks.length > 1 ? 's' : ''} attached]`;
+          // Extract image data for storage
+          imageAttachments = imageBlocks.map((block: any, index: number) => ({
+            id: `img-${Date.now()}-${index}`,
+            data: block.source?.data || '',
+            mediaType: block.source?.media_type || 'image/png',
+            fileName: `image-${index + 1}.png`,
+          }));
         }
       } else if (typeof userRequest === 'string') {
         try {
@@ -128,10 +136,17 @@ const executeHandler = async (req: any, res: any) => {
           const parsed = JSON.parse(userRequest);
           if (Array.isArray(parsed)) {
             const textBlocks = parsed.filter((block: any) => block.type === 'text');
-            const imageCount = parsed.filter((block: any) => block.type === 'image').length;
+            const imageBlocks = parsed.filter((block: any) => block.type === 'image');
             displayContent = textBlocks.map((block: any) => block.text).join('\n');
-            if (imageCount > 0) {
-              displayContent += `\n[${imageCount} image${imageCount > 1 ? 's' : ''} attached]`;
+            if (imageBlocks.length > 0) {
+              displayContent += `\n[${imageBlocks.length} image${imageBlocks.length > 1 ? 's' : ''} attached]`;
+              // Extract image data for storage
+              imageAttachments = imageBlocks.map((block: any, index: number) => ({
+                id: `img-${Date.now()}-${index}`,
+                data: block.source?.data || '',
+                mediaType: block.source?.media_type || 'image/png',
+                fileName: `image-${index + 1}.png`,
+              }));
             }
           } else {
             displayContent = userRequest;
@@ -148,6 +163,7 @@ const executeHandler = async (req: any, res: any) => {
         chatSessionId: chatSession.id,
         type: 'user',
         content: displayContent,
+        images: imageAttachments.length > 0 ? imageAttachments : null,
       });
 
       // Lock the session after first message if it has a repository

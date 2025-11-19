@@ -81,6 +81,7 @@ if (usePostgres) {
       chat_session_id INTEGER NOT NULL REFERENCES chat_sessions(id) ON DELETE CASCADE,
       type TEXT NOT NULL,
       content TEXT NOT NULL,
+      images JSONB,
       timestamp TIMESTAMP NOT NULL DEFAULT NOW()
     );
   `).then(() => {
@@ -94,6 +95,12 @@ if (usePostgres) {
           WHERE table_name = 'chat_sessions' AND column_name = 'locked'
         ) THEN
           ALTER TABLE chat_sessions ADD COLUMN locked BOOLEAN NOT NULL DEFAULT FALSE;
+        END IF;
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'messages' AND column_name = 'images'
+        ) THEN
+          ALTER TABLE messages ADD COLUMN images JSONB;
         END IF;
       END $$;
     `);
@@ -162,6 +169,7 @@ if (usePostgres) {
       chat_session_id INTEGER NOT NULL,
       type TEXT NOT NULL,
       content TEXT NOT NULL,
+      images TEXT,
       timestamp INTEGER NOT NULL DEFAULT (unixepoch()),
       FOREIGN KEY (chat_session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE
     );
@@ -171,11 +179,18 @@ if (usePostgres) {
 
   // Add locked column if it doesn't exist (migration)
   try {
-    const tableInfo = sqlite.pragma('table_info(chat_sessions)') as Array<{ name: string }>;
-    const hasLockedColumn = tableInfo.some((col) => col.name === 'locked');
+    const chatSessionsInfo = sqlite.pragma('table_info(chat_sessions)') as Array<{ name: string }>;
+    const hasLockedColumn = chatSessionsInfo.some((col) => col.name === 'locked');
     if (!hasLockedColumn) {
       sqlite.exec('ALTER TABLE chat_sessions ADD COLUMN locked INTEGER NOT NULL DEFAULT 0;');
       console.log('SQLite migration: Added locked column to chat_sessions');
+    }
+
+    const messagesInfo = sqlite.pragma('table_info(messages)') as Array<{ name: string }>;
+    const hasImagesColumn = messagesInfo.some((col) => col.name === 'images');
+    if (!hasImagesColumn) {
+      sqlite.exec('ALTER TABLE messages ADD COLUMN images TEXT;');
+      console.log('SQLite migration: Added images column to messages');
     }
   } catch (err) {
     console.error('Error applying SQLite migrations:', err);

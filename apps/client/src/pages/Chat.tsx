@@ -5,6 +5,7 @@ import { sessionsApi, githubApi } from '@/lib/api';
 import { useEventSource } from '@/hooks/useEventSource';
 import { useAuthStore } from '@/lib/store';
 import ChatInput, { type ChatInputRef, type ImageAttachment } from '@/components/ChatInput';
+import { ImageViewer } from '@/components/ImageViewer';
 import type { Message, GitHubRepository, ChatSession } from '@webedt/shared';
 
 export default function Chat() {
@@ -41,6 +42,11 @@ export default function Chat() {
     selectedRepo: string;
     branch: string;
     autoCommit: boolean;
+  } | null>(null);
+  const [viewingImage, setViewingImage] = useState<{
+    data: string;
+    mediaType: string;
+    fileName: string;
   } | null>(null);
 
   // Load session details first to check status
@@ -782,6 +788,46 @@ export default function Chat() {
                     }`}
                   >
                     <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+
+                    {/* Display images if present */}
+                    {message.images && message.images.length > 0 && (
+                      <div className="mt-2 grid grid-cols-2 gap-2">
+                        {message.images.map((image) => (
+                          <div
+                            key={image.id}
+                            className="relative group cursor-pointer"
+                            onClick={() => setViewingImage({
+                              data: image.data,
+                              mediaType: image.mediaType,
+                              fileName: image.fileName,
+                            })}
+                          >
+                            <img
+                              src={`data:${image.mediaType};base64,${image.data}`}
+                              alt={image.fileName}
+                              className="w-full h-32 object-cover rounded border border-white/20 group-hover:border-white/40 transition-colors"
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded flex items-center justify-center">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
+                                />
+                              </svg>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     <p className="text-xs mt-1 opacity-70">
                       {new Date(message.timestamp).toLocaleTimeString()}
                     </p>
@@ -879,6 +925,16 @@ export default function Chat() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Image Viewer Modal */}
+      {viewingImage && (
+        <ImageViewer
+          imageData={viewingImage.data}
+          mediaType={viewingImage.mediaType}
+          fileName={viewingImage.fileName}
+          onClose={() => setViewingImage(null)}
+        />
       )}
     </div>
   );
