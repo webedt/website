@@ -549,18 +549,6 @@ export default function Chat() {
       console.log('[Chat] Continuing existing chatSession:', currentSessionId);
     }
 
-    if (selectedRepo) {
-      requestParams.repositoryUrl = selectedRepo;
-    }
-
-    if (branch) {
-      requestParams.branch = branch;
-    }
-
-    if (autoCommit) {
-      requestParams.autoCommit = true;
-    }
-
     console.log('[Chat] Session resumption check:', {
       currentSessionId,
       aiWorkerSessionId,
@@ -570,8 +558,23 @@ export default function Chat() {
     if (aiWorkerSessionId) {
       requestParams.resumeSessionId = aiWorkerSessionId;
       console.log('[Chat] Resuming AI worker session with ID:', aiWorkerSessionId);
+      // When resuming a session, do NOT send repository parameters
+      // The repository is already available in the session workspace
     } else {
       console.log('[Chat] Starting new AI worker session - no aiWorkerSessionId available');
+
+      // Only send repository parameters when starting a new session
+      if (selectedRepo) {
+        requestParams.repositoryUrl = selectedRepo;
+      }
+
+      if (branch) {
+        requestParams.branch = branch;
+      }
+
+      if (autoCommit) {
+        requestParams.autoCommit = true;
+      }
     }
 
     // Use POST for requests with images to avoid URL length limits
@@ -622,21 +625,24 @@ export default function Chat() {
       console.log('[Chat] Retrying with existing chatSession:', currentSessionId);
     }
 
-    if (lastRequest.selectedRepo) {
-      params.append('repositoryUrl', lastRequest.selectedRepo);
-    }
-
-    if (lastRequest.branch) {
-      params.append('branch', lastRequest.branch);
-    }
-
-    if (lastRequest.autoCommit) {
-      params.append('autoCommit', 'true');
-    }
-
     if (aiWorkerSessionId) {
       params.append('resumeSessionId', aiWorkerSessionId);
       console.log('[Chat] Retrying with AI worker session ID:', aiWorkerSessionId);
+      // When resuming a session, do NOT send repository parameters
+      // The repository is already available in the session workspace
+    } else {
+      // Only send repository parameters when starting a new session
+      if (lastRequest.selectedRepo) {
+        params.append('repositoryUrl', lastRequest.selectedRepo);
+      }
+
+      if (lastRequest.branch) {
+        params.append('branch', lastRequest.branch);
+      }
+
+      if (lastRequest.autoCommit) {
+        params.append('autoCommit', 'true');
+      }
     }
 
     setStreamUrl(`/api/execute?${params}`);
