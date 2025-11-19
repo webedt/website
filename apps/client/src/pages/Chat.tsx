@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { sessionsApi, githubApi } from '@/lib/api';
 import { useEventSource } from '@/hooks/useEventSource';
 import { useAuthStore } from '@/lib/store';
-import ChatInput, { type ChatInputRef } from '@/components/ChatInput';
+import ChatInput, { type ChatInputRef, type ImageAttachment } from '@/components/ChatInput';
 import type { Message, GitHubRepository, ChatSession } from '@webedt/shared';
 
 export default function Chat() {
@@ -15,6 +15,7 @@ export default function Chat() {
   const user = useAuthStore((state) => state.user);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
+  const [images, setImages] = useState<ImageAttachment[]>([]);
   const [selectedRepo, setSelectedRepo] = useState('');
   const [branch, setBranch] = useState('');
   const [autoCommit, setAutoCommit] = useState(true);
@@ -206,6 +207,7 @@ export default function Chat() {
     if (!sessionId) {
       setMessages([]);
       setInput('');
+      setImages([]);
       setSelectedRepo('');
       setBranch('');
       setAutoCommit(true);
@@ -452,7 +454,7 @@ export default function Chat() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!input.trim() || isExecuting) return;
+    if ((!input.trim() && images.length === 0) || isExecuting) return;
 
     // Save last request for retry functionality
     setLastRequest({
@@ -468,15 +470,51 @@ export default function Chat() {
       id: Date.now() + messageIdCounter.current,
       chatSessionId: Number(sessionId) || 0,
       type: 'user',
-      content: input,
+      content: images.length > 0
+        ? `${input}\n[${images.length} image${images.length > 1 ? 's' : ''} attached]`
+        : input,
       timestamp: new Date(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
 
+    // Build userRequest - either string or content blocks
+    let userRequestParam: string;
+
+    if (images.length > 0) {
+      // Create content blocks for multimodal request
+      const contentBlocks: any[] = [];
+
+      // Add text block if there's text
+      if (input.trim()) {
+        contentBlocks.push({
+          type: 'text',
+          text: input.trim(),
+        });
+      }
+
+      // Add image blocks
+      images.forEach((image) => {
+        contentBlocks.push({
+          type: 'image',
+          source: {
+            type: 'base64',
+            media_type: image.mediaType,
+            data: image.data,
+          },
+        });
+      });
+
+      // JSON encode the content blocks
+      userRequestParam = JSON.stringify(contentBlocks);
+    } else {
+      // Simple text request
+      userRequestParam = input.trim();
+    }
+
     // Build stream URL
     const params = new URLSearchParams({
-      userRequest: input,
+      userRequest: userRequestParam,
     });
 
     // If we have a currentSessionId, pass it to reuse the same chat session
@@ -513,6 +551,7 @@ export default function Chat() {
 
     setStreamUrl(`/api/execute?${params}`);
     setInput('');
+    setImages([]);
   };
 
   const handleRetry = () => {
@@ -672,6 +711,8 @@ export default function Chat() {
             ref={chatInputRef}
             input={input}
             setInput={setInput}
+            images={images}
+            setImages={setImages}
             onSubmit={handleSubmit}
             isExecuting={isExecuting}
             selectedRepo={selectedRepo}
@@ -755,6 +796,8 @@ export default function Chat() {
               ref={chatInputRef}
               input={input}
               setInput={setInput}
+              images={images}
+              setImages={setImages}
               onSubmit={handleSubmit}
               isExecuting={isExecuting}
               selectedRepo={selectedRepo}

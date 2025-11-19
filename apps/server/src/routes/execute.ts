@@ -107,10 +107,29 @@ router.get('/execute', requireAuth, async (req, res) => {
 
     // Store user message and lock the session
     if (userRequest) {
+      // Store the raw userRequest (which could be JSON or string)
+      // For display purposes, if it's a content block array, show a summary
+      let displayContent: string;
+      try {
+        const parsed = JSON.parse(userRequest as string);
+        if (Array.isArray(parsed)) {
+          const textBlocks = parsed.filter((block: any) => block.type === 'text');
+          const imageCount = parsed.filter((block: any) => block.type === 'image').length;
+          displayContent = textBlocks.map((block: any) => block.text).join('\n');
+          if (imageCount > 0) {
+            displayContent += `\n[${imageCount} image${imageCount > 1 ? 's' : ''} attached]`;
+          }
+        } else {
+          displayContent = userRequest as string;
+        }
+      } catch {
+        displayContent = userRequest as string;
+      }
+
       await db.insert(messages).values({
         chatSessionId: chatSession.id,
         type: 'user',
-        content: userRequest as string,
+        content: displayContent,
       });
 
       // Lock the session after first message if it has a repository
@@ -166,8 +185,18 @@ router.get('/execute', requireAuth, async (req, res) => {
     }
 
     // Prepare request to ai-coding-worker
+    // userRequest can be either a string or JSON-encoded array of content blocks
+    let parsedUserRequest: string | any[];
+    try {
+      // Try to parse as JSON (for content blocks with images)
+      parsedUserRequest = JSON.parse(userRequest as string);
+    } catch {
+      // If parsing fails, it's a simple string
+      parsedUserRequest = (userRequest as string) || 'Resume previous session';
+    }
+
     const executePayload: any = {
-      userRequest: (userRequest as string) || 'Resume previous session',
+      userRequest: parsedUserRequest,
       codingAssistantProvider: 'ClaudeAgentSDK',
       codingAssistantAuthentication: claudeAuth,
     };

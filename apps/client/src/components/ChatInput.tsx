@@ -2,9 +2,18 @@ import { forwardRef, useImperativeHandle, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import type { GitHubRepository, User } from '@webedt/shared';
 
+export interface ImageAttachment {
+  id: string;
+  data: string; // base64 data
+  mediaType: string;
+  fileName: string;
+}
+
 interface ChatInputProps {
   input: string;
   setInput: (value: string) => void;
+  images: ImageAttachment[];
+  setImages: (images: ImageAttachment[]) => void;
   onSubmit: (e: React.FormEvent) => void;
   isExecuting: boolean;
   selectedRepo: string;
@@ -27,6 +36,8 @@ export interface ChatInputRef {
 const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
   input,
   setInput,
+  images,
+  setImages,
   onSubmit,
   isExecuting,
   selectedRepo,
@@ -42,6 +53,7 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
   centered = false,
 }, ref) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const hasGithubAuth = !!user?.githubAccessToken;
   const hasClaudeAuth = !!user?.claudeAuth;
 
@@ -49,6 +61,88 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
   const sortedRepositories = [...repositories].sort((a, b) =>
     a.fullName.localeCompare(b.fullName)
   );
+
+  // Helper function to convert file to base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Remove the data:image/png;base64, prefix to get just the base64 data
+        const base64 = result.split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  // Handle file selection
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const newImages: ImageAttachment[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (file.type.startsWith('image/')) {
+        try {
+          const base64Data = await fileToBase64(file);
+          newImages.push({
+            id: `${Date.now()}-${i}`,
+            data: base64Data,
+            mediaType: file.type,
+            fileName: file.name,
+          });
+        } catch (error) {
+          console.error('Failed to read file:', error);
+        }
+      }
+    }
+
+    setImages([...images, ...newImages]);
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Handle paste event
+  const handlePaste = async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    const newImages: ImageAttachment[] = [];
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type.startsWith('image/')) {
+        e.preventDefault(); // Prevent pasting the image as text
+        const file = item.getAsFile();
+        if (file) {
+          try {
+            const base64Data = await fileToBase64(file);
+            newImages.push({
+              id: `${Date.now()}-${i}`,
+              data: base64Data,
+              mediaType: file.type,
+              fileName: `pasted-image-${Date.now()}.png`,
+            });
+          } catch (error) {
+            console.error('Failed to read pasted image:', error);
+          }
+        }
+      }
+    }
+
+    if (newImages.length > 0) {
+      setImages([...images, ...newImages]);
+    }
+  };
+
+  // Remove an image
+  const removeImage = (id: string) => {
+    setImages(images.filter(img => img.id !== id));
+  };
 
   // Expose focus method to parent component
   useImperativeHandle(ref, () => ({
@@ -59,15 +153,42 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
 
   return (
     <form onSubmit={onSubmit} className={`max-w-4xl ${centered ? 'w-full -mt-12' : 'mx-auto w-full'}`}>
+      {/* Image previews */}
+      {images.length > 0 && (
+        <div className="mb-2 flex flex-wrap gap-2">
+          {images.map((image) => (
+            <div key={image.id} className="relative group">
+              <img
+                src={`data:${image.mediaType};base64,${image.data}`}
+                alt={image.fileName}
+                className="h-20 w-20 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
+              />
+              <button
+                type="button"
+                onClick={() => removeImage(image.id)}
+                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                title="Remove image"
+              >
+                ×
+              </button>
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-[80px] truncate">
+                {image.fileName}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Multi-line input with controls and submit button inside */}
       <div className="relative">
         <textarea
           ref={textareaRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Describe what you want to code..."
+          onPaste={handlePaste}
+          placeholder="Describe what you want to code... (paste images directly or use the attach button)"
           rows={4}
-          className="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-lg focus:border-blue-500 focus:ring-blue-500 resize-none pr-14 text-base p-4 pb-16"
+          className="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-lg focus:border-blue-500 focus:ring-blue-500 resize-none pr-24 text-base p-4 pb-16"
           disabled={isExecuting || !user?.claudeAuth}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
@@ -203,26 +324,57 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
           )}
         </div>
 
-        {/* Submit button inside textarea */}
-        <button
-          type="submit"
-          disabled={isExecuting || !input.trim() || !user?.claudeAuth}
-          className="absolute bottom-3 right-3 flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          title="Send message (Enter at end, Cmd/Ctrl+Enter, or click)"
-        >
-          {isExecuting ? (
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-          ) : (
+        {/* Image attach button and submit button inside textarea */}
+        <div className="absolute bottom-3 right-3 flex items-center gap-1">
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+
+          {/* Attach image button */}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isExecuting || !user?.claudeAuth}
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+            title="Attach image"
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
               fill="currentColor"
               className="w-5 h-5"
             >
-              <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
+              <path fillRule="evenodd" d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clipRule="evenodd" />
             </svg>
-          )}
-        </button>
+          </button>
+
+          {/* Submit button */}
+          <button
+            type="submit"
+            disabled={isExecuting || (!input.trim() && images.length === 0) || !user?.claudeAuth}
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            title="Send message (Enter at end, Cmd/Ctrl+Enter, or click)"
+          >
+            {isExecuting ? (
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+            ) : (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                className="w-5 h-5"
+              >
+                <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
+              </svg>
+            )}
+          </button>
+        </div>
       </div>
     </form>
   );
