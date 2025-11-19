@@ -261,12 +261,49 @@ router.get('/execute', requireAuth, async (req, res) => {
                 console.log(`[Execute] No sessionId in event data:`, JSON.stringify(eventData).substring(0, 200));
               }
 
-              // Store assistant messages (for any event with content)
-              if (eventData.message || eventData.content || eventData.text) {
+              // Store assistant messages (extract content from various event structures)
+              let messageContent: string | null = null;
+
+              // Extract content from different event types
+              if (eventData.type === 'message' && eventData.message) {
+                messageContent = eventData.message;
+              } else if (eventData.type === 'session_name' && eventData.sessionName) {
+                messageContent = `Session: ${eventData.sessionName}`;
+              } else if (eventData.type === 'assistant_message' && eventData.data) {
+                const msgData = eventData.data;
+
+                // Handle assistant message with Claude response
+                if (msgData.type === 'assistant' && msgData.message?.content) {
+                  const contentBlocks = msgData.message.content;
+                  if (Array.isArray(contentBlocks)) {
+                    const textParts = contentBlocks
+                      .filter((block: any) => block.type === 'text' && block.text)
+                      .map((block: any) => block.text);
+                    if (textParts.length > 0) {
+                      messageContent = textParts.join('\n');
+                    }
+                  }
+                }
+                // Handle result type
+                else if (msgData.type === 'result' && msgData.result) {
+                  messageContent = typeof msgData.result === 'string' ? msgData.result : JSON.stringify(msgData.result);
+                }
+              }
+              // Fallback to direct fields
+              else if (eventData.message) {
+                messageContent = eventData.message;
+              } else if (eventData.content) {
+                messageContent = typeof eventData.content === 'string' ? eventData.content : JSON.stringify(eventData.content);
+              } else if (eventData.text) {
+                messageContent = eventData.text;
+              }
+
+              // Save to database if we extracted content
+              if (messageContent) {
                 await db.insert(messages).values({
                   chatSessionId: chatSession.id,
                   type: 'assistant',
-                  content: eventData.message || eventData.content || eventData.text || JSON.stringify(eventData),
+                  content: messageContent,
                 });
               }
 
