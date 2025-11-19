@@ -482,6 +482,9 @@ export default function Chat() {
 
     if ((!input.trim() && images.length === 0) || isExecuting) return;
 
+    // Set executing state immediately to prevent duplicate submissions
+    setIsExecuting(true);
+
     // Save last request for retry functionality
     setLastRequest({
       input: input.trim(),
