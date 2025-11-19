@@ -259,7 +259,9 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
 
       recognition.onerror = (event: any) => {
         console.error('Speech recognition error:', event.error);
-        alert(`Speech recognition error: ${event.error}`);
+        if (event.error !== 'no-speech' && event.error !== 'aborted') {
+          alert(`Speech recognition error: ${event.error}`);
+        }
         setIsTranscribing(false);
         resolve();
       };
@@ -269,11 +271,22 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
         resolve();
       };
 
-      // Note: We can't re-start recognition from recorded audio
-      // This is a limitation - Web Speech API works with live audio only
-      alert('Web Speech API fallback: Please click the microphone again and speak when ready.');
-      setIsTranscribing(false);
-      resolve();
+      recognition.onstart = () => {
+        console.log('Web Speech API: Listening... Speak now.');
+      };
+
+      // Start recognition
+      // Note: Web Speech API can't use pre-recorded audio from MediaRecorder,
+      // so we start a fresh recognition session for live speech
+      try {
+        console.log('Using browser speech recognition fallback - please speak now...');
+        recognition.start();
+      } catch (error) {
+        console.error('Failed to start speech recognition:', error);
+        alert('Failed to start speech recognition. Please try again.');
+        setIsTranscribing(false);
+        resolve();
+      }
     });
   };
 
