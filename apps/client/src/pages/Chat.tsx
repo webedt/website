@@ -403,6 +403,12 @@ export default function Chat() {
       userRequest: input,
     });
 
+    // If we have a currentSessionId, pass it to reuse the same chat session
+    if (currentSessionId) {
+      params.append('chatSessionId', String(currentSessionId));
+      console.log('[Chat] Continuing existing chatSession:', currentSessionId);
+    }
+
     if (selectedRepo) {
       params.append('repositoryUrl', selectedRepo);
     }
@@ -415,7 +421,7 @@ export default function Chat() {
       params.append('autoCommit', 'true');
     }
 
-    // Resume session if we have an AI worker session ID
+    // Resume AI worker session if we have an AI worker session ID
     console.log('[Chat] Session resumption check:', {
       currentSessionId,
       aiWorkerSessionId,
@@ -424,9 +430,9 @@ export default function Chat() {
 
     if (aiWorkerSessionId) {
       params.append('resumeSessionId', aiWorkerSessionId);
-      console.log('[Chat] Resuming session with ID:', aiWorkerSessionId);
+      console.log('[Chat] Resuming AI worker session with ID:', aiWorkerSessionId);
     } else {
-      console.log('[Chat] Starting new session - no aiWorkerSessionId available');
+      console.log('[Chat] Starting new AI worker session - no aiWorkerSessionId available');
     }
 
     setStreamUrl(`/api/execute?${params}`);

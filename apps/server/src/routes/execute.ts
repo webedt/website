@@ -15,7 +15,7 @@ router.get('/execute', requireAuth, async (req, res) => {
   let chatSession: any;
 
   try {
-    const { userRequest, repositoryUrl, branch, autoCommit, resumeSessionId } = req.query;
+    const { userRequest, repositoryUrl, branch, autoCommit, resumeSessionId, chatSessionId } = req.query;
 
     if (!userRequest && !resumeSessionId) {
       res.status(400).json({ success: false, error: 'userRequest or resumeSessionId is required' });
@@ -33,43 +33,77 @@ router.get('/execute', requireAuth, async (req, res) => {
     // Parse autoCommit from string to boolean
     const autoCommitBool = autoCommit === 'true';
 
-    // Check if there's already a locked session for this repo/branch combination
-    if (repositoryUrl && branch) {
-      const existingLockedSession = await db
+    // Check if we're continuing an existing session or creating a new one
+    if (chatSessionId) {
+      // Load existing session
+      const existingSessions = await db
         .select()
         .from(chatSessions)
         .where(
           and(
-            eq(chatSessions.userId, authReq.user.id),
-            eq(chatSessions.repositoryUrl, repositoryUrl as string),
-            eq(chatSessions.branch, branch as string),
-            eq(chatSessions.locked, true)
+            eq(chatSessions.id, Number(chatSessionId)),
+            eq(chatSessions.userId, authReq.user.id)
           )
         )
         .limit(1);
 
-      if (existingLockedSession.length > 0) {
-        res.status(400).json({
+      if (existingSessions.length === 0) {
+        res.status(404).json({
           success: false,
-          error: `Repository ${repositoryUrl} on branch ${branch} is locked by an existing session. Please complete or delete the existing session first.`,
+          error: 'Chat session not found',
         });
         return;
       }
-    }
 
-    // Create chat session in database
-    chatSession = (await db
-      .insert(chatSessions)
-      .values({
-        userId: authReq.user.id,
-        userRequest: (userRequest as string) || 'Resumed session',
-        status: 'pending',
-        repositoryUrl: (repositoryUrl as string) || null,
-        branch: (branch as string) || null,
-        autoCommit: autoCommitBool,
-        locked: false, // Will be locked after first message
-      })
-      .returning())[0];
+      chatSession = existingSessions[0];
+      console.log(`[Execute] Resuming existing chatSession: ${chatSession.id}`);
+
+      // Update session status to running
+      await db
+        .update(chatSessions)
+        .set({ status: 'running' })
+        .where(eq(chatSessions.id, chatSession.id));
+    } else {
+      // Check if there's already a locked session for this repo/branch combination
+      if (repositoryUrl && branch) {
+        const existingLockedSession = await db
+          .select()
+          .from(chatSessions)
+          .where(
+            and(
+              eq(chatSessions.userId, authReq.user.id),
+              eq(chatSessions.repositoryUrl, repositoryUrl as string),
+              eq(chatSessions.branch, branch as string),
+              eq(chatSessions.locked, true)
+            )
+          )
+          .limit(1);
+
+        if (existingLockedSession.length > 0) {
+          res.status(400).json({
+            success: false,
+            error: `Repository ${repositoryUrl} on branch ${branch} is locked by an existing session. Please complete or delete the existing session first.`,
+          });
+          return;
+        }
+      }
+
+      // Create new chat session in database
+      chatSession = (await db
+        .insert(chatSessions)
+        .values({
+          userId: authReq.user.id,
+          userRequest: (userRequest as string) || 'New session',
+          status: 'pending',
+          repositoryUrl: (repositoryUrl as string) || null,
+          branch: (branch as string) || null,
+          autoCommit: autoCommitBool,
+          locked: false, // Will be locked after first message
+        })
+        .returning())[0];
+
+      console.log(`[Execute] Created new chatSession: ${chatSession.id}`);
+    }
 
     // Store user message and lock the session
     if (userRequest) {
@@ -122,9 +156,14 @@ router.get('/execute', requireAuth, async (req, res) => {
       'Connection': 'keep-alive',
     });
 
-    // Send session ID immediately so client can navigate
-    res.write(`event: session-created\n`);
-    res.write(`data: ${JSON.stringify({ chatSessionId: chatSession.id })}\n\n`);
+    // Send session-created event only if this is a new session (not resuming existing chatSession)
+    if (!chatSessionId) {
+      res.write(`event: session-created\n`);
+      res.write(`data: ${JSON.stringify({ chatSessionId: chatSession.id })}\n\n`);
+      console.log(`[Execute] Sent session-created event for new chatSession: ${chatSession.id}`);
+    } else {
+      console.log(`[Execute] Resuming chatSession ${chatSession.id}, not sending session-created event`);
+    }
 
     // Prepare request to ai-coding-worker
     const executePayload: any = {
