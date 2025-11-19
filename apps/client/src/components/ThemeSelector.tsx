@@ -37,6 +37,41 @@ const THEMES = [
 
 type Theme = typeof THEMES[number];
 
+const THEME_EMOJIS: Record<Theme, string> = {
+  light: '☀️',
+  dark: '🌙',
+  cupcake: '🧁',
+  bumblebee: '🐝',
+  emerald: '💎',
+  corporate: '💼',
+  synthwave: '🌃',
+  retro: '📻',
+  cyberpunk: '🤖',
+  valentine: '💝',
+  halloween: '🎃',
+  garden: '🌻',
+  forest: '🌲',
+  aqua: '💧',
+  lofi: '🎧',
+  pastel: '🎨',
+  fantasy: '🦄',
+  wireframe: '📐',
+  black: '🖤',
+  luxury: '👑',
+  dracula: '🧛',
+  cmyk: '🖨️',
+  autumn: '🍂',
+  business: '📊',
+  acid: '🧪',
+  lemonade: '🍋',
+  night: '🌌',
+  coffee: '☕',
+  winter: '❄️',
+  dim: '🔅',
+  nord: '🏔️',
+  sunset: '🌅',
+};
+
 const THEME_STORAGE_KEY = 'webedt:theme';
 
 export default function ThemeSelector() {
@@ -75,24 +110,11 @@ export default function ThemeSelector() {
     <div className="relative theme-dropdown">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-2xl"
         aria-label="Select theme"
-        title="Select theme"
+        title={`Current theme: ${theme}`}
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          strokeWidth={1.5}
-          stroke="currentColor"
-          className="w-5 h-5"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42"
-          />
-        </svg>
+        {THEME_EMOJIS[theme]}
       </button>
 
       {isOpen && (
@@ -105,7 +127,10 @@ export default function ThemeSelector() {
               onClick={() => handleThemeChange(theme)}
               className="w-full flex items-center justify-between px-3 py-2 text-sm rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium"
             >
-              <span className="capitalize">{theme}</span>
+              <span className="flex items-center gap-2">
+                <span className="text-lg">{THEME_EMOJIS[theme]}</span>
+                <span className="capitalize">{theme}</span>
+              </span>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 20 20"
@@ -129,8 +154,9 @@ export default function ThemeSelector() {
                   <button
                     key={t}
                     onClick={() => handleThemeChange(t)}
-                    className="w-full flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors text-left"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors text-left"
                   >
+                    <span className="text-lg">{THEME_EMOJIS[t]}</span>
                     <span className="capitalize">{t}</span>
                   </button>
                 ))}
