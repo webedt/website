@@ -38,6 +38,27 @@ export default function Dashboard() {
 
   const repositories: GitHubRepository[] = reposData?.data || [];
 
+  // Load last selected repo from localStorage when repositories are loaded
+  useEffect(() => {
+    if (repositories.length > 0 && !selectedRepo) {
+      const lastSelectedRepo = localStorage.getItem('lastSelectedRepo');
+      if (lastSelectedRepo) {
+        // Verify the repo still exists in the list
+        const repoExists = repositories.some(repo => repo.cloneUrl === lastSelectedRepo);
+        if (repoExists) {
+          setSelectedRepo(lastSelectedRepo);
+        }
+      }
+    }
+  }, [repositories, selectedRepo]);
+
+  // Save selected repo to localStorage whenever it changes
+  useEffect(() => {
+    if (selectedRepo) {
+      localStorage.setItem('lastSelectedRepo', selectedRepo);
+    }
+  }, [selectedRepo]);
+
   const updateMutation = useMutation({
     mutationFn: ({ id, title }: { id: number; title: string }) =>
       sessionsApi.update(id, title),
