@@ -39,17 +39,17 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-base-200 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-900 px-4">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-base-content">
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-white">
             Sign in to WebEDT
           </h2>
-          <p className="mt-2 text-center text-sm text-base-content/70">
+          <p className="mt-2 text-center text-sm text-gray-400">
             Or{' '}
             <Link
               to="/register"
-              className="font-medium link link-primary"
+              className="font-medium text-blue-400 hover:text-blue-300"
             >
               create a new account
             </Link>
@@ -58,57 +58,55 @@ export default function Login() {
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           {error && (
-            <div className="alert alert-error">
-              <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              <span>{error}</span>
+            <div className="rounded-md bg-red-900/20 border border-red-800 p-4">
+              <p className="text-sm text-red-200">{error}</p>
             </div>
           )}
 
           <div className="space-y-4">
             <div>
-              <label htmlFor="email" className="label">
-                <span className="label-text">Email address</span>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
+                Email address
               </label>
               <input
                 {...register('email')}
                 type="email"
-                className="input input-bordered w-full"
+                className="appearance-none relative block w-full px-3 py-2 border border-gray-700 placeholder-gray-500 text-white bg-gray-800 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 placeholder="Email address"
               />
               {errors.email && (
-                <label className="label">
-                  <span className="label-text-alt text-error">{errors.email.message}</span>
-                </label>
+                <p className="mt-1 text-sm text-red-400">{errors.email.message}</p>
               )}
             </div>
 
             <div>
-              <label htmlFor="password" className="label">
-                <span className="label-text">Password</span>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
+                Password
               </label>
               <input
                 {...register('password')}
                 type="password"
-                className="input input-bordered w-full"
+                className="appearance-none relative block w-full px-3 py-2 border border-gray-700 placeholder-gray-500 text-white bg-gray-800 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 placeholder="Password"
               />
               {errors.password && (
-                <label className="label">
-                  <span className="label-text-alt text-error">{errors.password.message}</span>
-                </label>
+                <p className="mt-1 text-sm text-red-400">{errors.password.message}</p>
               )}
             </div>
           </div>
 
-          <div className="form-control">
-            <label className="label cursor-pointer justify-start gap-2">
-              <input
-                {...register('rememberMe')}
-                type="checkbox"
-                id="rememberMe"
-                className="checkbox checkbox-sm"
-              />
-              <span className="label-text">Remember me for 90 days</span>
+          <div className="flex items-center">
+            <input
+              {...register('rememberMe')}
+              type="checkbox"
+              id="rememberMe"
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-700 rounded bg-gray-800"
+            />
+            <label
+              htmlFor="rememberMe"
+              className="ml-2 block text-sm text-gray-300"
+            >
+              Remember me for 90 days
             </label>
           </div>
 
@@ -116,7 +114,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="btn btn-primary w-full"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? 'Signing in...' : 'Sign in'}
             </button>
