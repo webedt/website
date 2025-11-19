@@ -96,34 +96,36 @@ export default function Settings() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Settings</h1>
+      <h1 className="text-3xl font-bold text-base-content mb-8">Settings</h1>
 
       <div className="space-y-6">
         {/* Account Info */}
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Account</h2>
-          <div className="space-y-2">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              <span className="font-medium">Email:</span> {user?.email}
-            </p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              <span className="font-medium">User ID:</span> {user?.id}
-            </p>
+        <div className="card bg-base-100 shadow">
+          <div className="card-body">
+            <h2 className="card-title">Account</h2>
+            <div className="space-y-2">
+              <p className="text-sm text-base-content/70">
+                <span className="font-medium">Email:</span> {user?.email}
+              </p>
+              <p className="text-sm text-base-content/70">
+                <span className="font-medium">User ID:</span> {user?.id}
+              </p>
+            </div>
           </div>
         </div>
 
         {/* GitHub Integration */}
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-            GitHub Integration
-          </h2>
+        <div className="card bg-base-100 shadow">
+          <div className="card-body">
+            <h2 className="card-title">
+              GitHub Integration
+            </h2>
 
-          {user?.githubAccessToken ? (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-md">
-                <div className="flex items-center space-x-2">
+            {user?.githubAccessToken ? (
+              <div className="space-y-4">
+                <div className="alert alert-success">
                   <svg
-                    className="h-5 w-5 text-green-600 dark:text-green-400"
+                    className="h-5 w-5"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -133,49 +135,49 @@ export default function Settings() {
                       clipRule="evenodd"
                     />
                   </svg>
-                  <span className="text-sm text-green-800 dark:text-green-200">
+                  <span className="text-sm">
                     GitHub connected (ID: {user.githubId})
                   </span>
+                  <button
+                    onClick={() => disconnectGitHub.mutate()}
+                    disabled={disconnectGitHub.isPending}
+                    className="btn btn-sm btn-error"
+                  >
+                    Disconnect
+                  </button>
                 </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-base-content/70">
+                  Connect your GitHub account to access repositories and enable automatic commits.
+                </p>
                 <button
-                  onClick={() => disconnectGitHub.mutate()}
-                  disabled={disconnectGitHub.isPending}
-                  className="text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 font-medium"
+                  onClick={githubApi.connect}
+                  className="btn btn-neutral"
                 >
-                  Disconnect
+                  <svg className="mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                  </svg>
+                  Connect GitHub
                 </button>
               </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Connect your GitHub account to access repositories and enable automatic commits.
-              </p>
-              <button
-                onClick={githubApi.connect}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-              >
-                <svg className="mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-                </svg>
-                Connect GitHub
-              </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Claude Authentication */}
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-            Claude Authentication
-          </h2>
+        <div className="card bg-base-100 shadow">
+          <div className="card-body">
+            <h2 className="card-title">
+              Claude Authentication
+            </h2>
 
-          {user?.claudeAuth ? (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-md">
-                <div className="flex items-center space-x-2">
+            {user?.claudeAuth ? (
+              <div className="space-y-4">
+                <div className="alert alert-success">
                   <svg
-                    className="h-5 w-5 text-green-600 dark:text-green-400"
+                    className="h-5 w-5"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -185,70 +187,72 @@ export default function Settings() {
                       clipRule="evenodd"
                     />
                   </svg>
-                  <span className="text-sm text-green-800 dark:text-green-200">
+                  <span className="text-sm">
                     Claude credentials configured
                   </span>
+                  <button
+                    onClick={() => removeClaudeAuth.mutate()}
+                    disabled={removeClaudeAuth.isPending}
+                    className="btn btn-sm btn-error"
+                  >
+                    Remove
+                  </button>
                 </div>
-                <button
-                  onClick={() => removeClaudeAuth.mutate()}
-                  disabled={removeClaudeAuth.isPending}
-                  className="text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 font-medium"
-                >
-                  Remove
-                </button>
-              </div>
-              <div className="space-y-2">
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Subscription: {user.claudeAuth.subscriptionType} | Rate Limit:{' '}
-                  {user.claudeAuth.rateLimitTier}
-                </p>
-                {user.claudeAuth.expiresAt && (
-                  <div className="text-xs">
-                    <span className="text-gray-500 dark:text-gray-400">Access Token: </span>
-                    <span className={getExpirationStatus(user.claudeAuth.expiresAt).color}>
-                      {getExpirationStatus(user.claudeAuth.expiresAt).text}
-                    </span>
-                    <span className="text-gray-500 dark:text-gray-400">
-                      {' '}
-                      (expires {formatTokenExpiration(user.claudeAuth.expiresAt)})
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Paste the entire contents of your Claude credentials JSON file from ai-coding-worker.
-                The system will automatically extract the authentication details.
-              </p>
-
-              <form onSubmit={handleClaudeAuthSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Claude Auth JSON (paste the entire file contents)
-                  </label>
-                  <textarea
-                    value={claudeAuthJson}
-                    onChange={(e) => setClaudeAuthJson(e.target.value)}
-                    placeholder='{"claudeAiOauth":{"accessToken":"...","refreshToken":"...","expiresAt":123456789,"scopes":[...],"subscriptionType":"...","rateLimitTier":"..."}}'
-                    rows={8}
-                    className="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm font-mono text-xs"
-                  />
-                  {claudeError && (
-                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">{claudeError}</p>
+                <div className="space-y-2">
+                  <p className="text-xs text-base-content/70">
+                    Subscription: {user.claudeAuth.subscriptionType} | Rate Limit:{' '}
+                    {user.claudeAuth.rateLimitTier}
+                  </p>
+                  {user.claudeAuth.expiresAt && (
+                    <div className="text-xs">
+                      <span className="text-base-content/70">Access Token: </span>
+                      <span className={getExpirationStatus(user.claudeAuth.expiresAt).color}>
+                        {getExpirationStatus(user.claudeAuth.expiresAt).text}
+                      </span>
+                      <span className="text-base-content/70">
+                        {' '}
+                        (expires {formatTokenExpiration(user.claudeAuth.expiresAt)})
+                      </span>
+                    </div>
                   )}
                 </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-base-content/70">
+                  Paste the entire contents of your Claude credentials JSON file from ai-coding-worker.
+                  The system will automatically extract the authentication details.
+                </p>
 
-                <button
-                  type="submit"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  Save Claude Credentials
-                </button>
-              </form>
-            </div>
-          )}
+                <form onSubmit={handleClaudeAuthSubmit} className="space-y-4">
+                  <div>
+                    <label className="label">
+                      <span className="label-text">Claude Auth JSON (paste the entire file contents)</span>
+                    </label>
+                    <textarea
+                      value={claudeAuthJson}
+                      onChange={(e) => setClaudeAuthJson(e.target.value)}
+                      placeholder='{"claudeAiOauth":{"accessToken":"...","refreshToken":"...","expiresAt":123456789,"scopes":[...],"subscriptionType":"...","rateLimitTier":"..."}}'
+                      rows={8}
+                      className="textarea textarea-bordered w-full font-mono text-xs"
+                    />
+                    {claudeError && (
+                      <label className="label">
+                        <span className="label-text-alt text-error">{claudeError}</span>
+                      </label>
+                    )}
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                  >
+                    Save Claude Credentials
+                  </button>
+                </form>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
