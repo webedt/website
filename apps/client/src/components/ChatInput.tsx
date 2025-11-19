@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle, useRef } from 'react';
+import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { GitHubRepository, User } from '@webedt/shared';
 
@@ -54,8 +54,15 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
 }, ref) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recognitionRef = useRef<any>(null);
   const hasGithubAuth = !!user?.githubAccessToken;
   const hasClaudeAuth = !!user?.claudeAuth;
+
+  // Voice recording state
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
 
   // Sort repositories alphabetically by fullName
   const sortedRepositories = [...repositories].sort((a, b) =>
@@ -144,6 +151,142 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
     setImages(images.filter(img => img.id !== id));
   };
 
+  // Start voice recording
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      // Try MediaRecorder first (for Whisper API)
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm')
+        ? 'audio/webm'
+        : 'audio/mp4';
+
+      const mediaRecorder = new MediaRecorder(stream, { mimeType });
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+        await transcribeAudio(audioBlob);
+
+        // Stop all tracks
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (error) {
+      console.error('Error starting recording:', error);
+      alert('Failed to access microphone. Please ensure microphone permissions are granted.');
+    }
+  };
+
+  // Stop voice recording
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  // Transcribe audio using OpenAI Whisper or fallback to Web Speech API
+  const transcribeAudio = async (audioBlob: Blob) => {
+    setIsTranscribing(true);
+
+    try {
+      // Try OpenAI Whisper API first
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'recording.webm');
+
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+      const response = await fetch(`${apiBaseUrl}/api/transcribe`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data.text) {
+          // Append transcribed text to existing input
+          const newText = input ? `${input}\n${result.data.text}` : result.data.text;
+          setInput(newText);
+          setIsTranscribing(false);
+          return;
+        }
+      }
+
+      // If Whisper API fails, try Web Speech API fallback
+      console.log('Whisper API unavailable, falling back to Web Speech API');
+      await transcribeWithWebSpeech();
+    } catch (error) {
+      console.error('Transcription error:', error);
+      // Fallback to Web Speech API
+      await transcribeWithWebSpeech();
+    }
+  };
+
+  // Fallback transcription using Web Speech API
+  const transcribeWithWebSpeech = async () => {
+    return new Promise<void>((resolve) => {
+      // Check if Web Speech API is available
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+      if (!SpeechRecognition) {
+        alert('Speech recognition is not supported in this browser. Please configure OpenAI API key on the server.');
+        setIsTranscribing(false);
+        resolve();
+        return;
+      }
+
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        const newText = input ? `${input}\n${transcript}` : transcript;
+        setInput(newText);
+        setIsTranscribing(false);
+        resolve();
+      };
+
+      recognition.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        alert(`Speech recognition error: ${event.error}`);
+        setIsTranscribing(false);
+        resolve();
+      };
+
+      recognition.onend = () => {
+        setIsTranscribing(false);
+        resolve();
+      };
+
+      // Note: We can't re-start recognition from recorded audio
+      // This is a limitation - Web Speech API works with live audio only
+      alert('Web Speech API fallback: Please click the microphone again and speak when ready.');
+      setIsTranscribing(false);
+      resolve();
+    });
+  };
+
+  // Toggle recording on/off
+  const toggleRecording = () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  };
+
   // Expose focus method to parent component
   useImperativeHandle(ref, () => ({
     focus: () => {
@@ -186,9 +329,9 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onPaste={handlePaste}
-          placeholder="Describe what you want to code... (paste images directly or use the attach button)"
+          placeholder="Describe what you want to code... (paste images, use voice input, or attach files)"
           rows={4}
-          className="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-lg focus:border-blue-500 focus:ring-blue-500 resize-none pr-24 text-base p-4 pb-16"
+          className="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-lg focus:border-blue-500 focus:ring-blue-500 resize-none pr-36 text-base p-4 pb-16"
           disabled={isExecuting || !user?.claudeAuth}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
@@ -324,7 +467,7 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
           )}
         </div>
 
-        {/* Image attach button and submit button inside textarea */}
+        {/* Voice, Image attach, and Submit buttons inside textarea */}
         <div className="absolute bottom-3 right-3 flex items-center gap-1">
           {/* Hidden file input */}
           <input
@@ -335,6 +478,51 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
             onChange={handleFileSelect}
             className="hidden"
           />
+
+          {/* Microphone button */}
+          <button
+            type="button"
+            onClick={toggleRecording}
+            disabled={isExecuting || !user?.claudeAuth || isTranscribing}
+            className={`flex items-center justify-center w-10 h-10 rounded-full shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+              isRecording
+                ? 'bg-red-500 hover:bg-red-600 text-white focus:ring-red-400 animate-pulse'
+                : isTranscribing
+                ? 'bg-blue-500 text-white focus:ring-blue-400'
+                : 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 focus:ring-gray-400'
+            }`}
+            title={
+              isRecording
+                ? 'Tap to stop recording'
+                : isTranscribing
+                ? 'Transcribing...'
+                : 'Tap to start voice input'
+            }
+          >
+            {isTranscribing ? (
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+            ) : (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                className="w-5 h-5"
+              >
+                {isRecording ? (
+                  /* Stop icon when recording */
+                  <rect x="6" y="6" width="12" height="12" rx="2" />
+                ) : (
+                  /* Microphone icon when not recording */
+                  <path d="M8.25 4.5a3.75 3.75 0 117.5 0v8.25a3.75 3.75 0 11-7.5 0V4.5z" />
+                )}
+                {!isRecording && (
+                  <>
+                    <path d="M6 10.5a.75.75 0 01.75.75v1.5a5.25 5.25 0 1010.5 0v-1.5a.75.75 0 011.5 0v1.5a6.751 6.751 0 01-6 6.709v2.291h3a.75.75 0 010 1.5h-7.5a.75.75 0 010-1.5h3v-2.291a6.751 6.751 0 01-6-6.709v-1.5A.75.75 0 016 10.5z" />
+                  </>
+                )}
+              </svg>
+            )}
+          </button>
 
           {/* Attach image button */}
           <button
