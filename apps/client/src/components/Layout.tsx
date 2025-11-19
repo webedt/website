@@ -1,6 +1,7 @@
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/lib/store';
 import { authApi } from '@/lib/api';
+import ThemeSelector from './ThemeSelector';
 
 export default function Layout() {
   const { user, isAuthenticated, clearUser } = useAuthStore();
@@ -54,6 +55,7 @@ export default function Layout() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              <ThemeSelector />
               <span className="text-sm text-gray-700 dark:text-gray-300">{user?.email}</span>
               <button
                 onClick={handleLogout}
