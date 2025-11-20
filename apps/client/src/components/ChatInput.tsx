@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
+import { forwardRef, useImperativeHandle, useRef, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import type { GitHubRepository, User } from '@webedt/shared';
 
@@ -61,10 +61,25 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
   // Voice recording state
   const [isRecording, setIsRecording] = useState(false);
 
+  // Repository search state
+  const [repoSearchQuery, setRepoSearchQuery] = useState('');
+  const [isRepoDropdownOpen, setIsRepoDropdownOpen] = useState(false);
+
   // Sort repositories alphabetically by fullName
   const sortedRepositories = [...repositories].sort((a, b) =>
     a.fullName.localeCompare(b.fullName)
   );
+
+  // Filter repositories based on fuzzy search with space-separated terms
+  const filteredRepositories = sortedRepositories.filter((repo) => {
+    if (!repoSearchQuery.trim()) return true;
+
+    const searchTerms = repoSearchQuery.toLowerCase().trim().split(/\s+/);
+    const repoName = repo.fullName.toLowerCase();
+
+    // Check if all search terms match
+    return searchTerms.every(term => repoName.includes(term));
+  });
 
   // Helper function to convert file to base64
   const fileToBase64 = (file: File): Promise<string> => {
@@ -255,6 +270,24 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
     }
   };
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (isRepoDropdownOpen && !target.closest('.dropdown')) {
+        setIsRepoDropdownOpen(false);
+        setRepoSearchQuery('');
+      }
+    };
+
+    if (isRepoDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [isRepoDropdownOpen]);
+
   // Expose focus method to parent component
   useImperativeHandle(ref, () => ({
     focus: () => {
@@ -364,19 +397,78 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
                   ) : (
                     /* Show as editable controls when not executing */
                     <>
-                      <select
-                        value={selectedRepo}
-                        onChange={(e) => setSelectedRepo(e.target.value)}
-                        className="select select-bordered select-xs"
-                        disabled={isLocked}
-                      >
-                        <option value="">No repository</option>
-                        {sortedRepositories.map((repo) => (
-                          <option key={repo.id} value={repo.cloneUrl}>
-                            {repo.fullName}
-                          </option>
-                        ))}
-                      </select>
+                      {/* Custom dropdown with search */}
+                      <div className="dropdown">
+                        <button
+                          type="button"
+                          tabIndex={0}
+                          onClick={() => setIsRepoDropdownOpen(!isRepoDropdownOpen)}
+                          className="btn btn-xs btn-outline normal-case"
+                          disabled={isLocked}
+                        >
+                          {selectedRepo
+                            ? sortedRepositories.find((r) => r.cloneUrl === selectedRepo)?.fullName ||
+                              'No repository'
+                            : 'No repository'}
+                          <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                        {isRepoDropdownOpen && (
+                          <div
+                            tabIndex={0}
+                            className="dropdown-content z-50 menu p-2 shadow-lg bg-base-100 rounded-box w-64 max-h-80 overflow-y-auto border border-base-300"
+                          >
+                            {/* Search input */}
+                            <div className="p-2 sticky top-0 bg-base-100 border-b border-base-300">
+                              <input
+                                type="text"
+                                placeholder="Search repositories..."
+                                value={repoSearchQuery}
+                                onChange={(e) => setRepoSearchQuery(e.target.value)}
+                                className="input input-bordered input-xs w-full"
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            </div>
+                            {/* No repository option */}
+                            <li>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedRepo('');
+                                  setIsRepoDropdownOpen(false);
+                                  setRepoSearchQuery('');
+                                }}
+                                className={!selectedRepo ? 'active' : ''}
+                              >
+                                No repository
+                              </button>
+                            </li>
+                            {/* Filtered repositories */}
+                            {filteredRepositories.length > 0 ? (
+                              filteredRepositories.map((repo) => (
+                                <li key={repo.id}>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedRepo(repo.cloneUrl);
+                                      setIsRepoDropdownOpen(false);
+                                      setRepoSearchQuery('');
+                                    }}
+                                    className={selectedRepo === repo.cloneUrl ? 'active' : ''}
+                                  >
+                                    {repo.fullName}
+                                  </button>
+                                </li>
+                              ))
+                            ) : (
+                              <li className="p-2 text-xs text-base-content/50 text-center">
+                                No repositories found
+                              </li>
+                            )}
+                          </div>
+                        )}
+                      </div>
 
                       <input
                         type="text"
