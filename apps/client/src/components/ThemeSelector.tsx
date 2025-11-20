@@ -82,8 +82,17 @@ export default function ThemeSelector() {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
+    console.log('🎨 Setting theme to:', theme);
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem(THEME_STORAGE_KEY, theme);
+
+    // Log the computed styles to verify theme is applying
+    const styles = getComputedStyle(document.documentElement);
+    console.log('🎨 CSS Variables:', {
+      '--p': styles.getPropertyValue('--p'),
+      '--b1': styles.getPropertyValue('--b1'),
+      '--bc': styles.getPropertyValue('--bc'),
+    });
   }, [theme]);
 
   const handleThemeChange = (newTheme: Theme) => {
