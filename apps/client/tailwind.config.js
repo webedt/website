@@ -47,5 +47,6 @@ export default {
     base: true,
     styled: true,
     utils: true,
+    logs: false,
   },
 }
