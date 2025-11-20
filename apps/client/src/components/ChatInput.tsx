@@ -153,44 +153,102 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
   // Start voice recording
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-      // Try MediaRecorder first (for Whisper API)
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm')
-        ? 'audio/webm'
-        : 'audio/mp4';
-
-      const mediaRecorder = new MediaRecorder(stream, { mimeType });
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
-        await transcribeAudio(audioBlob);
-
-        // Stop all tracks
-        stream.getTracks().forEach(track => track.stop());
-      };
-
-      mediaRecorder.start();
-      setIsRecording(true);
+      // Use Web Speech API directly for simpler UX
+      // (If OpenAI API key is configured on server, we could detect and use MediaRecorder instead)
+      await startWebSpeechRecording();
     } catch (error) {
       console.error('Error starting recording:', error);
-      alert('Failed to access microphone. Please ensure microphone permissions are granted.');
+      alert('Failed to start voice input. Please ensure microphone permissions are granted.');
     }
   };
 
   // Stop voice recording
   const stopRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
+    stopWebSpeechRecording();
+  };
+
+  // Start Web Speech API recording directly
+  const startWebSpeechRecording = async () => {
+    return new Promise<void>((resolve, reject) => {
+      // Check if Web Speech API is available
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+      if (!SpeechRecognition) {
+        alert('Speech recognition is not supported in this browser.');
+        reject(new Error('Speech recognition not supported'));
+        return;
+      }
+
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true; // Keep listening until manually stopped
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => {
+        console.log('Voice input started - speak now...');
+        setIsRecording(true);
+        setIsTranscribing(false);
+        resolve();
+      };
+
+      recognition.onresult = (event: any) => {
+        // Collect all transcripts
+        let transcript = '';
+        for (let i = 0; i < event.results.length; i++) {
+          if (event.results[i].isFinal) {
+            transcript += event.results[i][0].transcript + ' ';
+          }
+        }
+
+        if (transcript.trim()) {
+          // Append transcribed text to existing input
+          const newText = input ? `${input}\n${transcript.trim()}` : transcript.trim();
+          setInput(newText);
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        if (event.error !== 'no-speech' && event.error !== 'aborted') {
+          alert(`Speech recognition error: ${event.error}`);
+        }
+        setIsRecording(false);
+        setIsTranscribing(false);
+        mediaRecorderRef.current = null;
+      };
+
+      recognition.onend = () => {
+        console.log('Voice input ended');
+        setIsRecording(false);
+        setIsTranscribing(false);
+        mediaRecorderRef.current = null;
+      };
+
+      // Store recognition instance so we can stop it later
+      mediaRecorderRef.current = recognition as any;
+
+      // Start recognition
+      try {
+        recognition.start();
+      } catch (error) {
+        console.error('Failed to start speech recognition:', error);
+        alert('Failed to start speech recognition. Please try again.');
+        reject(error);
+      }
+    });
+  };
+
+  // Stop Web Speech API recording
+  const stopWebSpeechRecording = () => {
+    const recognition = mediaRecorderRef.current as any;
+    if (recognition && recognition.stop) {
+      try {
+        recognition.stop();
+      } catch (error) {
+        console.error('Error stopping recognition:', error);
+      }
       setIsRecording(false);
+      setIsTranscribing(false);
     }
   };
 
