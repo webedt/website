@@ -61,7 +61,6 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
 
   // Voice recording state
   const [isRecording, setIsRecording] = useState(false);
-  const [isTranscribing, setIsTranscribing] = useState(false);
 
   // Sort repositories alphabetically by fullName
   const sortedRepositories = [...repositories].sort((a, b) =>
@@ -187,7 +186,6 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
       recognition.onstart = () => {
         console.log('Voice input started - speak now...');
         setIsRecording(true);
-        setIsTranscribing(false);
         resolve();
       };
 
@@ -213,14 +211,12 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
           alert(`Speech recognition error: ${event.error}`);
         }
         setIsRecording(false);
-        setIsTranscribing(false);
         mediaRecorderRef.current = null;
       };
 
       recognition.onend = () => {
         console.log('Voice input ended');
         setIsRecording(false);
-        setIsTranscribing(false);
         mediaRecorderRef.current = null;
       };
 
@@ -248,104 +244,7 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
         console.error('Error stopping recognition:', error);
       }
       setIsRecording(false);
-      setIsTranscribing(false);
     }
-  };
-
-  // Transcribe audio using OpenAI Whisper or fallback to Web Speech API
-  const transcribeAudio = async (audioBlob: Blob) => {
-    setIsTranscribing(true);
-
-    try {
-      // Try OpenAI Whisper API first
-      const formData = new FormData();
-      formData.append('audio', audioBlob, 'recording.webm');
-
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
-      const response = await fetch(`${apiBaseUrl}/api/transcribe`, {
-        method: 'POST',
-        body: formData,
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.data.text) {
-          // Append transcribed text to existing input
-          const newText = input ? `${input}\n${result.data.text}` : result.data.text;
-          setInput(newText);
-          setIsTranscribing(false);
-          return;
-        }
-      }
-
-      // If Whisper API fails, try Web Speech API fallback
-      console.log('Whisper API unavailable, falling back to Web Speech API');
-      await transcribeWithWebSpeech();
-    } catch (error) {
-      console.error('Transcription error:', error);
-      // Fallback to Web Speech API
-      await transcribeWithWebSpeech();
-    }
-  };
-
-  // Fallback transcription using Web Speech API
-  const transcribeWithWebSpeech = async () => {
-    return new Promise<void>((resolve) => {
-      // Check if Web Speech API is available
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-
-      if (!SpeechRecognition) {
-        alert('Speech recognition is not supported in this browser. Please configure OpenAI API key on the server.');
-        setIsTranscribing(false);
-        resolve();
-        return;
-      }
-
-      const recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.lang = 'en-US';
-
-      recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        const newText = input ? `${input}\n${transcript}` : transcript;
-        setInput(newText);
-        setIsTranscribing(false);
-        resolve();
-      };
-
-      recognition.onerror = (event: any) => {
-        console.error('Speech recognition error:', event.error);
-        if (event.error !== 'no-speech' && event.error !== 'aborted') {
-          alert(`Speech recognition error: ${event.error}`);
-        }
-        setIsTranscribing(false);
-        resolve();
-      };
-
-      recognition.onend = () => {
-        setIsTranscribing(false);
-        resolve();
-      };
-
-      recognition.onstart = () => {
-        console.log('Web Speech API: Listening... Speak now.');
-      };
-
-      // Start recognition
-      // Note: Web Speech API can't use pre-recorded audio from MediaRecorder,
-      // so we start a fresh recognition session for live speech
-      try {
-        console.log('Using browser speech recognition fallback - please speak now...');
-        recognition.start();
-      } catch (error) {
-        console.error('Failed to start speech recognition:', error);
-        alert('Failed to start speech recognition. Please try again.');
-        setIsTranscribing(false);
-        resolve();
-      }
-    });
   };
 
   // Toggle recording on/off
@@ -553,45 +452,37 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
           <button
             type="button"
             onClick={toggleRecording}
-            disabled={isExecuting || !user?.claudeAuth || isTranscribing}
+            disabled={isExecuting || !user?.claudeAuth}
             className={`flex items-center justify-center w-10 h-10 rounded-full shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 ${
               isRecording
                 ? 'bg-red-500 hover:bg-red-600 text-white focus:ring-red-400 animate-pulse'
-                : isTranscribing
-                ? 'bg-blue-500 text-white focus:ring-blue-400'
                 : 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 focus:ring-gray-400'
             }`}
             title={
               isRecording
                 ? 'Tap to stop recording'
-                : isTranscribing
-                ? 'Transcribing...'
                 : 'Tap to start voice input'
             }
           >
-            {isTranscribing ? (
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-            ) : (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className="w-5 h-5"
-              >
-                {isRecording ? (
-                  /* Stop icon when recording */
-                  <rect x="6" y="6" width="12" height="12" rx="2" />
-                ) : (
-                  /* Microphone icon when not recording */
-                  <path d="M8.25 4.5a3.75 3.75 0 117.5 0v8.25a3.75 3.75 0 11-7.5 0V4.5z" />
-                )}
-                {!isRecording && (
-                  <>
-                    <path d="M6 10.5a.75.75 0 01.75.75v1.5a5.25 5.25 0 1010.5 0v-1.5a.75.75 0 011.5 0v1.5a6.751 6.751 0 01-6 6.709v2.291h3a.75.75 0 010 1.5h-7.5a.75.75 0 010-1.5h3v-2.291a6.751 6.751 0 01-6-6.709v-1.5A.75.75 0 016 10.5z" />
-                  </>
-                )}
-              </svg>
-            )}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              className="w-5 h-5"
+            >
+              {isRecording ? (
+                /* Stop icon when recording */
+                <rect x="6" y="6" width="12" height="12" rx="2" />
+              ) : (
+                /* Microphone icon when not recording */
+                <path d="M8.25 4.5a3.75 3.75 0 117.5 0v8.25a3.75 3.75 0 11-7.5 0V4.5z" />
+              )}
+              {!isRecording && (
+                <>
+                  <path d="M6 10.5a.75.75 0 01.75.75v1.5a5.25 5.25 0 1010.5 0v-1.5a.75.75 0 011.5 0v1.5a6.751 6.751 0 01-6 6.709v2.291h3a.75.75 0 010 1.5h-7.5a.75.75 0 010-1.5h3v-2.291a6.751 6.751 0 01-6-6.709v-1.5A.75.75 0 016 10.5z" />
+                </>
+              )}
+            </svg>
           </button>
 
           {/* Attach image button */}
