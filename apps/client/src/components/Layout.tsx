@@ -3,6 +3,7 @@ import { useAuthStore } from '@/lib/store';
 import { authApi } from '@/lib/api';
 import { useState } from 'react';
 import ThemeSelector from './ThemeSelector';
+import { VERSION } from '@/version';
 
 export default function Layout() {
   const { user, isAuthenticated, clearUser } = useAuthStore();
@@ -31,9 +32,12 @@ export default function Layout() {
             <div className="flex">
               <Link
                 to="/"
-                className="flex items-center px-2 py-2 text-base-content font-semibold text-xl"
+                className="flex flex-col justify-center px-2 py-2 text-base-content"
               >
-                WebEDT
+                <span className="font-semibold text-xl leading-tight">WebEDT</span>
+                <span className="text-[10px] text-base-content/40 leading-tight">
+                  v{VERSION}
+                </span>
               </Link>
               <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
                 <Link

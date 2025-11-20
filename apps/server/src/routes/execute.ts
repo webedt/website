@@ -24,6 +24,16 @@ const executeHandler = async (req: any, res: any) => {
       return;
     }
 
+    // Validate that both github params and resumeSessionId are not provided together
+    // When resuming a session, the repository is already available in the session workspace
+    if (resumeSessionId && repositoryUrl) {
+      res.status(400).json({
+        success: false,
+        error: 'Cannot provide both "github" and "resumeSessionId". When resuming a session, the repository is already available in the session workspace.',
+      });
+      return;
+    }
+
     if (!authReq.user?.claudeAuth) {
       res.status(400).json({
         success: false,
