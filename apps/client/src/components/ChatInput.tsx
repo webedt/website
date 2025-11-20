@@ -272,17 +272,17 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
               <img
                 src={`data:${image.mediaType};base64,${image.data}`}
                 alt={image.fileName}
-                className="h-20 w-20 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
+                className="h-20 w-20 object-cover rounded-lg border border-base-300"
               />
               <button
                 type="button"
                 onClick={() => removeImage(image.id)}
-                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute -top-2 -right-2 bg-error text-error-content rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                 title="Remove image"
               >
                 ×
               </button>
-              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-[80px] truncate">
+              <div className="text-xs text-base-content/70 mt-1 max-w-[80px] truncate">
                 {image.fileName}
               </div>
             </div>
@@ -299,7 +299,7 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
           onPaste={handlePaste}
           placeholder="Describe what you want to code... (paste images, use voice input, or attach files)"
           rows={4}
-          className="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-lg focus:border-blue-500 focus:ring-blue-500 resize-none pr-36 text-base p-4 pb-16"
+          className="textarea textarea-bordered w-full shadow-lg resize-none pr-36 text-base p-4 pb-16"
           disabled={isExecuting || !user?.claudeAuth}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
@@ -336,9 +336,9 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
               {isLoadingRepos ? (
                 /* Skeleton loading state */
                 <>
-                  <div className="h-6 w-32 bg-gray-300 dark:bg-gray-600 rounded-md animate-pulse"></div>
-                  <div className="h-6 w-24 bg-gray-300 dark:bg-gray-600 rounded-md animate-pulse"></div>
-                  <div className="h-4 w-28 bg-gray-300 dark:bg-gray-600 rounded-md animate-pulse"></div>
+                  <div className="skeleton h-6 w-32"></div>
+                  <div className="skeleton h-6 w-24"></div>
+                  <div className="skeleton h-4 w-28"></div>
                 </>
               ) : repositories.length > 0 ? (
                 /* Actual controls or labels */
@@ -346,18 +346,18 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
                   {isExecuting ? (
                     /* Show as text labels when executing */
                     <>
-                      <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-md text-gray-700 dark:text-gray-300">
+                      <span className="badge badge-ghost text-xs">
                         {selectedRepo
                           ? sortedRepositories.find((r) => r.cloneUrl === selectedRepo)?.fullName ||
                             'No repository'
                           : 'No repository'}
                       </span>
                       {branch && (
-                        <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-md text-gray-700 dark:text-gray-300">
+                        <span className="badge badge-ghost text-xs">
                           {branch}
                         </span>
                       )}
-                      <span className="text-xs text-gray-700 dark:text-gray-300">
+                      <span className="text-xs text-base-content/70">
                         {autoCommit ? '✓ Auto-commit/push' : '✗ Auto-commit/push'}
                       </span>
                     </>
@@ -367,7 +367,7 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
                       <select
                         value={selectedRepo}
                         onChange={(e) => setSelectedRepo(e.target.value)}
-                        className="text-xs rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-600 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1 px-2"
+                        className="select select-bordered select-xs"
                         disabled={isLocked}
                       >
                         <option value="">No repository</option>
@@ -383,7 +383,7 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
                         value={branch}
                         onChange={(e) => setBranch(e.target.value)}
                         placeholder="main"
-                        className="text-xs rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-600 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1 px-2 w-24"
+                        className="input input-bordered input-xs w-24"
                         disabled={isLocked}
                       />
 
@@ -392,10 +392,10 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
                           type="checkbox"
                           checked={autoCommit}
                           onChange={(e) => setAutoCommit(e.target.checked)}
-                          className="rounded border-gray-300 dark:border-gray-500 text-blue-600 focus:ring-blue-500"
+                          className="checkbox checkbox-xs"
                           disabled={isLocked}
                         />
-                        <span className="text-xs text-gray-700 dark:text-gray-300">Auto-commit/push</span>
+                        <span className="text-xs text-base-content/70">Auto-commit/push</span>
                       </label>
                     </>
                   )}
@@ -410,7 +410,7 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
               {!hasGithubAuth && (
                 <Link
                   to="/settings"
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+                  className="badge badge-warning gap-1"
                   title="GitHub integration required for repository features"
                 >
                   <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
@@ -422,7 +422,7 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
               {!hasClaudeAuth && (
                 <Link
                   to="/settings"
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+                  className="badge badge-warning gap-1"
                   title="Claude credentials required to use this service"
                 >
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -489,7 +489,7 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={isExecuting || !user?.claudeAuth}
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+            className="btn btn-circle btn-ghost"
             title="Attach image"
           >
             <svg
@@ -506,11 +506,11 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
           <button
             type="submit"
             disabled={isExecuting || (!input.trim() && images.length === 0) || !user?.claudeAuth}
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="btn btn-primary btn-circle"
             title="Send message (Enter at end, Cmd/Ctrl+Enter, or click)"
           >
             {isExecuting ? (
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              <span className="loading loading-spinner loading-sm"></span>
             ) : (
               <svg
                 xmlns="http://www.w3.org/2000/svg"

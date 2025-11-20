@@ -482,6 +482,9 @@ export default function Chat() {
 
     if ((!input.trim() && images.length === 0) || isExecuting) return;
 
+    // Set executing state immediately to prevent duplicate submissions
+    setIsExecuting(true);
+
     // Save last request for retry functionality
     setLastRequest({
       input: input.trim(),
@@ -546,18 +549,6 @@ export default function Chat() {
       console.log('[Chat] Continuing existing chatSession:', currentSessionId);
     }
 
-    if (selectedRepo) {
-      requestParams.repositoryUrl = selectedRepo;
-    }
-
-    if (branch) {
-      requestParams.branch = branch;
-    }
-
-    if (autoCommit) {
-      requestParams.autoCommit = true;
-    }
-
     console.log('[Chat] Session resumption check:', {
       currentSessionId,
       aiWorkerSessionId,
@@ -567,8 +558,23 @@ export default function Chat() {
     if (aiWorkerSessionId) {
       requestParams.resumeSessionId = aiWorkerSessionId;
       console.log('[Chat] Resuming AI worker session with ID:', aiWorkerSessionId);
+      // When resuming a session, do NOT send repository parameters
+      // The repository is already available in the session workspace
     } else {
       console.log('[Chat] Starting new AI worker session - no aiWorkerSessionId available');
+
+      // Only send repository parameters when starting a new session
+      if (selectedRepo) {
+        requestParams.repositoryUrl = selectedRepo;
+      }
+
+      if (branch) {
+        requestParams.branch = branch;
+      }
+
+      if (autoCommit) {
+        requestParams.autoCommit = true;
+      }
     }
 
     // Use POST for requests with images to avoid URL length limits
@@ -619,21 +625,24 @@ export default function Chat() {
       console.log('[Chat] Retrying with existing chatSession:', currentSessionId);
     }
 
-    if (lastRequest.selectedRepo) {
-      params.append('repositoryUrl', lastRequest.selectedRepo);
-    }
-
-    if (lastRequest.branch) {
-      params.append('branch', lastRequest.branch);
-    }
-
-    if (lastRequest.autoCommit) {
-      params.append('autoCommit', 'true');
-    }
-
     if (aiWorkerSessionId) {
       params.append('resumeSessionId', aiWorkerSessionId);
       console.log('[Chat] Retrying with AI worker session ID:', aiWorkerSessionId);
+      // When resuming a session, do NOT send repository parameters
+      // The repository is already available in the session workspace
+    } else {
+      // Only send repository parameters when starting a new session
+      if (lastRequest.selectedRepo) {
+        params.append('repositoryUrl', lastRequest.selectedRepo);
+      }
+
+      if (lastRequest.branch) {
+        params.append('branch', lastRequest.branch);
+      }
+
+      if (lastRequest.autoCommit) {
+        params.append('autoCommit', 'true');
+      }
     }
 
     setStreamUrl(`/api/execute?${params}`);
@@ -642,7 +651,7 @@ export default function Chat() {
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4">
+      <div className="bg-base-100 border-b border-base-300 p-4">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-2">
             {editingTitle && session ? (
@@ -651,7 +660,7 @@ export default function Chat() {
                   type="text"
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
-                  className="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  className="flex-1 input input-bordered"
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleSaveTitle();
@@ -660,28 +669,28 @@ export default function Chat() {
                 />
                 <button
                   onClick={handleSaveTitle}
-                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded text-white bg-green-600 hover:bg-green-700"
+                  className="btn btn-success btn-sm"
                   disabled={updateMutation.isPending}
                 >
                   Save
                 </button>
                 <button
                   onClick={handleCancelEdit}
-                  className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  className="btn btn-ghost btn-sm"
                 >
                   Cancel
                 </button>
               </div>
             ) : (
               <>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h1 className="text-2xl font-bold text-base-content">
                   {session ? session.userRequest : 'Chat Session'}
                 </h1>
                 {session && (
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={handleEditTitle}
-                      className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
+                      className="btn btn-ghost btn-sm btn-circle"
                       title="Edit session title"
                     >
                       <svg
@@ -695,7 +704,7 @@ export default function Chat() {
                     </button>
                     <button
                       onClick={handleDeleteSession}
-                      className="text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
+                      className="btn btn-ghost btn-sm btn-circle text-error"
                       title="Delete session"
                     >
                       <svg
@@ -718,26 +727,29 @@ export default function Chat() {
           </div>
 
           {isLocked && (
-            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md">
-              <p className="text-sm text-blue-800 dark:text-blue-200">
+            <div className="alert alert-info mt-4">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              <span className="text-sm">
                 This session is locked to repository {selectedRepo} on branch {branch}. Repository and branch cannot be changed.
-              </p>
+              </span>
             </div>
           )}
 
           {!user?.githubAccessToken && (
-            <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-md">
-              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+            <div className="alert alert-warning mt-4">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+              <span className="text-sm">
                 Connect GitHub in settings to work with repositories
-              </p>
+              </span>
             </div>
           )}
 
           {!user?.claudeAuth && (
-            <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-md">
-              <p className="text-sm text-red-800 dark:text-red-200">
+            <div className="alert alert-error mt-4">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              <span className="text-sm">
                 Add Claude credentials in settings to use the AI assistant
-              </p>
+              </span>
             </div>
           )}
         </div>
@@ -781,10 +793,10 @@ export default function Chat() {
                   <div
                     className={`max-w-3xl rounded-lg px-4 py-2 ${
                       message.type === 'user'
-                        ? 'bg-blue-600 text-white'
+                        ? 'bg-primary text-primary-content'
                         : message.type === 'error'
-                        ? 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200'
-                        : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700'
+                        ? 'bg-error/10 text-error border border-error/20'
+                        : 'bg-base-100 text-base-content border border-base-300'
                     }`}
                   >
                     <p className="text-sm whitespace-pre-wrap">{message.content}</p>
@@ -834,7 +846,7 @@ export default function Chat() {
                     {message.type === 'error' && lastRequest && !isExecuting && (
                       <button
                         onClick={handleRetry}
-                        className="mt-3 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                        className="mt-3 btn btn-error btn-xs"
                       >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -857,10 +869,10 @@ export default function Chat() {
 
               {isConnected && isExecuting && (
                 <div className="flex justify-start">
-                  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-2">
+                  <div className="bg-base-100 border border-base-300 rounded-lg px-4 py-2">
                     <div className="flex items-center space-x-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                      <span className="text-sm text-gray-600 dark:text-gray-400">Processing...</span>
+                      <span className="loading loading-spinner loading-sm text-primary"></span>
+                      <span className="text-sm text-base-content/70">Processing...</span>
                     </div>
                   </div>
                 </div>
@@ -871,7 +883,7 @@ export default function Chat() {
           </div>
 
           {/* Input panel at bottom when messages exist */}
-          <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-6">
+          <div className="bg-base-100 border-t border-base-300 p-6">
             <ChatInput
               ref={chatInputRef}
               input={input}
@@ -898,26 +910,26 @@ export default function Chat() {
 
       {/* Delete confirmation modal */}
       {deletingSession && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 dark:bg-gray-900 dark:bg-opacity-80 overflow-y-auto h-full w-full flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg mb-4">
               Delete Session
             </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+            <p className="text-sm text-base-content/70 mb-6">
               Are you sure you want to delete this session? This action cannot be undone and will
               delete all messages in this session.
             </p>
-            <div className="flex justify-end space-x-3">
+            <div className="modal-action">
               <button
                 onClick={cancelDelete}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                className="btn btn-ghost"
                 disabled={deleteMutation.isPending}
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDelete}
-                className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50"
+                className="btn btn-error"
                 disabled={deleteMutation.isPending}
               >
                 {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
