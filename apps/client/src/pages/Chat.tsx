@@ -184,10 +184,11 @@ export default function Chat() {
     }
   }, [currentSessionData]);
 
-  // Load last selected repo from localStorage when repositories are loaded
+  // Load last selected repo from localStorage when repositories are loaded (only once)
+  const [hasLoadedFromStorage, setHasLoadedFromStorage] = useState(false);
   useEffect(() => {
-    // Only load from localStorage if session is not locked and no repo is selected
-    if (repositories.length > 0 && !selectedRepo && !isLocked) {
+    // Only load from localStorage if session is not locked and hasn't been loaded yet
+    if (repositories.length > 0 && !hasLoadedFromStorage && !isLocked) {
       const lastSelectedRepo = localStorage.getItem('lastSelectedRepo');
       if (lastSelectedRepo) {
         // Verify the repo still exists in the list
@@ -196,15 +197,20 @@ export default function Chat() {
           setSelectedRepo(lastSelectedRepo);
         }
       }
+      setHasLoadedFromStorage(true);
     }
-  }, [repositories, selectedRepo, isLocked]);
+  }, [repositories, hasLoadedFromStorage, isLocked]);
 
-  // Save selected repo to localStorage whenever it changes
+  // Save selected repo to localStorage whenever it changes (including clearing)
   useEffect(() => {
-    if (selectedRepo) {
-      localStorage.setItem('lastSelectedRepo', selectedRepo);
+    if (hasLoadedFromStorage && !isLocked) {
+      if (selectedRepo) {
+        localStorage.setItem('lastSelectedRepo', selectedRepo);
+      } else {
+        localStorage.removeItem('lastSelectedRepo');
+      }
     }
-  }, [selectedRepo]);
+  }, [selectedRepo, hasLoadedFromStorage, isLocked]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
