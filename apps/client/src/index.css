@@ -20,3 +20,35 @@ body {
   margin: 0;
   min-height: 100vh;
 }
+
+/* Apply pixel font for retro theme */
+[data-theme='retro'] {
+  font-family: 'VT323', monospace;
+  font-size: 1.15em; /* VT323 looks better slightly larger */
+  letter-spacing: 0.05em;
+}
+
+/* Adjust font sizes for better readability in retro theme */
+[data-theme='retro'] .text-xs {
+  font-size: 1rem;
+}
+
+[data-theme='retro'] .text-sm {
+  font-size: 1.1rem;
+}
+
+[data-theme='retro'] .text-base {
+  font-size: 1.25rem;
+}
+
+[data-theme='retro'] .text-lg {
+  font-size: 1.5rem;
+}
+
+[data-theme='retro'] .text-xl {
+  font-size: 1.75rem;
+}
+
+[data-theme='retro'] .text-2xl {
+  font-size: 2rem;
+}

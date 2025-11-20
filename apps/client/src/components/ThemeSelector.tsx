@@ -45,7 +45,7 @@ const THEME_EMOJIS: Record<Theme, string> = {
   emerald: '💎',
   corporate: '💼',
   synthwave: '🌃',
-  retro: '📻',
+  retro: '👾',
   cyberpunk: '🤖',
   valentine: '💝',
   halloween: '🎃',
