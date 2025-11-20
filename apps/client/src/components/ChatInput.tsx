@@ -274,7 +274,7 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      if (isRepoDropdownOpen && !target.closest('.dropdown')) {
+      if (isRepoDropdownOpen && !target.closest('.repo-dropdown')) {
         setIsRepoDropdownOpen(false);
         setRepoSearchQuery('');
       }
@@ -398,10 +398,9 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
                     /* Show as editable controls when not executing */
                     <>
                       {/* Custom dropdown with search */}
-                      <div className="dropdown">
+                      <div className="relative repo-dropdown">
                         <button
                           type="button"
-                          tabIndex={0}
                           onClick={() => setIsRepoDropdownOpen(!isRepoDropdownOpen)}
                           className="btn btn-xs btn-outline normal-case"
                           disabled={isLocked}
@@ -415,10 +414,7 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
                           </svg>
                         </button>
                         {isRepoDropdownOpen && (
-                          <div
-                            tabIndex={0}
-                            className="dropdown-content z-50 menu p-2 shadow-lg bg-base-100 rounded-box w-64 max-h-80 overflow-y-auto border border-base-300"
-                          >
+                          <div className="absolute bottom-full left-0 mb-2 w-64 max-h-80 bg-base-100 rounded-lg shadow-xl border border-base-300 overflow-hidden z-50">
                             {/* Search input */}
                             <div className="p-2 sticky top-0 bg-base-100 border-b border-base-300">
                               <input
@@ -427,45 +423,49 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
                                 value={repoSearchQuery}
                                 onChange={(e) => setRepoSearchQuery(e.target.value)}
                                 className="input input-bordered input-xs w-full"
-                                onClick={(e) => e.stopPropagation()}
+                                autoFocus
                               />
                             </div>
-                            {/* No repository option */}
-                            <li>
+                            {/* Repository list */}
+                            <div className="overflow-y-auto max-h-64">
+                              {/* No repository option */}
                               <button
                                 type="button"
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
                                   setSelectedRepo('');
                                   setIsRepoDropdownOpen(false);
                                   setRepoSearchQuery('');
                                 }}
-                                className={!selectedRepo ? 'active' : ''}
+                                className={`w-full text-left px-4 py-2 text-sm hover:bg-base-200 ${!selectedRepo ? 'bg-primary/10 font-semibold' : ''}`}
                               >
                                 No repository
                               </button>
-                            </li>
-                            {/* Filtered repositories */}
-                            {filteredRepositories.length > 0 ? (
-                              filteredRepositories.map((repo) => (
-                                <li key={repo.id}>
+                              {/* Filtered repositories */}
+                              {filteredRepositories.length > 0 ? (
+                                filteredRepositories.map((repo) => (
                                   <button
+                                    key={repo.id}
                                     type="button"
-                                    onClick={() => {
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
                                       setSelectedRepo(repo.cloneUrl);
                                       setIsRepoDropdownOpen(false);
                                       setRepoSearchQuery('');
                                     }}
-                                    className={selectedRepo === repo.cloneUrl ? 'active' : ''}
+                                    className={`w-full text-left px-4 py-2 text-sm hover:bg-base-200 ${selectedRepo === repo.cloneUrl ? 'bg-primary/10 font-semibold' : ''}`}
                                   >
                                     {repo.fullName}
                                   </button>
-                                </li>
-                              ))
-                            ) : (
-                              <li className="p-2 text-xs text-base-content/50 text-center">
-                                No repositories found
-                              </li>
-                            )}
+                                ))
+                              ) : (
+                                <div className="p-4 text-xs text-base-content/50 text-center">
+                                  No repositories found
+                                </div>
+                              )}
+                            </div>
                           </div>
                         )}
                       </div>
