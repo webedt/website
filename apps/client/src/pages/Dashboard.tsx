@@ -39,9 +39,10 @@ export default function Dashboard() {
 
   const repositories: GitHubRepository[] = reposData?.data || [];
 
-  // Load last selected repo from localStorage when repositories are loaded
+  // Load last selected repo from localStorage when repositories are loaded (only once)
+  const [hasLoadedFromStorage, setHasLoadedFromStorage] = useState(false);
   useEffect(() => {
-    if (repositories.length > 0 && !selectedRepo) {
+    if (repositories.length > 0 && !hasLoadedFromStorage) {
       const lastSelectedRepo = localStorage.getItem('lastSelectedRepo');
       if (lastSelectedRepo) {
         // Verify the repo still exists in the list
@@ -50,15 +51,20 @@ export default function Dashboard() {
           setSelectedRepo(lastSelectedRepo);
         }
       }
+      setHasLoadedFromStorage(true);
     }
-  }, [repositories, selectedRepo]);
+  }, [repositories, hasLoadedFromStorage]);
 
-  // Save selected repo to localStorage whenever it changes
+  // Save selected repo to localStorage whenever it changes (including clearing)
   useEffect(() => {
-    if (selectedRepo) {
-      localStorage.setItem('lastSelectedRepo', selectedRepo);
+    if (hasLoadedFromStorage) {
+      if (selectedRepo) {
+        localStorage.setItem('lastSelectedRepo', selectedRepo);
+      } else {
+        localStorage.removeItem('lastSelectedRepo');
+      }
     }
-  }, [selectedRepo]);
+  }, [selectedRepo, hasLoadedFromStorage]);
 
   const updateMutation = useMutation({
     mutationFn: ({ id, title }: { id: number; title: string }) =>
