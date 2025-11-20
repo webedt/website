@@ -45,7 +45,7 @@ const THEME_EMOJIS: Record<Theme, string> = {
   emerald: '💎',
   corporate: '💼',
   synthwave: '🌃',
-  retro: '📻',
+  retro: '👾',
   cyberpunk: '🤖',
   valentine: '💝',
   halloween: '🎃',
@@ -82,8 +82,17 @@ export default function ThemeSelector() {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
+    console.log('🎨 Setting theme to:', theme);
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem(THEME_STORAGE_KEY, theme);
+
+    // Log the computed styles to verify theme is applying
+    const styles = getComputedStyle(document.documentElement);
+    console.log('🎨 CSS Variables:', {
+      '--p': styles.getPropertyValue('--p'),
+      '--b1': styles.getPropertyValue('--b1'),
+      '--bc': styles.getPropertyValue('--bc'),
+    });
   }, [theme]);
 
   const handleThemeChange = (newTheme: Theme) => {
@@ -110,7 +119,7 @@ export default function ThemeSelector() {
     <div className="relative theme-dropdown">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-2xl"
+        className="btn btn-ghost btn-circle text-2xl"
         aria-label="Select theme"
         title={`Current theme: ${theme}`}
       >
@@ -118,14 +127,14 @@ export default function ThemeSelector() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 max-h-96 overflow-y-auto z-50">
+        <div className="absolute right-0 mt-2 w-56 bg-base-100 rounded-lg shadow-lg border border-base-300 max-h-96 overflow-y-auto z-50">
           <div className="p-2">
-            <div className="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">
+            <div className="px-3 py-2 text-xs font-semibold text-base-content/60 uppercase">
               Current Theme
             </div>
             <button
               onClick={() => handleThemeChange(theme)}
-              className="w-full flex items-center justify-between px-3 py-2 text-sm rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium"
+              className="w-full flex items-center justify-between px-3 py-2 text-sm rounded-md bg-primary/10 text-primary font-medium"
             >
               <span className="flex items-center gap-2">
                 <span className="text-lg">{THEME_EMOJIS[theme]}</span>
@@ -145,8 +154,8 @@ export default function ThemeSelector() {
               </svg>
             </button>
 
-            <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-              <div className="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">
+            <div className="mt-2 pt-2 border-t border-base-300">
+              <div className="px-3 py-2 text-xs font-semibold text-base-content/60 uppercase">
                 All Themes
               </div>
               <div className="space-y-1">
@@ -154,7 +163,7 @@ export default function ThemeSelector() {
                   <button
                     key={t}
                     onClick={() => handleThemeChange(t)}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors text-left"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-base-200 text-base-content transition-colors text-left"
                   >
                     <span className="text-lg">{THEME_EMOJIS[t]}</span>
                     <span className="capitalize">{t}</span>

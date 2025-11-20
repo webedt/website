@@ -178,10 +178,10 @@ export default function Dashboard() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Your Sessions</h1>
+        <h1 className="text-3xl font-bold text-base-content">Your Sessions</h1>
         <Link
           to="/chat"
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          className="btn btn-primary"
         >
           New Session
         </Link>
@@ -212,23 +212,22 @@ export default function Dashboard() {
 
       {isLoading && (
         <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">Loading sessions...</p>
+          <span className="loading loading-spinner loading-lg text-primary"></span>
+          <p className="mt-2 text-base-content/70">Loading sessions...</p>
         </div>
       )}
 
       {error && (
-        <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-4">
-          <p className="text-sm text-red-800 dark:text-red-200">
-            {error instanceof Error ? error.message : 'Failed to load sessions'}
-          </p>
+        <div className="alert alert-error">
+          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          <span>{error instanceof Error ? error.message : 'Failed to load sessions'}</span>
         </div>
       )}
 
       {!isLoading && !error && sessions.length === 0 && (
         <div className="text-center py-12">
           <svg
-            className="mx-auto h-12 w-12 text-gray-400"
+            className="mx-auto h-12 w-12 text-base-content/40"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -240,14 +239,14 @@ export default function Dashboard() {
               d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
             />
           </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No sessions</h3>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <h3 className="mt-2 text-sm font-medium text-base-content">No sessions</h3>
+          <p className="mt-1 text-sm text-base-content/70">
             Get started by creating a new session.
           </p>
           <div className="mt-6">
             <Link
               to="/chat"
-              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="btn btn-primary"
             >
               New Session
             </Link>
@@ -256,11 +255,11 @@ export default function Dashboard() {
       )}
 
       {!isLoading && !error && sessions.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-md">
-          <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+        <div className="bg-base-100 shadow overflow-hidden sm:rounded-md">
+          <ul className="divide-y divide-base-300">
             {sessions.map((session) => (
               <li key={session.id}>
-                <div className="px-4 py-4 sm:px-6 hover:bg-gray-50 dark:hover:bg-gray-700">
+                <div className="px-4 py-4 sm:px-6 hover:bg-base-200">
                   <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0">
                       {editingId === session.id ? (
@@ -269,7 +268,7 @@ export default function Dashboard() {
                             type="text"
                             value={editTitle}
                             onChange={(e) => setEditTitle(e.target.value)}
-                            className="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                            className="flex-1 input input-bordered input-sm"
                             autoFocus
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') handleSaveEdit(session.id);
@@ -278,24 +277,24 @@ export default function Dashboard() {
                           />
                           <button
                             onClick={() => handleSaveEdit(session.id)}
-                            className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-green-600 hover:bg-green-700"
+                            className="btn btn-success btn-xs"
                             disabled={updateMutation.isPending}
                           >
                             Save
                           </button>
                           <button
                             onClick={handleCancelEdit}
-                            className="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                            className="btn btn-ghost btn-xs"
                           >
                             Cancel
                           </button>
                         </div>
                       ) : (
                         <Link to={`/chat/${session.id}`}>
-                          <p className="text-sm font-medium text-blue-600 dark:text-blue-400 truncate">
+                          <p className="text-sm font-medium text-primary truncate">
                             {session.userRequest}
                           </p>
-                          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                          <p className="mt-1 text-sm text-base-content/70">
                             {session.repositoryUrl || 'No repository'}
                           </p>
                         </Link>
@@ -303,19 +302,19 @@ export default function Dashboard() {
                     </div>
                     <div className="ml-4 flex-shrink-0 flex items-center space-x-4">
                       <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        className={`badge ${
                           session.status === 'completed'
-                            ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                            ? 'badge-success'
                             : session.status === 'running'
-                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                            ? 'badge-info'
                             : session.status === 'error'
-                            ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-                            : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
+                            ? 'badge-error'
+                            : 'badge-ghost'
                         }`}
                       >
                         {session.status}
                       </span>
-                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                      <span className="text-sm text-base-content/70">
                         {new Date(session.createdAt).toLocaleDateString()}
                       </span>
                       {editingId !== session.id && (
@@ -325,7 +324,7 @@ export default function Dashboard() {
                               e.preventDefault();
                               handleEdit(session);
                             }}
-                            className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
+                            className="btn btn-ghost btn-xs btn-circle"
                             title="Edit session title"
                           >
                             <svg
@@ -342,7 +341,7 @@ export default function Dashboard() {
                               e.preventDefault();
                               handleDelete(session.id);
                             }}
-                            className="text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
+                            className="btn btn-ghost btn-xs btn-circle text-error"
                             title="Delete session"
                           >
                             <svg
@@ -371,26 +370,26 @@ export default function Dashboard() {
 
       {/* Delete confirmation modal */}
       {deletingId && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 dark:bg-gray-900 dark:bg-opacity-80 overflow-y-auto h-full w-full flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg mb-4">
               Delete Session
             </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+            <p className="text-sm text-base-content/70 mb-6">
               Are you sure you want to delete this session? This action cannot be undone and will
               delete all messages in this session.
             </p>
-            <div className="flex justify-end space-x-3">
+            <div className="modal-action">
               <button
                 onClick={cancelDelete}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                className="btn btn-ghost"
                 disabled={deleteMutation.isPending}
               >
                 Cancel
               </button>
               <button
                 onClick={() => confirmDelete(deletingId)}
-                className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50"
+                className="btn btn-error"
                 disabled={deleteMutation.isPending}
               >
                 {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
