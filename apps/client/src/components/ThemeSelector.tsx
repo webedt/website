@@ -77,7 +77,7 @@ const THEME_STORAGE_KEY = 'webedt:theme';
 export default function ThemeSelector() {
   const [theme, setTheme] = useState<Theme>(() => {
     const stored = localStorage.getItem(THEME_STORAGE_KEY);
-    return (stored && THEMES.includes(stored as Theme) ? stored : 'light') as Theme;
+    return (stored && THEMES.includes(stored as Theme) ? stored : 'dark') as Theme;
   });
   const [isOpen, setIsOpen] = useState(false);
 
