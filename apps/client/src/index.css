@@ -1,3 +1,6 @@
+/* Import daisyUI themes directly to ensure all themes are available */
+@import 'daisyui/themes.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
