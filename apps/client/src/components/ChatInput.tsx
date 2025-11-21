@@ -100,11 +100,14 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
   });
 
   // Helper function to resize image to max dimensions while maintaining aspect ratio
-  const resizeImage = (file: File, maxWidth: number = 1000, maxHeight: number = 1000): Promise<Blob> => {
+  const resizeImage = (file: File): Promise<Blob> => {
     return new Promise((resolve, reject) => {
       const img = new Image();
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
+
+      // Use user's preference or default to 1024
+      const maxDimension = user?.imageResizeMaxDimension || 1024;
 
       if (!ctx) {
         reject(new Error('Failed to get canvas context'));
@@ -116,14 +119,14 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
         let height = img.height;
 
         // Calculate new dimensions while maintaining aspect ratio
-        if (width > maxWidth || height > maxHeight) {
+        if (width > maxDimension || height > maxDimension) {
           const aspectRatio = width / height;
 
           if (width > height) {
-            width = maxWidth;
+            width = maxDimension;
             height = width / aspectRatio;
           } else {
-            height = maxHeight;
+            height = maxDimension;
             width = height * aspectRatio;
           }
         }

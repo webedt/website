@@ -8,6 +8,7 @@ export default function Settings() {
   const setUser = useAuthStore((state) => state.setUser);
   const [claudeAuthJson, setClaudeAuthJson] = useState('');
   const [claudeError, setClaudeError] = useState('');
+  const [imageResizeDimension, setImageResizeDimension] = useState(user?.imageResizeMaxDimension || 1024);
 
   // Format token expiration time
   const formatTokenExpiration = (expiresAt: number) => {
@@ -47,6 +48,13 @@ export default function Settings() {
     refreshUserSession();
   }, []);
 
+  // Update local state when user changes
+  useEffect(() => {
+    if (user?.imageResizeMaxDimension) {
+      setImageResizeDimension(user.imageResizeMaxDimension);
+    }
+  }, [user?.imageResizeMaxDimension]);
+
   const disconnectGitHub = useMutation({
     mutationFn: githubApi.disconnect,
     onSuccess: async () => {
@@ -78,6 +86,17 @@ export default function Settings() {
     },
     onError: (error) => {
       alert(`Failed to remove Claude authentication: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    },
+  });
+
+  const updateImageResizeSetting = useMutation({
+    mutationFn: userApi.updateImageResizeSetting,
+    onSuccess: async () => {
+      await refreshUserSession();
+      alert('Image resize setting updated successfully');
+    },
+    onError: (error) => {
+      alert(`Failed to update image resize setting: ${error instanceof Error ? error.message : 'Unknown error'}`);
     },
   });
 
@@ -252,6 +271,48 @@ export default function Settings() {
                 </form>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Image Resize Settings */}
+        <div className="card bg-base-100 shadow">
+          <div className="card-body">
+            <h2 className="card-title">Image Resize Settings</h2>
+            <div className="space-y-4">
+              <p className="text-sm text-base-content/70">
+                Configure the maximum dimension for pasted and uploaded images. Images will be automatically resized to fit within this size while maintaining their aspect ratio.
+              </p>
+
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">Maximum Image Dimension</span>
+                </label>
+                <select
+                  value={imageResizeDimension}
+                  onChange={(e) => setImageResizeDimension(Number(e.target.value))}
+                  className="select select-bordered w-full max-w-xs"
+                >
+                  <option value={512}>512 x 512</option>
+                  <option value={1024}>1024 x 1024 (default)</option>
+                  <option value={2048}>2048 x 2048</option>
+                  <option value={4096}>4096 x 4096</option>
+                  <option value={8000}>8000 x 8000 (max)</option>
+                </select>
+                <label className="label">
+                  <span className="label-text-alt text-base-content/70">
+                    Smaller sizes reduce upload time and bandwidth usage
+                  </span>
+                </label>
+              </div>
+
+              <button
+                onClick={() => updateImageResizeSetting.mutate(imageResizeDimension)}
+                disabled={updateImageResizeSetting.isPending || imageResizeDimension === user?.imageResizeMaxDimension}
+                className="btn btn-primary"
+              >
+                {updateImageResizeSetting.isPending ? 'Saving...' : 'Save Setting'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
