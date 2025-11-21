@@ -446,6 +446,12 @@ export default function Chat() {
       if (data?.chatSessionId) {
         console.log('[Chat] Execution completed, setting currentSessionId:', data.chatSessionId);
         setCurrentSessionId(data.chatSessionId);
+        // Lock the fields after first submission completes
+        // This prevents users from changing repo/branch/autoCommit after a session has started
+        if (!isLocked && selectedRepo) {
+          console.log('[Chat] Locking fields after first submission');
+          setIsLocked(true);
+        }
         // Invalidate the query to refetch session data with aiWorkerSessionId
         queryClient.invalidateQueries({ queryKey: ['currentSession', data.chatSessionId] });
 
@@ -734,9 +740,9 @@ export default function Chat() {
 
           {isLocked && (
             <div className="alert alert-info mt-4">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
               <span className="text-sm">
-                This session is locked to repository {selectedRepo} on branch {branch}. Repository and branch cannot be changed.
+                This session is locked to repository {selectedRepo}{branch ? ` on branch ${branch}` : ''}. Repository, branch, and auto-commit settings cannot be changed after the first request.
               </span>
             </div>
           )}
