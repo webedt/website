@@ -9,15 +9,48 @@ import type { ClaudeAuth } from '@webedt/shared';
 
 const router = Router();
 
+// Helper function to sanitize sensitive data for logging
+const sanitizeForLogging = (data: any): any => {
+  if (!data || typeof data !== 'object') return data;
+
+  const sanitized = JSON.parse(JSON.stringify(data));
+
+  // Remove sensitive authentication data
+  if (sanitized.codingAssistantAuthentication) {
+    sanitized.codingAssistantAuthentication = {
+      sessionKey: sanitized.codingAssistantAuthentication.sessionKey ? '[REDACTED]' : undefined,
+      accessToken: sanitized.codingAssistantAuthentication.accessToken ? '[REDACTED]' : undefined,
+      refreshToken: sanitized.codingAssistantAuthentication.refreshToken ? '[REDACTED]' : undefined,
+      expiresAt: sanitized.codingAssistantAuthentication.expiresAt,
+    };
+  }
+
+  // Remove GitHub access token
+  if (sanitized.github?.accessToken) {
+    sanitized.github.accessToken = '[REDACTED]';
+  }
+
+  return sanitized;
+};
+
+// Helper function to truncate long content for logging
+const truncateContent = (content: any, maxLength: number = 500): string => {
+  const str = typeof content === 'string' ? content : JSON.stringify(content);
+  if (str.length <= maxLength) return str;
+  return str.substring(0, maxLength) + `... (truncated, total length: ${str.length})`;
+};
+
 // Execute AI coding task with SSE - supports both GET and POST
 const executeHandler = async (req: any, res: any) => {
   const authReq = req as AuthRequest;
   let chatSession: any;
+  let resumeSessionId: string | undefined;
 
   try {
     // Support both GET (query) and POST (body) parameters
     const params = req.method === 'POST' ? req.body : req.query;
-    const { userRequest, repositoryUrl, branch, autoCommit, resumeSessionId, chatSessionId } = params;
+    const { userRequest, repositoryUrl, branch, autoCommit, chatSessionId } = params;
+    resumeSessionId = params.resumeSessionId;
 
     if (!userRequest && !resumeSessionId) {
       res.status(400).json({ success: false, error: 'userRequest or resumeSessionId is required' });
@@ -276,8 +309,21 @@ const executeHandler = async (req: any, res: any) => {
       executePayload.autoCommit = autoCommitBool;
     }
 
-    // Forward to ai-coding-worker
+    // Log outbound request to AI worker
     const aiWorkerUrl = process.env.AI_WORKER_URL || 'http://localhost:5001';
+    const sanitizedPayload = sanitizeForLogging(executePayload);
+    console.log(`[Execute] ========== OUTBOUND REQUEST TO AI WORKER ==========`);
+    console.log(`[Execute] Destination: ${aiWorkerUrl}/execute`);
+    console.log(`[Execute] Chat Session ID: ${chatSession.id}`);
+    console.log(`[Execute] Resume Session ID: ${resumeSessionId || 'N/A'}`);
+    console.log(`[Execute] User Request: ${truncateContent(executePayload.userRequest)}`);
+    console.log(`[Execute] Repository: ${executePayload.github?.repoUrl || 'N/A'}`);
+    console.log(`[Execute] Branch: ${executePayload.github?.branch || 'N/A'}`);
+    console.log(`[Execute] Auto Commit: ${executePayload.autoCommit || false}`);
+    console.log(`[Execute] Full Payload (sanitized): ${JSON.stringify(sanitizedPayload, null, 2)}`);
+    console.log(`[Execute] ======================================================`);
+
+    // Forward to ai-coding-worker
     const response = await fetch(`${aiWorkerUrl}/execute`, {
       method: 'POST',
       headers: {
@@ -289,7 +335,11 @@ const executeHandler = async (req: any, res: any) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('AI worker error:', errorText);
+      console.error('[Execute] ========== AI WORKER ERROR RESPONSE ==========');
+      console.error('[Execute] HTTP Status:', response.status, response.statusText);
+      console.error('[Execute] Chat Session ID:', chatSession.id);
+      console.error('[Execute] Error Response:', truncateContent(errorText, 2000));
+      console.error('[Execute] ===================================================');
 
       await db
         .update(chatSessions)
@@ -329,12 +379,18 @@ const executeHandler = async (req: any, res: any) => {
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
+    let eventCounter = 0;
+
+    console.log(`[Execute] ========== STARTING SSE STREAM FROM AI WORKER ==========`);
 
     try {
       while (true) {
         const { done, value } = await reader.read();
 
-        if (done) break;
+        if (done) {
+          console.log(`[Execute] SSE stream ended (done=true)`);
+          break;
+        }
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
@@ -353,9 +409,35 @@ const executeHandler = async (req: any, res: any) => {
 
           if (line.startsWith('data:')) {
             const data = line.substring(5).trim();
+            eventCounter++;
 
             try {
               const eventData = JSON.parse(data);
+
+              // Log each event received from AI worker
+              console.log(`[Execute] <<<< INBOUND EVENT #${eventCounter} FROM AI WORKER <<<<`);
+              console.log(`[Execute] Event Type: ${currentEvent || eventData.type || 'unknown'}`);
+              console.log(`[Execute] Session ID in event: ${eventData.sessionId || 'N/A'}`);
+              console.log(`[Execute] Event Data (truncated): ${truncateContent(eventData, 1000)}`);
+
+              // Log specific important fields if present
+              if (eventData.type === 'assistant_message' && eventData.data?.message?.content) {
+                const textContent = eventData.data.message.content
+                  .filter((block: any) => block.type === 'text')
+                  .map((block: any) => block.text)
+                  .join('\n');
+                if (textContent) {
+                  console.log(`[Execute] Assistant Message Text: ${truncateContent(textContent, 300)}`);
+                }
+              }
+
+              if (eventData.type === 'session_name' && eventData.sessionName) {
+                console.log(`[Execute] Session Name: ${eventData.sessionName}`);
+              }
+
+              if (eventData.error) {
+                console.log(`[Execute] ERROR in event: ${eventData.error}`);
+              }
 
               // If no event type was set from event: line, check data.type
               if (!currentEvent && eventData.type) {
@@ -434,7 +516,11 @@ const executeHandler = async (req: any, res: any) => {
               }
               res.write(`data: ${data}\n\n`);
             } catch (e) {
-              // Forward non-JSON data as-is
+              // Forward non-JSON data as-is (non-JSON event)
+              console.log(`[Execute] <<<< INBOUND EVENT #${eventCounter} FROM AI WORKER (non-JSON) <<<<`);
+              console.log(`[Execute] Event Type: ${currentEvent || 'unknown'}`);
+              console.log(`[Execute] Raw Data: ${truncateContent(data, 500)}`);
+
               if (currentEvent) {
                 res.write(`event: ${currentEvent}\n`);
               }
@@ -446,14 +532,22 @@ const executeHandler = async (req: any, res: any) => {
         }
       }
 
+      // Log completion summary
+      console.log(`[Execute] ========== SSE STREAM COMPLETED ==========`);
+      console.log(`[Execute] Total events received: ${eventCounter}`);
+      console.log(`[Execute] Chat Session ID: ${chatSession.id}`);
+      console.log(`[Execute] AI Worker Session ID: ${chatSession.aiWorkerSessionId || 'N/A'}`);
+      console.log(`[Execute] ==================================================`);
+
       // Mark as completed
       try {
         await db
           .update(chatSessions)
           .set({ status: 'completed', completedAt: new Date() })
           .where(eq(chatSessions.id, chatSession.id));
+        console.log(`[Execute] Updated session ${chatSession.id} status to 'completed'`);
       } catch (dbError) {
-        console.error('Failed to update session status to completed:', dbError);
+        console.error('[Execute] Failed to update session status to completed:', dbError);
         // Continue anyway to send completion event to client
       }
 
@@ -464,7 +558,11 @@ const executeHandler = async (req: any, res: any) => {
         res.end();
       }
     } catch (streamError) {
-      console.error('Streaming error:', streamError);
+      console.error('[Execute] ========== SSE STREAM ERROR ==========');
+      console.error('[Execute] Streaming error:', streamError);
+      console.error('[Execute] Error stack:', streamError instanceof Error ? streamError.stack : 'No stack trace');
+      console.error('[Execute] Total events received before error:', eventCounter);
+      console.error('[Execute] ===========================================');
 
       // Try to update session status, but don't fail if it doesn't work
       try {
@@ -487,8 +585,13 @@ const executeHandler = async (req: any, res: any) => {
       }
     }
   } catch (error) {
-    console.error('Execute error:', error);
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    console.error('[Execute] ========== EXECUTE HANDLER ERROR ==========');
+    console.error('[Execute] Error:', error);
+    console.error('[Execute] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    console.error('[Execute] Chat Session ID:', chatSession?.id || 'N/A');
+    console.error('[Execute] User ID:', authReq?.user?.id || 'N/A');
+    console.error('[Execute] Resume Session ID:', resumeSessionId || 'N/A');
+    console.error('[Execute] ===================================================');
 
     // Try to update session status if session was created, but don't fail if it doesn't work
     if (chatSession?.id) {
