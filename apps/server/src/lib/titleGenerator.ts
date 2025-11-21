@@ -66,8 +66,23 @@ Title:`;
 
       } catch (err) {
         lastError = err as Error;
+
+        // Debug: log the error details
+        console.log(`[Title Generator] Caught error on attempt ${attempt}:`);
+        console.log(`[Title Generator] Error message: ${err instanceof Error ? err.message : String(err)}`);
+        console.log(`[Title Generator] Has cause: ${(err as any).cause ? 'yes' : 'no'}`);
+        if ((err as any).cause) {
+          console.log(`[Title Generator] Cause code: ${(err as any).cause.code}`);
+        }
+
         const isConnectionTimeout = err instanceof Error &&
-          (err.message.includes('Connect Timeout') || err.message.includes('ETIMEDOUT'));
+          (err.message.includes('Connect Timeout') ||
+           err.message.includes('ETIMEDOUT') ||
+           err.message.includes('fetch failed') ||
+           (err as any).cause?.code === 'UND_ERR_CONNECT_TIMEOUT');
+
+        console.log(`[Title Generator] Is connection timeout: ${isConnectionTimeout}`);
+        console.log(`[Title Generator] Will retry: ${isConnectionTimeout && attempt < maxRetries}`);
 
         if (isConnectionTimeout && attempt < maxRetries) {
           // Add delay to let main request finish (likely 3-4 seconds)
@@ -76,6 +91,8 @@ Title:`;
           await new Promise(resolve => setTimeout(resolve, delay));
           continue;
         }
+
+        console.log(`[Title Generator] Not retrying - throwing error`);
         throw err; // Not a connection timeout or last attempt - rethrow
       }
     }
