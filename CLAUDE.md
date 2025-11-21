@@ -55,23 +55,41 @@ export default defineConfig({
 - ❌ Wrong: `<link rel="icon" href="/vite.svg" />`
 
 **API Calls in JavaScript/TypeScript:**
-- ✅ Correct: `fetch('./api/auth/login')`
-- ❌ Wrong: `fetch('/api/auth/login')`
-- ✅ Correct: `const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '.'`
-- ❌ Wrong: `const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''`
 
-**Why Relative Paths Are Required:**
+For SPAs with client-side routing, API calls must use absolute paths with basename detection:
 
-When deployed at `https://github.etdofresh.com/webedt/website/main/`:
-- Relative path `./api/auth/login` → `https://github.etdofresh.com/webedt/website/main/api/auth/login`
+```typescript
+// Detect API base URL from current location
+function getApiBaseUrl(): string {
+  const envBaseUrl = import.meta.env.VITE_API_BASE_URL;
+  if (envBaseUrl) return envBaseUrl;
+
+  const pathname = window.location.pathname;
+  const pathSegments = pathname.split('/').filter(Boolean);
+
+  // Check for path-based deployment (owner/repo/branch pattern)
+  if (pathSegments.length >= 3 && !['login', 'register', 'chat', 'settings'].includes(pathSegments[0])) {
+    return `/${pathSegments[0]}/${pathSegments[1]}/${pathSegments[2]}`;
+  }
+
+  return ''; // Root-based deployment
+}
+
+const API_BASE_URL = getApiBaseUrl();
+
+// API calls use absolute paths: fetch(`${API_BASE_URL}/api/auth/login`)
+```
+
+**Why This Approach:**
+
+With path-based routing at `https://github.etdofresh.com/webedt/website/main/`:
+- Detected API_BASE_URL: `/webedt/website/main`
+- API call: `${API_BASE_URL}/api/auth/login` → `/webedt/website/main/api/auth/login`
 - Traefik matches path prefix `/webedt/website/main/`
 - Strip Path removes `/webedt/website/main/`
 - Express receives `/api/auth/login` ✓
 
-If using absolute paths:
-- Absolute path `/api/auth/login` → `https://github.etdofresh.com/api/auth/login`
-- No path prefix → Traefik doesn't route to container
-- Returns 404 ❌
+Simple relative paths (`./api/...`) don't work because they resolve relative to the current page URL, not the basename. If you're on `/webedt/website/main/login`, then `./api/auth/login` becomes `/webedt/website/main/login/api/auth/login` (wrong!).
 
 **DO NOT use `<base>` tag:** The `<base href>` tag affects ALL URL resolution including absolute paths, which breaks the routing.
 
