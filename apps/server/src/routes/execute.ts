@@ -44,11 +44,13 @@ const truncateContent = (content: any, maxLength: number = 500): string => {
 const executeHandler = async (req: any, res: any) => {
   const authReq = req as AuthRequest;
   let chatSession: any;
+  let resumeSessionId: string | undefined;
 
   try {
     // Support both GET (query) and POST (body) parameters
     const params = req.method === 'POST' ? req.body : req.query;
-    const { userRequest, repositoryUrl, branch, autoCommit, resumeSessionId, chatSessionId } = params;
+    const { userRequest, repositoryUrl, branch, autoCommit, chatSessionId } = params;
+    resumeSessionId = params.resumeSessionId;
 
     if (!userRequest && !resumeSessionId) {
       res.status(400).json({ success: false, error: 'userRequest or resumeSessionId is required' });
