@@ -14,6 +14,7 @@ export const users = pgTable('users', {
     subscriptionType: string;
     rateLimitTier: string;
   }>(),
+  imageResizeMaxDimension: integer('image_resize_max_dimension').default(1024).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
