@@ -425,8 +425,8 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
               ) : repositories.length > 0 ? (
                 /* Actual controls or labels */
                 <>
-                  {isExecuting ? (
-                    /* Show as text labels when executing */
+                  {isExecuting || isLocked ? (
+                    /* Show as text labels when executing or locked */
                     <>
                       <span className="badge badge-ghost text-xs">
                         {selectedRepo
@@ -444,7 +444,7 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
                       </span>
                     </>
                   ) : (
-                    /* Show as editable controls when not executing */
+                    /* Show as editable controls when not executing and not locked */
                     <>
                       {/* Custom dropdown with search */}
                       <div className="relative repo-dropdown">
