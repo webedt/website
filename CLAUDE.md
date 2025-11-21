@@ -33,6 +33,48 @@ https://github.etdofresh.com/webedt/website/develop/
 - Example: Branch `claude/test-feature` becomes `/webedt/website/claude-test-feature/`
 - The path prefix is stripped by Dokploy before forwarding requests to your app
 
+### Critical Path Requirements for Strip Path
+
+**IMPORTANT**: All static assets and API calls MUST use relative paths (starting with `./`) to work correctly with Strip Path routing.
+
+**Vite Configuration:**
+```typescript
+// vite.config.ts
+export default defineConfig({
+  base: './', // REQUIRED: Use relative paths for assets
+  // ... other config
+});
+```
+
+**Static Assets in HTML:**
+- ✅ Correct: `<link rel="stylesheet" href="./styles.css">`
+- ❌ Wrong: `<link rel="stylesheet" href="/styles.css">`
+- ✅ Correct: `<script src="./src/main.tsx"></script>`
+- ❌ Wrong: `<script src="/src/main.tsx"></script>`
+- ✅ Correct: `<link rel="icon" href="./vite.svg" />`
+- ❌ Wrong: `<link rel="icon" href="/vite.svg" />`
+
+**API Calls in JavaScript/TypeScript:**
+- ✅ Correct: `fetch('./api/auth/login')`
+- ❌ Wrong: `fetch('/api/auth/login')`
+- ✅ Correct: `const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '.'`
+- ❌ Wrong: `const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''`
+
+**Why Relative Paths Are Required:**
+
+When deployed at `https://github.etdofresh.com/webedt/website/main/`:
+- Relative path `./api/auth/login` → `https://github.etdofresh.com/webedt/website/main/api/auth/login`
+- Traefik matches path prefix `/webedt/website/main/`
+- Strip Path removes `/webedt/website/main/`
+- Express receives `/api/auth/login` ✓
+
+If using absolute paths:
+- Absolute path `/api/auth/login` → `https://github.etdofresh.com/api/auth/login`
+- No path prefix → Traefik doesn't route to container
+- Returns 404 ❌
+
+**DO NOT use `<base>` tag:** The `<base href>` tag affects ALL URL resolution including absolute paths, which breaks the routing.
+
 ### Viewing Deployment Logs
 
 If deployed via Dokploy, build and deployment logs can be accessed at:

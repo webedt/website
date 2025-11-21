@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 
 export default defineConfig({
+  base: './', // Use relative paths for assets (required for Strip Path routing)
   plugins: [react()],
   resolve: {
     alias: {

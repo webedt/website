@@ -80,7 +80,7 @@ export default function Chat() {
     queryKey: ['currentSession', currentSessionId],
     queryFn: async () => {
       if (!currentSessionId || currentSessionId === 0) return null;
-      const response = await fetch(`/api/sessions/${currentSessionId}`, {
+      const response = await fetch(`./api/sessions/${currentSessionId}`, {
         credentials: 'include',
       });
       if (!response.ok) throw new Error('Failed to fetch session');
