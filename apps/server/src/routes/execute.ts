@@ -356,22 +356,52 @@ const executeHandler = async (req: any, res: any) => {
     console.log(`[Execute] Full Payload (sanitized): ${JSON.stringify(sanitizedPayload, null, 2)}`);
     console.log(`[Execute] ======================================================`);
 
-    // Forward to ai-coding-worker with increased timeout for AI requests
+    // Forward to ai-coding-worker with increased timeout and retry logic
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 120000); // 2 minutes timeout
 
-    try {
-      const response = await fetch(`${aiWorkerUrl}/execute`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'text/event-stream',
-        },
-        body: JSON.stringify(executePayload),
-        signal: controller.signal,
-      });
+    let response: Response | null = null;
+    let lastError: Error | null = null;
+    const maxRetries = 3;
 
-      clearTimeout(timeout);
+    try {
+      // Retry connection failures with exponential backoff
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          console.log(`[Execute] Attempt ${attempt}/${maxRetries} to connect to AI worker...`);
+
+          response = await fetch(`${aiWorkerUrl}/execute`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'text/event-stream',
+            },
+            body: JSON.stringify(executePayload),
+            signal: controller.signal,
+          });
+
+          console.log(`[Execute] Successfully connected to AI worker on attempt ${attempt}`);
+          clearTimeout(timeout);
+          break; // Success!
+
+        } catch (err) {
+          lastError = err as Error;
+          const isConnectionTimeout = err instanceof Error &&
+            (err.message.includes('Connect Timeout') || err.message.includes('ETIMEDOUT'));
+
+          if (isConnectionTimeout && attempt < maxRetries) {
+            const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // Max 5s delay
+            console.log(`[Execute] Connection timeout on attempt ${attempt}, retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+          }
+          throw err; // Not a connection timeout or last attempt - rethrow
+        }
+      }
+
+      if (!response) {
+        throw lastError || new Error('Failed to connect after retries');
+      }
 
       if (!response.ok) {
       const errorText = await response.text();
