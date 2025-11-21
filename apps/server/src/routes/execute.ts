@@ -356,17 +356,24 @@ const executeHandler = async (req: any, res: any) => {
     console.log(`[Execute] Full Payload (sanitized): ${JSON.stringify(sanitizedPayload, null, 2)}`);
     console.log(`[Execute] ======================================================`);
 
-    // Forward to ai-coding-worker
-    const response = await fetch(`${aiWorkerUrl}/execute`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'text/event-stream',
-      },
-      body: JSON.stringify(executePayload),
-    });
+    // Forward to ai-coding-worker with increased timeout for AI requests
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 120000); // 2 minutes timeout
 
-    if (!response.ok) {
+    try {
+      const response = await fetch(`${aiWorkerUrl}/execute`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'text/event-stream',
+        },
+        body: JSON.stringify(executePayload),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeout);
+
+      if (!response.ok) {
       const errorText = await response.text();
       console.error('[Execute] ========== AI WORKER ERROR RESPONSE ==========');
       console.error('[Execute] HTTP Status:', response.status, response.statusText);
@@ -616,6 +623,25 @@ const executeHandler = async (req: any, res: any) => {
         res.write(`data: ${JSON.stringify({ completed: true })}\n\n`);
         res.end();
       }
+    }
+    } catch (fetchError) {
+      clearTimeout(timeout);
+      console.error('[Execute] ========== AI WORKER FETCH ERROR ==========');
+      console.error('[Execute] Fetch error:', fetchError);
+      console.error('[Execute] Error name:', fetchError instanceof Error ? fetchError.name : 'Unknown');
+      console.error('[Execute] ===================================================');
+
+      await db
+        .update(chatSessions)
+        .set({ status: 'error', completedAt: new Date() })
+        .where(eq(chatSessions.id, chatSession.id));
+
+      res.write(`event: error\n`);
+      res.write(`data: ${JSON.stringify({ error: 'Failed to connect to AI worker. Please try again.' })}\n\n`);
+      res.write(`event: completed\n`);
+      res.write(`data: ${JSON.stringify({ completed: true })}\n\n`);
+      res.end();
+      return;
     }
   } catch (error) {
     console.error('[Execute] ========== EXECUTE HANDLER ERROR ==========');

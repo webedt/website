@@ -9,6 +9,10 @@ export async function generateSessionTitle(
   claudeAuth: ClaudeAuth,
   aiWorkerUrl: string
 ): Promise<string> {
+  // Create abort controller outside try block so it's accessible in catch
+  const controller = new AbortController();
+  let timeout: NodeJS.Timeout | undefined;
+
   try {
     // Extract text from content blocks if userRequest is an array
     let requestText: string;
@@ -26,6 +30,9 @@ User request: ${requestText}
 
 Title:`;
 
+    // Set 60 second timeout for title generation
+    timeout = setTimeout(() => controller.abort(), 60000);
+
     const response = await fetch(`${aiWorkerUrl}/execute`, {
       method: 'POST',
       headers: {
@@ -37,7 +44,10 @@ Title:`;
         codingAssistantProvider: 'ClaudeAgentSDK',
         codingAssistantAuthentication: claudeAuth,
       }),
+      signal: controller.signal,
     });
+
+    clearTimeout(timeout);
 
     if (!response.ok) {
       throw new Error(`AI worker request failed: ${response.status}`);
@@ -105,8 +115,16 @@ Title:`;
     }
 
     // Fallback to first 50 characters of request
-    return requestText.substring(0, 50).trim() + (requestText.length > 50 ? '...' : '');
+    const fallbackText = Array.isArray(userRequest)
+      ? userRequest.filter((b: any) => b.type === 'text').map((b: any) => b.text).join(' ')
+      : userRequest;
+    const firstLine = fallbackText.split('\n')[0].trim();
+    return firstLine.substring(0, 50) + (firstLine.length > 50 ? '...' : '');
   } catch (error) {
+    // Clear timeout if error occurs
+    if (timeout) {
+      clearTimeout(timeout);
+    }
     console.error('[Title Generator] Error generating session title:', error);
 
     // Fallback: use first line of user request (max 50 chars)
