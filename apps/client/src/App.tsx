@@ -36,9 +36,35 @@ function App() {
       });
   }, [setUser]);
 
+  // Detect base path for React Router
+  // In development: BASE_URL is './'
+  // In production with Strip Path: we need to detect the actual path from the URL
+  const getBasename = () => {
+    // If BASE_URL is set to something other than './' or '/', use it
+    const viteBase = import.meta.env.BASE_URL;
+    if (viteBase && viteBase !== './' && viteBase !== '/') {
+      return viteBase;
+    }
+
+    // Detect from current pathname for path-based routing
+    // Example: https://github.etdofresh.com/webedt/website/branch/ -> /webedt/website/branch
+    const pathname = window.location.pathname;
+
+    // Check if we're in a path-based deployment (3+ path segments)
+    const pathSegments = pathname.split('/').filter(Boolean);
+    if (pathSegments.length >= 3 && !['login', 'register', 'chat', 'settings'].includes(pathSegments[0])) {
+      // Assume format: /owner/repo/branch/...
+      return `/${pathSegments[0]}/${pathSegments[1]}/${pathSegments[2]}`;
+    }
+
+    return '/';
+  };
+
+  const basename = getBasename();
+
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <BrowserRouter basename={basename}>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />

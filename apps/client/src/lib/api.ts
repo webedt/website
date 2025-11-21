@@ -1,4 +1,28 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+// Detect API base URL for path-based routing
+function getApiBaseUrl(): string {
+  // If explicitly set via env var, use it
+  const envBaseUrl = import.meta.env.VITE_API_BASE_URL;
+  if (envBaseUrl) {
+    return envBaseUrl;
+  }
+
+  // Detect from current pathname for path-based routing
+  // Example: https://github.etdofresh.com/webedt/website/branch/ -> /webedt/website/branch
+  const pathname = window.location.pathname;
+  const pathSegments = pathname.split('/').filter(Boolean);
+
+  // Check if we're in a path-based deployment (3+ path segments)
+  // and first segment is not a route name
+  if (pathSegments.length >= 3 && !['login', 'register', 'chat', 'settings'].includes(pathSegments[0])) {
+    // Assume format: /owner/repo/branch/...
+    return `/${pathSegments[0]}/${pathSegments[1]}/${pathSegments[2]}`;
+  }
+
+  // Default to empty string for root-based deployments
+  return '';
+}
+
+const API_BASE_URL = getApiBaseUrl();
 
 interface ApiOptions extends RequestInit {
   body?: any;
