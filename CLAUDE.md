@@ -75,6 +75,37 @@ If using absolute paths:
 
 **DO NOT use `<base>` tag:** The `<base href>` tag affects ALL URL resolution including absolute paths, which breaks the routing.
 
+**React Router Configuration:**
+
+For Single Page Applications using React Router, you MUST configure the basename:
+
+```typescript
+// In App.tsx or routing setup
+const getBasename = () => {
+  const viteBase = import.meta.env.BASE_URL;
+  if (viteBase && viteBase !== './' && viteBase !== '/') {
+    return viteBase;
+  }
+
+  // Detect from URL for path-based routing
+  const pathname = window.location.pathname;
+  const pathSegments = pathname.split('/').filter(Boolean);
+
+  // Check for path-based deployment (owner/repo/branch pattern)
+  if (pathSegments.length >= 3 && !['login', 'register', 'chat', 'settings'].includes(pathSegments[0])) {
+    return `/${pathSegments[0]}/${pathSegments[1]}/${pathSegments[2]}`;
+  }
+
+  return '/';
+};
+
+<BrowserRouter basename={getBasename()}>
+  {/* routes */}
+</BrowserRouter>
+```
+
+This ensures React Router navigation (e.g., `navigate('/login')`) produces correct URLs like `https://github.etdofresh.com/webedt/website/branch/login` instead of `https://github.etdofresh.com/login`.
+
 ### Viewing Deployment Logs
 
 If deployed via Dokploy, build and deployment logs can be accessed at:
