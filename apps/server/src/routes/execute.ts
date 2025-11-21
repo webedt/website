@@ -6,6 +6,7 @@ import type { AuthRequest } from '../middleware/auth';
 import { requireAuth } from '../middleware/auth';
 import { ensureValidToken } from '../lib/claudeAuth';
 import type { ClaudeAuth } from '@webedt/shared';
+import { generateSessionTitle } from '../lib/titleGenerator';
 
 const router = Router();
 
@@ -243,6 +244,28 @@ const executeHandler = async (req: any, res: any) => {
       return;
     }
 
+    // Generate session title for new sessions (not resuming)
+    let generatedTitle: string | null = null;
+    if (!chatSessionId && userRequest) {
+      try {
+        console.log('[Execute] Generating session title for new session...');
+        const aiWorkerUrl = process.env.AI_WORKER_URL || 'http://localhost:5001';
+        generatedTitle = await generateSessionTitle(userRequest, claudeAuth, aiWorkerUrl);
+        console.log('[Execute] Generated title:', generatedTitle);
+
+        // Update database with generated title
+        await db
+          .update(chatSessions)
+          .set({ userRequest: generatedTitle })
+          .where(eq(chatSessions.id, chatSession.id));
+
+        console.log('[Execute] Updated session title in database');
+      } catch (error) {
+        console.error('[Execute] Failed to generate session title:', error);
+        // Continue anyway - not critical
+      }
+    }
+
     // Setup SSE manually
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
@@ -255,6 +278,13 @@ const executeHandler = async (req: any, res: any) => {
       res.write(`event: session-created\n`);
       res.write(`data: ${JSON.stringify({ chatSessionId: chatSession.id })}\n\n`);
       console.log(`[Execute] Sent session-created event for new chatSession: ${chatSession.id}`);
+
+      // Send session_name event if title was generated
+      if (generatedTitle) {
+        res.write(`event: session_name\n`);
+        res.write(`data: ${JSON.stringify({ type: 'session_name', sessionName: generatedTitle, timestamp: new Date().toISOString() })}\n\n`);
+        console.log(`[Execute] Sent session_name event: ${generatedTitle}`);
+      }
     } else {
       console.log(`[Execute] Resuming chatSession ${chatSession.id}, not sending session-created event`);
     }
