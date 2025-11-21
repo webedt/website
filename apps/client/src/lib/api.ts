@@ -22,7 +22,7 @@ function getApiBaseUrl(): string {
   return '';
 }
 
-const API_BASE_URL = getApiBaseUrl();
+export const API_BASE_URL = getApiBaseUrl();
 console.log('[API] Detected API_BASE_URL:', API_BASE_URL);
 console.log('[API] Current pathname:', window.location.pathname);
 

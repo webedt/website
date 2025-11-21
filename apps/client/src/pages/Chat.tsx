@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { sessionsApi, githubApi } from '@/lib/api';
+import { sessionsApi, githubApi, API_BASE_URL } from '@/lib/api';
 import { useEventSource } from '@/hooks/useEventSource';
 import { useAuthStore } from '@/lib/store';
 import ChatInput, { type ChatInputRef, type ImageAttachment } from '@/components/ChatInput';
@@ -265,7 +265,7 @@ export default function Chat() {
         // Use POST for requests with images
         setStreamMethod('POST');
         setStreamBody(state.streamParams);
-        setStreamUrl(`/api/execute`);
+        setStreamUrl(`${API_BASE_URL}/api/execute`);
       } else {
         // Use GET for text-only requests
         setStreamMethod('GET');
@@ -276,7 +276,7 @@ export default function Chat() {
             params.append(key, String(value));
           }
         });
-        setStreamUrl(`/api/execute?${params}`);
+        setStreamUrl(`${API_BASE_URL}/api/execute?${params}`);
       }
 
       setIsExecuting(true);
@@ -594,7 +594,7 @@ export default function Chat() {
       // Use POST for large requests with images
       setStreamMethod('POST');
       setStreamBody(requestParams);
-      setStreamUrl(`/api/execute`);
+      setStreamUrl(`${API_BASE_URL}/api/execute`);
     } else {
       // Use GET with query params for text-only requests
       setStreamMethod('GET');
@@ -605,7 +605,7 @@ export default function Chat() {
           params.append(key, String(value));
         }
       });
-      setStreamUrl(`/api/execute?${params}`);
+      setStreamUrl(`${API_BASE_URL}/api/execute?${params}`);
     }
 
     setInput('');
@@ -657,7 +657,7 @@ export default function Chat() {
       }
     }
 
-    setStreamUrl(`/api/execute?${params}`);
+    setStreamUrl(`${API_BASE_URL}/api/execute?${params}`);
   };
 
   return (
