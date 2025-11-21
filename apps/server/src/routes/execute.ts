@@ -244,11 +244,31 @@ const executeHandler = async (req: any, res: any) => {
       return;
     }
 
-    // Generate session title for new sessions (not resuming) - run in background
+    // Setup SSE manually
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+    });
+
+    // Send session-created event only if this is a new session (not resuming existing chatSession)
+    if (!chatSessionId) {
+      res.write(`event: session-created\n`);
+      res.write(`data: ${JSON.stringify({ chatSessionId: chatSession.id })}\n\n`);
+      console.log(`[Execute] Sent session-created event for new chatSession: ${chatSession.id}`);
+      // Note: session_name event will be sent by background title generation when ready
+    } else {
+      console.log(`[Execute] Resuming chatSession ${chatSession.id}, not sending session-created event`);
+    }
+
+    // Generate session title for new sessions (not resuming) - run in background AFTER main request starts
     if (!chatSessionId && userRequest) {
-      // Fire and forget - don't await, let it run in parallel with the main request
+      // Fire and forget - delay 2 seconds to let main request get to worker first
       (async () => {
         try {
+          console.log('[Execute] Will generate session title in 2 seconds (after main request starts)...');
+          await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second delay
+
           console.log('[Execute] Generating session title for new session (background)...');
           const aiWorkerUrl = process.env.AI_WORKER_URL || 'http://localhost:5001';
           const generatedTitle = await generateSessionTitle(userRequest, claudeAuth, aiWorkerUrl);
@@ -273,23 +293,6 @@ const executeHandler = async (req: any, res: any) => {
           // Continue anyway - not critical
         }
       })();
-    }
-
-    // Setup SSE manually
-    res.writeHead(200, {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-    });
-
-    // Send session-created event only if this is a new session (not resuming existing chatSession)
-    if (!chatSessionId) {
-      res.write(`event: session-created\n`);
-      res.write(`data: ${JSON.stringify({ chatSessionId: chatSession.id })}\n\n`);
-      console.log(`[Execute] Sent session-created event for new chatSession: ${chatSession.id}`);
-      // Note: session_name event will be sent by background title generation when ready
-    } else {
-      console.log(`[Execute] Resuming chatSession ${chatSession.id}, not sending session-created event`);
     }
 
     // Prepare request to ai-coding-worker
