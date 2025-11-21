@@ -53,6 +53,7 @@ if (usePostgres) {
       github_id TEXT UNIQUE,
       github_access_token TEXT,
       claude_auth JSONB,
+      image_resize_max_dimension INTEGER NOT NULL DEFAULT 1024,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     );
 
@@ -102,6 +103,12 @@ if (usePostgres) {
         ) THEN
           ALTER TABLE messages ADD COLUMN images JSONB;
         END IF;
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'users' AND column_name = 'image_resize_max_dimension'
+        ) THEN
+          ALTER TABLE users ADD COLUMN image_resize_max_dimension INTEGER NOT NULL DEFAULT 1024;
+        END IF;
       END $$;
     `);
   }).then(() => {
@@ -139,6 +146,7 @@ if (usePostgres) {
       github_id TEXT UNIQUE,
       github_access_token TEXT,
       claude_auth TEXT,
+      image_resize_max_dimension INTEGER NOT NULL DEFAULT 1024,
       created_at INTEGER NOT NULL DEFAULT (unixepoch())
     );
 
@@ -191,6 +199,13 @@ if (usePostgres) {
     if (!hasImagesColumn) {
       sqlite.exec('ALTER TABLE messages ADD COLUMN images TEXT;');
       console.log('SQLite migration: Added images column to messages');
+    }
+
+    const usersInfo = sqlite.pragma('table_info(users)') as Array<{ name: string }>;
+    const hasImageResizeColumn = usersInfo.some((col) => col.name === 'image_resize_max_dimension');
+    if (!hasImageResizeColumn) {
+      sqlite.exec('ALTER TABLE users ADD COLUMN image_resize_max_dimension INTEGER NOT NULL DEFAULT 1024;');
+      console.log('SQLite migration: Added image_resize_max_dimension column to users');
     }
   } catch (err) {
     console.error('Error applying SQLite migrations:', err);

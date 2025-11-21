@@ -99,11 +99,70 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
     return searchTerms.every(term => branch.includes(term));
   });
 
+  // Helper function to resize image to max dimensions while maintaining aspect ratio
+  const resizeImage = (file: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      // Use user's preference or default to 1024
+      const maxDimension = user?.imageResizeMaxDimension || 1024;
+
+      if (!ctx) {
+        reject(new Error('Failed to get canvas context'));
+        return;
+      }
+
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        // Calculate new dimensions while maintaining aspect ratio
+        if (width > maxDimension || height > maxDimension) {
+          const aspectRatio = width / height;
+
+          if (width > height) {
+            width = maxDimension;
+            height = width / aspectRatio;
+          } else {
+            height = maxDimension;
+            width = height * aspectRatio;
+          }
+        }
+
+        // Set canvas dimensions and draw resized image
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Convert canvas to blob
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error('Failed to create blob from canvas'));
+            }
+          },
+          file.type || 'image/png',
+          0.95 // Quality for JPEG
+        );
+      };
+
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   // Helper function to convert file to base64
-  const fileToBase64 = (file: File): Promise<string> => {
+  const fileToBase64 = async (file: File): Promise<string> => {
+    // Resize the image first
+    const resizedBlob = await resizeImage(file);
+
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(resizedBlob);
       reader.onload = () => {
         const result = reader.result as string;
         // Remove the data:image/png;base64, prefix to get just the base64 data

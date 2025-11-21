@@ -27,8 +27,9 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Increase limit to 10MB to support base64-encoded images (1000x1000 resized)
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Auth middleware (adds user to request if authenticated)
 app.use(authMiddleware);

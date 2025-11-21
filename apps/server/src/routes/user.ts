@@ -63,4 +63,35 @@ router.delete('/claude-auth', requireAuth, async (req, res) => {
   }
 });
 
+// Update image resize max dimension
+router.post('/image-resize-setting', requireAuth, async (req, res) => {
+  try {
+    const authReq = req as AuthRequest;
+    const { maxDimension } = req.body;
+
+    // Validate that maxDimension is a valid number
+    const validDimensions = [512, 1024, 2048, 4096, 8000];
+    if (!validDimensions.includes(maxDimension)) {
+      res.status(400).json({
+        success: false,
+        error: 'Invalid max dimension. Must be one of: 512, 1024, 2048, 4096, 8000',
+      });
+      return;
+    }
+
+    await db
+      .update(users)
+      .set({ imageResizeMaxDimension: maxDimension })
+      .where(eq(users.id, authReq.user!.id));
+
+    res.json({
+      success: true,
+      data: { message: 'Image resize setting updated successfully' },
+    });
+  } catch (error) {
+    console.error('Update image resize setting error:', error);
+    res.status(500).json({ success: false, error: 'Failed to update image resize setting' });
+  }
+});
+
 export default router;

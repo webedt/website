@@ -5,6 +5,7 @@ export interface User {
   githubId: string | null;
   githubAccessToken: string | null;
   claudeAuth: ClaudeAuth | null;
+  imageResizeMaxDimension: number;
   createdAt: Date;
 }
 

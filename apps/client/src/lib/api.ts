@@ -81,6 +81,12 @@ export const userApi = {
     fetchApi('/api/user/claude-auth', {
       method: 'DELETE',
     }),
+
+  updateImageResizeSetting: (maxDimension: number) =>
+    fetchApi('/api/user/image-resize-setting', {
+      method: 'POST',
+      body: { maxDimension },
+    }),
 };
 
 // Sessions API

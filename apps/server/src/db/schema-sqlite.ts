@@ -14,6 +14,7 @@ export const users = sqliteTable('users', {
     subscriptionType: string;
     rateLimitTier: string;
   }>(),
+  imageResizeMaxDimension: integer('image_resize_max_dimension').default(1024).notNull(),
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
 
