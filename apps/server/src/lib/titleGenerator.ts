@@ -38,19 +38,51 @@ Title:`;
     console.log(`[Title Generator] Request type: Title generation (separate from main request)`);
     console.log(`[Title Generator] ===========================================================`);
 
-    const response = await fetch(`${aiWorkerUrl}/execute`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'text/event-stream',
-      },
-      body: JSON.stringify({
-        userRequest: titlePrompt,
-        codingAssistantProvider: 'ClaudeAgentSDK',
-        codingAssistantAuthentication: claudeAuth,
-      }),
-      signal: controller.signal,
-    });
+    // Retry connection failures with exponential backoff (same as main request)
+    let response: Response | null = null;
+    let lastError: Error | null = null;
+    const maxRetries = 3;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`[Title Generator] Attempt ${attempt}/${maxRetries} to connect to AI worker...`);
+
+        response = await fetch(`${aiWorkerUrl}/execute`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'text/event-stream',
+          },
+          body: JSON.stringify({
+            userRequest: titlePrompt,
+            codingAssistantProvider: 'ClaudeAgentSDK',
+            codingAssistantAuthentication: claudeAuth,
+          }),
+          signal: controller.signal,
+        });
+
+        console.log(`[Title Generator] Successfully connected to AI worker on attempt ${attempt}`);
+        break; // Success!
+
+      } catch (err) {
+        lastError = err as Error;
+        const isConnectionTimeout = err instanceof Error &&
+          (err.message.includes('Connect Timeout') || err.message.includes('ETIMEDOUT'));
+
+        if (isConnectionTimeout && attempt < maxRetries) {
+          // Add delay to let main request finish (likely 3-4 seconds)
+          const delay = Math.min(3000 * Math.pow(2, attempt - 1), 10000); // 3s, 6s, 10s delays
+          console.log(`[Title Generator] Connection timeout on attempt ${attempt}, retrying in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+        throw err; // Not a connection timeout or last attempt - rethrow
+      }
+    }
+
+    if (!response) {
+      throw lastError || new Error('Failed to connect after retries');
+    }
 
     clearTimeout(timeout);
 
