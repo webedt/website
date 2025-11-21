@@ -387,8 +387,26 @@ const executeHandler = async (req: any, res: any) => {
 
         } catch (err) {
           lastError = err as Error;
+
+          // Debug: log the error details
+          console.log(`[Execute] Caught error on attempt ${attempt}:`);
+          console.log(`[Execute] Error type: ${err instanceof Error ? 'Error' : typeof err}`);
+          console.log(`[Execute] Error name: ${err instanceof Error ? err.name : 'N/A'}`);
+          console.log(`[Execute] Error message: ${err instanceof Error ? err.message : String(err)}`);
+          console.log(`[Execute] Has cause: ${(err as any).cause ? 'yes' : 'no'}`);
+          if ((err as any).cause) {
+            console.log(`[Execute] Cause message: ${(err as any).cause.message}`);
+            console.log(`[Execute] Cause code: ${(err as any).cause.code}`);
+          }
+
           const isConnectionTimeout = err instanceof Error &&
-            (err.message.includes('Connect Timeout') || err.message.includes('ETIMEDOUT'));
+            (err.message.includes('Connect Timeout') ||
+             err.message.includes('ETIMEDOUT') ||
+             err.message.includes('fetch failed') ||
+             (err as any).cause?.code === 'UND_ERR_CONNECT_TIMEOUT');
+
+          console.log(`[Execute] Is connection timeout: ${isConnectionTimeout}`);
+          console.log(`[Execute] Attempt: ${attempt}, Max retries: ${maxRetries}, Will retry: ${isConnectionTimeout && attempt < maxRetries}`);
 
           if (isConnectionTimeout && attempt < maxRetries) {
             const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // Max 5s delay
@@ -396,6 +414,8 @@ const executeHandler = async (req: any, res: any) => {
             await new Promise(resolve => setTimeout(resolve, delay));
             continue;
           }
+
+          console.log(`[Execute] Not retrying - throwing error`);
           throw err; // Not a connection timeout or last attempt - rethrow
         }
       }
