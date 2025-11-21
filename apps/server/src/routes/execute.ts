@@ -244,26 +244,35 @@ const executeHandler = async (req: any, res: any) => {
       return;
     }
 
-    // Generate session title for new sessions (not resuming)
-    let generatedTitle: string | null = null;
+    // Generate session title for new sessions (not resuming) - run in background
     if (!chatSessionId && userRequest) {
-      try {
-        console.log('[Execute] Generating session title for new session...');
-        const aiWorkerUrl = process.env.AI_WORKER_URL || 'http://localhost:5001';
-        generatedTitle = await generateSessionTitle(userRequest, claudeAuth, aiWorkerUrl);
-        console.log('[Execute] Generated title:', generatedTitle);
+      // Fire and forget - don't await, let it run in parallel with the main request
+      (async () => {
+        try {
+          console.log('[Execute] Generating session title for new session (background)...');
+          const aiWorkerUrl = process.env.AI_WORKER_URL || 'http://localhost:5001';
+          const generatedTitle = await generateSessionTitle(userRequest, claudeAuth, aiWorkerUrl);
+          console.log('[Execute] Generated title:', generatedTitle);
 
-        // Update database with generated title
-        await db
-          .update(chatSessions)
-          .set({ userRequest: generatedTitle })
-          .where(eq(chatSessions.id, chatSession.id));
+          // Update database with generated title
+          await db
+            .update(chatSessions)
+            .set({ userRequest: generatedTitle })
+            .where(eq(chatSessions.id, chatSession.id));
 
-        console.log('[Execute] Updated session title in database');
-      } catch (error) {
-        console.error('[Execute] Failed to generate session title:', error);
-        // Continue anyway - not critical
-      }
+          console.log('[Execute] Updated session title in database');
+
+          // Send session_name event to client if response is still writable
+          if (!res.writableEnded) {
+            res.write(`event: session_name\n`);
+            res.write(`data: ${JSON.stringify({ type: 'session_name', sessionName: generatedTitle, timestamp: new Date().toISOString() })}\n\n`);
+            console.log(`[Execute] Sent session_name event: ${generatedTitle}`);
+          }
+        } catch (error) {
+          console.error('[Execute] Failed to generate session title (background):', error);
+          // Continue anyway - not critical
+        }
+      })();
     }
 
     // Setup SSE manually
@@ -278,13 +287,7 @@ const executeHandler = async (req: any, res: any) => {
       res.write(`event: session-created\n`);
       res.write(`data: ${JSON.stringify({ chatSessionId: chatSession.id })}\n\n`);
       console.log(`[Execute] Sent session-created event for new chatSession: ${chatSession.id}`);
-
-      // Send session_name event if title was generated
-      if (generatedTitle) {
-        res.write(`event: session_name\n`);
-        res.write(`data: ${JSON.stringify({ type: 'session_name', sessionName: generatedTitle, timestamp: new Date().toISOString() })}\n\n`);
-        console.log(`[Execute] Sent session_name event: ${generatedTitle}`);
-      }
+      // Note: session_name event will be sent by background title generation when ready
     } else {
       console.log(`[Execute] Resuming chatSession ${chatSession.id}, not sending session-created event`);
     }
