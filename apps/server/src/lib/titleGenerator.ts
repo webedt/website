@@ -33,6 +33,11 @@ Title:`;
     // Set 60 second timeout for title generation
     timeout = setTimeout(() => controller.abort(), 60000);
 
+    console.log(`[Title Generator] ========== SENDING TITLE GENERATION REQUEST ==========`);
+    console.log(`[Title Generator] Destination: ${aiWorkerUrl}/execute`);
+    console.log(`[Title Generator] Request type: Title generation (separate from main request)`);
+    console.log(`[Title Generator] ===========================================================`);
+
     const response = await fetch(`${aiWorkerUrl}/execute`, {
       method: 'POST',
       headers: {
@@ -48,6 +53,8 @@ Title:`;
     });
 
     clearTimeout(timeout);
+
+    console.log(`[Title Generator] Received response from AI worker: ${response.status} ${response.statusText}`);
 
     if (!response.ok) {
       throw new Error(`AI worker request failed: ${response.status}`);
@@ -110,6 +117,10 @@ Title:`;
       if (title.length > 60) {
         title = title.substring(0, 57) + '...';
       }
+
+      console.log(`[Title Generator] ========== TITLE GENERATION COMPLETED ==========`);
+      console.log(`[Title Generator] Generated title: "${title}"`);
+      console.log(`[Title Generator] =======================================================`);
 
       return title;
     }

@@ -345,7 +345,8 @@ const executeHandler = async (req: any, res: any) => {
     // Log outbound request to AI worker
     const aiWorkerUrl = process.env.AI_WORKER_URL || 'http://localhost:5001';
     const sanitizedPayload = sanitizeForLogging(executePayload);
-    console.log(`[Execute] ========== OUTBOUND REQUEST TO AI WORKER ==========`);
+    console.log(`[Execute] ========== OUTBOUND **MAIN** REQUEST TO AI WORKER ==========`);
+    console.log(`[Execute] Request type: MAIN user request (separate from title generation)`);
     console.log(`[Execute] Destination: ${aiWorkerUrl}/execute`);
     console.log(`[Execute] Chat Session ID: ${chatSession.id}`);
     console.log(`[Execute] Resume Session ID: ${resumeSessionId || 'N/A'}`);
@@ -354,7 +355,7 @@ const executeHandler = async (req: any, res: any) => {
     console.log(`[Execute] Branch: ${executePayload.github?.branch || 'N/A'}`);
     console.log(`[Execute] Auto Commit: ${executePayload.autoCommit || false}`);
     console.log(`[Execute] Full Payload (sanitized): ${JSON.stringify(sanitizedPayload, null, 2)}`);
-    console.log(`[Execute] ======================================================`);
+    console.log(`[Execute] ==================================================================`);
 
     // Forward to ai-coding-worker with increased timeout and retry logic
     const controller = new AbortController();
