@@ -176,13 +176,11 @@ const executeHandler = async (req: any, res: any) => {
         images: imageAttachments.length > 0 ? imageAttachments : null,
       });
 
-      // Lock the session after first message if it has a repository
-      if (repositoryUrl && branch) {
-        await db
-          .update(chatSessions)
-          .set({ locked: true })
-          .where(eq(chatSessions.id, chatSession.id));
-      }
+      // Lock the session after first message to prevent changing settings
+      await db
+        .update(chatSessions)
+        .set({ locked: true })
+        .where(eq(chatSessions.id, chatSession.id));
     }
 
     // Ensure Claude token is valid, refresh if needed
