@@ -222,7 +222,7 @@ export default function NewSession() {
         </div>
 
         <div className="bg-base-100 rounded-2xl shadow-xl p-8 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Repository Selector */}
             <div>
               <label className="label">
@@ -233,7 +233,7 @@ export default function NewSession() {
                 <button
                   type="button"
                   onClick={() => setIsRepoDropdownOpen(!isRepoDropdownOpen)}
-                  className="btn btn-outline w-full justify-between normal-case"
+                  className="btn btn-outline w-full justify-between normal-case h-12"
                   disabled={!hasGithubAuth || isLoadingRepos}
                 >
                   <span className="truncate">
@@ -304,21 +304,21 @@ export default function NewSession() {
               <label className="label">
                 <span className="label-text font-semibold">Branch</span>
               </label>
-              <div className="flex gap-2">
+              <div className="relative flex items-center border border-base-300 rounded-lg h-12 pr-0 overflow-hidden hover:border-base-content/20 transition-colors">
                 <input
                   type="text"
                   value={branch}
                   onChange={(e) => setBranch(e.target.value)}
                   placeholder="main"
-                  className="input input-bordered flex-1"
+                  className="flex-1 px-4 bg-transparent focus:outline-none disabled:opacity-50"
                   disabled={!selectedRepo}
                 />
-                <div className="relative branch-dropdown">
+                <div className="relative branch-dropdown flex-shrink-0 border-l border-base-300">
                   <button
                     type="button"
                     onClick={fetchBranches}
                     disabled={!selectedRepo || isLoadingBranches}
-                    className="btn btn-square btn-outline"
+                    className="h-12 w-12 flex items-center justify-center hover:bg-base-200 transition-colors disabled:opacity-50"
                     title="Browse branches"
                   >
                     {isLoadingBranches ? (
@@ -368,19 +368,24 @@ export default function NewSession() {
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Auto-commit checkbox */}
-          <div className="flex items-center justify-end">
-            <label className="label cursor-pointer gap-2">
-              <input
-                type="checkbox"
-                checked={autoCommit}
-                onChange={(e) => setAutoCommit(e.target.checked)}
-                className="checkbox checkbox-primary"
-              />
-              <span className="label-text font-semibold">Auto-commit on Save</span>
-            </label>
+            {/* Auto-commit checkbox */}
+            <div>
+              <label className="label">
+                <span className="label-text font-semibold">&nbsp;</span>
+              </label>
+              <div className="flex items-center h-12">
+                <label className="label cursor-pointer gap-2">
+                  <input
+                    type="checkbox"
+                    checked={autoCommit}
+                    onChange={(e) => setAutoCommit(e.target.checked)}
+                    className="checkbox checkbox-primary"
+                  />
+                  <span className="label-text font-semibold">Auto-commit on Save</span>
+                </label>
+              </div>
+            </div>
           </div>
         </div>
 
