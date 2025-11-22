@@ -331,7 +331,7 @@ export default function QuickChatSetup() {
               onClick={handleStart}
               className="btn btn-primary px-12"
             >
-              Start Chat
+              Start Session
             </button>
           </div>
         </div>
