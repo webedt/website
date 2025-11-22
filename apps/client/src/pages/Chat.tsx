@@ -188,6 +188,15 @@ export default function Chat() {
     }
   }, [currentSessionData]);
 
+  // Auto-lock repository controls when messages exist (active session)
+  // This ensures controls are only editable on the NewSession page
+  useEffect(() => {
+    if (messages.length > 0 && !isLocked) {
+      console.log('[Chat] Auto-locking repository controls - active session with messages');
+      setIsLocked(true);
+    }
+  }, [messages.length, isLocked]);
+
   // Load last selected repo from localStorage when repositories are loaded (only once)
   const [hasLoadedFromStorage, setHasLoadedFromStorage] = useState(false);
   useEffect(() => {
