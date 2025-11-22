@@ -176,11 +176,16 @@ export default function Chat() {
     }
   }, [sessionData]);
 
-  // Update locked state when session data changes
+  // Update locked state and repository settings when session data changes
   useEffect(() => {
-    if (currentSessionData?.data?.locked) {
-      setIsLocked(true);
-      // Also set repo/branch/autoCommit from session if locked
+    if (currentSessionData?.data) {
+      // Set lock state from database
+      if (currentSessionData.data.locked) {
+        setIsLocked(true);
+      }
+
+      // Always populate repository settings from session data when available
+      // This ensures the second bar shows values even before the session is locked
       if (currentSessionData.data.repositoryUrl) {
         setSelectedRepo(currentSessionData.data.repositoryUrl);
       }
@@ -776,17 +781,7 @@ export default function Chat() {
   };
 
   return (
-    <SessionLayout
-      selectedRepo={selectedRepo}
-      branch={branch}
-      autoCommit={autoCommit}
-      onRepoChange={setSelectedRepo}
-      onBranchChange={setBranch}
-      onAutoCommitChange={setAutoCommit}
-      repositories={repositories}
-      isLoadingRepos={isLoadingRepos}
-      isLocked={isLocked}
-    >
+    <SessionLayout>
       <div className="flex flex-col h-full">
       {/* Header - only show for existing sessions with messages */}
       {messages.length > 0 && (
