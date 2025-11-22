@@ -6,6 +6,8 @@ on:
       - main
   # pull_request:
   workflow_dispatch:
+  repository_dispatch:
+    types: [deploy-main]
 
 jobs:
   configure-dokploy:
@@ -15,6 +17,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event_name == 'repository_dispatch' && 'main' || github.ref }}
           fetch-depth: 0
 
       - name: Display Configuration
