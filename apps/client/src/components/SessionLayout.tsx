@@ -292,6 +292,15 @@ export default function SessionLayout({
                       🏠 Dashboard
                     </Link>
 
+                    {/* New Session link */}
+                    <Link
+                      to="/new-session"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="block px-4 py-2 text-sm text-base-content hover:bg-base-200 transition-colors"
+                    >
+                      ➕ New Session
+                    </Link>
+
                     {/* Logout */}
                     <button
                       onClick={() => {
