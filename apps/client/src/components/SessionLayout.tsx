@@ -402,6 +402,15 @@ export default function SessionLayout({
                       ➕ New Session
                     </Link>
 
+                    {/* Settings link */}
+                    <Link
+                      to="/settings"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="block px-4 py-2 text-sm text-base-content hover:bg-base-200 transition-colors"
+                    >
+                      ⚙️ Settings
+                    </Link>
+
                     {/* Logout */}
                     <button
                       onClick={() => {
