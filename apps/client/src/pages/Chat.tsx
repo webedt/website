@@ -781,17 +781,7 @@ export default function Chat() {
   };
 
   return (
-    <SessionLayout
-      selectedRepo={selectedRepo}
-      branch={branch}
-      autoCommit={autoCommit}
-      onRepoChange={setSelectedRepo}
-      onBranchChange={setBranch}
-      onAutoCommitChange={setAutoCommit}
-      repositories={repositories}
-      isLoadingRepos={isLoadingRepos}
-      isLocked={isLocked}
-    >
+    <SessionLayout>
       <div className="flex flex-col h-full">
       {/* Header - only show for existing sessions with messages */}
       {messages.length > 0 && (
