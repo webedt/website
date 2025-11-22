@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuthStore } from '@/lib/store';
 import { authApi } from '@/lib/api';
 import { useState, useRef, useEffect } from 'react';
@@ -32,6 +32,7 @@ export default function SessionLayout({
 }: SessionLayoutProps) {
   const { user, isAuthenticated, clearUser } = useAuthStore();
   const navigate = useNavigate();
+  const { sessionId } = useParams();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -92,9 +93,9 @@ export default function SessionLayout({
             {/* Center - Navigation Items */}
             <div className="flex-1 flex items-center justify-center">
               <div className="flex items-center gap-1">
-                {hasRepository ? (
+                {hasRepository && sessionId ? (
                   <Link
-                    to="/chat"
+                    to={`/session/${sessionId}/chat`}
                     className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded transition-colors text-primary hover:bg-base-200"
                   >
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -114,9 +115,9 @@ export default function SessionLayout({
                   </button>
                 )}
 
-                {hasRepository ? (
+                {hasRepository && sessionId ? (
                   <Link
-                    to="/code"
+                    to={`/session/${sessionId}/code`}
                     className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded transition-colors text-base-content/70 hover:bg-base-200"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -136,9 +137,9 @@ export default function SessionLayout({
                   </button>
                 )}
 
-                {hasRepository ? (
+                {hasRepository && sessionId ? (
                   <Link
-                    to="/images"
+                    to={`/session/${sessionId}/images`}
                     className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded transition-colors text-base-content/70 hover:bg-base-200"
                   >
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -158,9 +159,9 @@ export default function SessionLayout({
                   </button>
                 )}
 
-                {hasRepository ? (
+                {hasRepository && sessionId ? (
                   <Link
-                    to="/sound"
+                    to={`/session/${sessionId}/sound`}
                     className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded transition-colors text-base-content/70 hover:bg-base-200"
                   >
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -180,9 +181,9 @@ export default function SessionLayout({
                   </button>
                 )}
 
-                {hasRepository ? (
+                {hasRepository && sessionId ? (
                   <Link
-                    to="/scene-editor"
+                    to={`/session/${sessionId}/scene-editor`}
                     className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded transition-colors text-base-content/70 hover:bg-base-200"
                   >
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -202,9 +203,9 @@ export default function SessionLayout({
                   </button>
                 )}
 
-                {hasRepository ? (
+                {hasRepository && sessionId ? (
                   <Link
-                    to="/preview"
+                    to={`/session/${sessionId}/preview`}
                     className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded transition-colors text-base-content/70 hover:bg-base-200"
                   >
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">

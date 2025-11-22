@@ -1,5 +1,10 @@
+import { useParams } from 'react-router-dom';
+import SessionLayout from '@/components/SessionLayout';
+
 export default function Preview() {
-  return (
+  const { sessionId } = useParams();
+
+  const content = (
     <div className="min-h-screen bg-base-200 flex items-center justify-center px-4">
       <div className="text-center">
         <div className="text-primary mb-6">
@@ -12,4 +17,12 @@ export default function Preview() {
       </div>
     </div>
   );
+
+  // If accessed via session route, wrap in SessionLayout
+  if (sessionId) {
+    return <SessionLayout>{content}</SessionLayout>;
+  }
+
+  // Otherwise render standalone
+  return content;
 }
