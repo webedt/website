@@ -198,26 +198,16 @@ export default function NewSession() {
     }
   }, [isRepoDropdownOpen, isBranchDropdownOpen]);
 
-  const handleActivityClick = (activityId: ActivityType) => {
-    // For now, all activities navigate to chat with a placeholder message
-    // In the future, different activities could navigate to different pages
-    const activityMessages: Record<ActivityType, string> = {
-      chat: 'Start a new chat session',
-      code: 'Start a new code editing session',
-      images: 'Start a new image and animation session',
-      sound: 'Start a new sound and music session',
-      scene: 'Start a new scene editor session',
-      preview: 'Start a new preview session',
-    };
-
+  const handleActivityClick = (_activityId: ActivityType) => {
+    // Navigate to chat with pre-selected repository/branch/autoCommit settings
+    // These will be locked in the chat page, but no stream will auto-start
     navigate('/chat/new', {
       state: {
-        startStream: true,
-        streamParams: {
-          userRequest: activityMessages[activityId],
+        preSelectedSettings: {
           repositoryUrl: selectedRepo || undefined,
           branch: branch || undefined,
-          autoCommit: autoCommit || undefined,
+          autoCommit: autoCommit !== undefined ? autoCommit : true,
+          locked: true, // Lock these settings
         }
       }
     });

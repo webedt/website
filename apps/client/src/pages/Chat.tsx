@@ -255,10 +255,38 @@ export default function Chat() {
     }
   }, [currentSessionData]);
 
-  // Auto-connect to stream when navigating from Dashboard with stream params
+  // Handle pre-selected settings from NewSession hub
   useEffect(() => {
-    // Check if we came from Dashboard with stream params
     const state = location.state as any;
+
+    // Check for pre-selected settings from NewSession hub
+    if (state?.preSelectedSettings && !currentSessionId) {
+      const { repositoryUrl, branch: preSelectedBranch, autoCommit: preSelectedAutoCommit, locked } = state.preSelectedSettings;
+
+      console.log('[Chat] Loading pre-selected settings:', state.preSelectedSettings);
+
+      if (repositoryUrl) {
+        setSelectedRepo(repositoryUrl);
+      }
+
+      if (preSelectedBranch) {
+        setBranch(preSelectedBranch);
+      }
+
+      if (preSelectedAutoCommit !== undefined) {
+        setAutoCommit(preSelectedAutoCommit);
+      }
+
+      if (locked) {
+        setIsLocked(true);
+      }
+
+      // Clear the navigation state to prevent re-applying
+      navigate(location.pathname, { replace: true, state: {} });
+      return;
+    }
+
+    // Check if we came from Dashboard with stream params (old behavior for backward compatibility)
     if (state?.startStream && state?.streamParams && !streamUrl) {
       console.log('[Chat] Auto-starting stream from navigation state:', state.streamParams);
 
@@ -288,7 +316,7 @@ export default function Chat() {
       // Clear the navigation state to prevent re-triggering
       navigate(location.pathname, { replace: true, state: {} });
     }
-  }, [location.state, streamUrl, navigate, location.pathname]);
+  }, [location.state, streamUrl, navigate, location.pathname, currentSessionId]);
 
   // Reset title edit tracking when switching to a different session
   useEffect(() => {
