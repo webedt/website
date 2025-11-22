@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import ThemeSelector from './ThemeSelector';
 import { VERSION } from '@/version';
+import type { GitHubRepository } from '@webedt/shared';
 
 interface SessionLayoutProps {
   selectedRepo?: string;
@@ -13,7 +14,7 @@ interface SessionLayoutProps {
   onRepoChange?: (repo: string) => void;
   onBranchChange?: (branch: string) => void;
   onAutoCommitChange?: (autoCommit: boolean) => void;
-  repositories?: any[];
+  repositories?: GitHubRepository[];
   isLoadingRepos?: boolean;
   isLocked?: boolean;
   children: React.ReactNode;
