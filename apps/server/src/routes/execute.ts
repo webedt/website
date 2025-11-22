@@ -608,11 +608,16 @@ const executeHandler = async (req: any, res: any) => {
                 });
               }
 
-              // Forward to client - write event and data together as a single SSE message
-              if (currentEvent) {
-                res.write(`event: ${currentEvent}\n`);
+              // Don't forward the AI worker's 'completed' event - we'll send our own with chatSessionId
+              if (currentEvent === 'completed' || eventData.type === 'completed') {
+                console.log(`[Execute] Skipping forwarding of AI worker's completed event - will send our own`);
+              } else {
+                // Forward to client - write event and data together as a single SSE message
+                if (currentEvent) {
+                  res.write(`event: ${currentEvent}\n`);
+                }
+                res.write(`data: ${data}\n\n`);
               }
-              res.write(`data: ${data}\n\n`);
             } catch (e) {
               // Forward non-JSON data as-is (non-JSON event)
               console.log(`[Execute] <<<< INBOUND EVENT #${eventCounter} FROM AI WORKER (non-JSON) <<<<`);
