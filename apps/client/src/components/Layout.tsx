@@ -67,65 +67,87 @@ export default function Layout() {
             {/* Center - Navigation Items */}
             <div className="flex-1 flex items-center justify-center">
               <div className="flex items-center gap-1">
-                <button
-                  disabled
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded transition-colors text-base-content/30 cursor-not-allowed"
+                {location.pathname === '/new-session' ? (
+                  <button
+                    disabled
+                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded transition-colors bg-primary/10 text-primary cursor-not-allowed"
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                    </svg>
+                    New
+                  </button>
+                ) : (
+                  <Link
+                    to="/new-session"
+                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded transition-colors text-base-content/70 hover:bg-base-200"
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                    </svg>
+                    New
+                  </Link>
+                )}
+
+                <Link
+                  to="/quick-setup/chat"
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded transition-colors text-base-content/70 hover:bg-base-200"
                 >
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/>
                   </svg>
                   Chat
-                </button>
+                </Link>
 
-                <button
-                  disabled
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded transition-colors text-base-content/30 cursor-not-allowed"
+                <Link
+                  to="/quick-setup/code"
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded transition-colors text-base-content/70 hover:bg-base-200"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
                   </svg>
                   Code
-                </button>
+                </Link>
 
-                <button
-                  disabled
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded transition-colors text-base-content/30 cursor-not-allowed"
+                <Link
+                  to="/quick-setup/images"
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded transition-colors text-base-content/70 hover:bg-base-200"
                 >
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2-3.5l-3-4 4-5 3 4 2-2.5 4 5H10z"/>
                   </svg>
                   Images and Animations
-                </button>
+                </Link>
 
-                <button
-                  disabled
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded transition-colors text-base-content/30 cursor-not-allowed"
+                <Link
+                  to="/quick-setup/sound"
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded transition-colors text-base-content/70 hover:bg-base-200"
                 >
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/>
                   </svg>
                   Sound and Music
-                </button>
+                </Link>
 
-                <button
-                  disabled
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded transition-colors text-base-content/30 cursor-not-allowed"
+                <Link
+                  to="/quick-setup/scene"
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded transition-colors text-base-content/70 hover:bg-base-200"
                 >
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 2l-5.5 9h11L12 2zm0 3.84L13.93 9h-3.87L12 5.84zM17.5 13c-2.49 0-4.5 2.01-4.5 4.5s2.01 4.5 4.5 4.5 4.5-2.01 4.5-4.5-2.01-4.5-4.5-4.5zm0 7c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5zM3 21.5h8v-8H3v8zm2-6h4v4H5v-4z"/>
                   </svg>
                   Scene Editor
-                </button>
+                </Link>
 
-                <button
-                  disabled
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded transition-colors text-base-content/30 cursor-not-allowed"
+                <Link
+                  to="/quick-setup/preview"
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded transition-colors text-base-content/70 hover:bg-base-200"
                 >
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
                   </svg>
                   Preview
-                </button>
+                </Link>
               </div>
             </div>
 
