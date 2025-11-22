@@ -179,12 +179,15 @@ export default function Chat() {
   useEffect(() => {
     if (currentSessionData?.data?.locked) {
       setIsLocked(true);
-      // Also set repo/branch from session if locked
+      // Also set repo/branch/autoCommit from session if locked
       if (currentSessionData.data.repositoryUrl) {
         setSelectedRepo(currentSessionData.data.repositoryUrl);
       }
       if (currentSessionData.data.branch) {
         setBranch(currentSessionData.data.branch);
+      }
+      if (currentSessionData.data.autoCommit !== undefined) {
+        setAutoCommit(currentSessionData.data.autoCommit);
       }
     }
   }, [currentSessionData]);

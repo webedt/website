@@ -231,59 +231,95 @@ export default function SessionLayout({
         <div className="px-4 h-12 flex items-center justify-center gap-4">
           {hasRepository ? (
             <>
-              {/* Repository */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-base-content/70">Repository:</span>
-                <select
-                  value={selectedRepo}
-                  onChange={(e) => onRepoChange?.(e.target.value)}
-                  disabled={isLocked || isLoadingRepos}
-                  className="select select-sm select-bordered"
-                >
-                  <option value="">No repository</option>
-                  {repositories.map((repo) => (
-                    <option key={repo.id} value={repo.cloneUrl}>
-                      {repo.fullName}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {isLocked ? (
+                <>
+                  {/* Read-only repository info when locked */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-base-content/70">Repository:</span>
+                    <span className="text-sm text-base-content">
+                      {repositories.find(repo => repo.cloneUrl === selectedRepo)?.fullName || selectedRepo}
+                    </span>
+                  </div>
 
-              {/* Branch */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-base-content/70">Branch:</span>
-                <input
-                  type="text"
-                  value={branch}
-                  onChange={(e) => onBranchChange?.(e.target.value)}
-                  disabled={isLocked}
-                  className="input input-sm input-bordered w-32"
-                  placeholder="main"
-                />
-              </div>
+                  {/* Read-only branch when locked */}
+                  {branch && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-base-content/70">Branch:</span>
+                      <span className="text-sm text-base-content">{branch}</span>
+                    </div>
+                  )}
 
-              {/* Auto-commit */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-base-content/70">Auto-commit:</span>
-                <input
-                  type="checkbox"
-                  checked={autoCommit}
-                  onChange={(e) => onAutoCommitChange?.(e.target.checked)}
-                  disabled={isLocked}
-                  className="toggle toggle-sm toggle-primary"
-                />
-                <span className="text-sm text-base-content/50">
-                  {autoCommit ? 'On' : 'Off'}
-                </span>
-              </div>
+                  {/* Read-only auto-commit status when locked */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-base-content/70">Auto-commit:</span>
+                    <span className="text-sm text-base-content">
+                      {autoCommit ? 'On' : 'Off'}
+                    </span>
+                  </div>
 
-              {/* New Session Button */}
-              <Link
-                to="/new-session"
-                className="btn btn-sm btn-primary"
-              >
-                New Session
-              </Link>
+                  {/* New Session Button */}
+                  <Link
+                    to="/new-session"
+                    className="btn btn-sm btn-primary ml-2"
+                  >
+                    New Session
+                  </Link>
+                </>
+              ) : (
+                <>
+                  {/* Editable repository controls when not locked */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-base-content/70">Repository:</span>
+                    <select
+                      value={selectedRepo}
+                      onChange={(e) => onRepoChange?.(e.target.value)}
+                      disabled={isLoadingRepos}
+                      className="select select-sm select-bordered"
+                    >
+                      <option value="">No repository</option>
+                      {repositories.map((repo) => (
+                        <option key={repo.id} value={repo.cloneUrl}>
+                          {repo.fullName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Branch */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-base-content/70">Branch:</span>
+                    <input
+                      type="text"
+                      value={branch}
+                      onChange={(e) => onBranchChange?.(e.target.value)}
+                      className="input input-sm input-bordered w-32"
+                      placeholder="main"
+                    />
+                  </div>
+
+                  {/* Auto-commit */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-base-content/70">Auto-commit:</span>
+                    <input
+                      type="checkbox"
+                      checked={autoCommit}
+                      onChange={(e) => onAutoCommitChange?.(e.target.checked)}
+                      className="toggle toggle-sm toggle-primary"
+                    />
+                    <span className="text-sm text-base-content/50">
+                      {autoCommit ? 'On' : 'Off'}
+                    </span>
+                  </div>
+
+                  {/* New Session Button */}
+                  <Link
+                    to="/new-session"
+                    className="btn btn-sm btn-primary"
+                  >
+                    New Session
+                  </Link>
+                </>
+              )}
             </>
           ) : (
             <>
