@@ -21,6 +21,8 @@ const fs = require('fs');
 const path = require('path');
 
 function getVersion() {
+  let versionInfo;
+
   try {
     // Try to get the latest tag and commit count
     // Format: v1.2.0-5-g1234abc (tag-commitsSince-hash)
@@ -36,7 +38,7 @@ function getVersion() {
       const [, major, minor, tagPatch, commitsSince, hash] = match;
       const patch = parseInt(commitsSince, 10);
 
-      return {
+      versionInfo = {
         version: `${major}.${minor}.${patch}`,
         major: parseInt(major, 10),
         minor: parseInt(minor, 10),
@@ -50,36 +52,52 @@ function getVersion() {
     // No tags found or not a git repo
   }
 
+  if (!versionInfo) {
+    try {
+      // No tags - count all commits from the beginning
+      const commitCount = execSync('git rev-list --count HEAD 2>/dev/null', {
+        encoding: 'utf8',
+        cwd: path.join(__dirname, '..')
+      }).trim();
+
+      const patch = parseInt(commitCount, 10);
+
+      versionInfo = {
+        version: `0.0.${patch}`,
+        major: 0,
+        minor: 0,
+        patch,
+        tag: null,
+        commitsSince: patch,
+        hash: null
+      };
+    } catch (error) {
+      // Not a git repo or no commits
+      versionInfo = {
+        version: '0.0.0',
+        major: 0,
+        minor: 0,
+        patch: 0,
+        tag: null,
+        commitsSince: 0,
+        hash: null
+      };
+    }
+  }
+
+  // Get the timestamp of the latest commit
   try {
-    // No tags - count all commits from the beginning
-    const commitCount = execSync('git rev-list --count HEAD 2>/dev/null', {
+    const timestamp = execSync('git log -1 --format=%cI HEAD 2>/dev/null', {
       encoding: 'utf8',
       cwd: path.join(__dirname, '..')
     }).trim();
 
-    const patch = parseInt(commitCount, 10);
-
-    return {
-      version: `0.0.${patch}`,
-      major: 0,
-      minor: 0,
-      patch,
-      tag: null,
-      commitsSince: patch,
-      hash: null
-    };
+    versionInfo.timestamp = timestamp || null;
   } catch (error) {
-    // Not a git repo or no commits
-    return {
-      version: '0.0.0',
-      major: 0,
-      minor: 0,
-      patch: 0,
-      tag: null,
-      commitsSince: 0,
-      hash: null
-    };
+    versionInfo.timestamp = null;
   }
+
+  return versionInfo;
 }
 
 function updatePackageJson(version) {
@@ -89,11 +107,12 @@ function updatePackageJson(version) {
   fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2) + '\n');
 }
 
-function updateVersionTs(version) {
+function updateVersionTs(version, timestamp) {
   const versionPath = path.join(__dirname, '..', 'apps', 'client', 'src', 'version.ts');
   const content = `// Auto-generated from git tags and commits
 // Run 'pnpm version:generate' to update
 export const VERSION = '${version}';
+export const VERSION_TIMESTAMP = ${timestamp ? `'${timestamp}'` : 'null'};
 `;
   fs.writeFileSync(versionPath, content);
 }
@@ -108,12 +127,15 @@ if (require.main === module) {
     console.log(JSON.stringify(versionInfo, null, 2));
   } else if (mode === '--update') {
     updatePackageJson(versionInfo.version);
-    updateVersionTs(versionInfo.version);
+    updateVersionTs(versionInfo.version, versionInfo.timestamp);
     console.log(`✓ Updated version to ${versionInfo.version}`);
     if (versionInfo.tag) {
       console.log(`  Based on tag: ${versionInfo.tag} + ${versionInfo.commitsSince} commits`);
     } else {
       console.log(`  Based on ${versionInfo.patch} total commits (no tags found)`);
+    }
+    if (versionInfo.timestamp) {
+      console.log(`  Commit date: ${versionInfo.timestamp}`);
     }
   } else {
     console.log(versionInfo.version);

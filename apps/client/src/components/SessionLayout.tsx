@@ -4,7 +4,7 @@ import { authApi, sessionsApi, githubApi } from '@/lib/api';
 import { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import ThemeSelector from './ThemeSelector';
-import { VERSION } from '@/version';
+import { VERSION, VERSION_TIMESTAMP } from '@/version';
 import type { GitHubRepository } from '@webedt/shared';
 
 interface SessionLayoutProps {
@@ -71,6 +71,23 @@ export default function SessionLayout({
     }
   };
 
+  // Format timestamp to Central Time
+  const getVersionTooltip = () => {
+    if (!VERSION_TIMESTAMP) return 'Version information';
+
+    const date = new Date(VERSION_TIMESTAMP);
+    return date.toLocaleString('en-US', {
+      timeZone: 'America/Chicago',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      second: '2-digit',
+      timeZoneName: 'short'
+    });
+  };
+
   // Close user menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -109,7 +126,10 @@ export default function SessionLayout({
                 className="flex flex-col justify-center py-2"
               >
                 <span className="font-semibold text-lg leading-tight">WebEDT</span>
-                <span className="text-[9px] text-base-content/40 leading-tight">
+                <span
+                  className="text-[9px] text-base-content/40 leading-tight cursor-help"
+                  title={getVersionTooltip()}
+                >
                   v{VERSION}
                 </span>
               </Link>
@@ -224,7 +244,7 @@ export default function SessionLayout({
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M12 2l-5.5 9h11L12 2zm0 3.84L13.93 9h-3.87L12 5.84zM17.5 13c-2.49 0-4.5 2.01-4.5 4.5s2.01 4.5 4.5 4.5 4.5-2.01 4.5-4.5-2.01-4.5-4.5-4.5zm0 7c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5zM3 21.5h8v-8H3v8zm2-6h4v4H5v-4z"/>
                     </svg>
-                    Scene Editor
+                    Scene and Object Editor
                   </button>
                 ) : (
                   <Link
@@ -234,7 +254,7 @@ export default function SessionLayout({
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M12 2l-5.5 9h11L12 2zm0 3.84L13.93 9h-3.87L12 5.84zM17.5 13c-2.49 0-4.5 2.01-4.5 4.5s2.01 4.5 4.5 4.5 4.5-2.01 4.5-4.5-2.01-4.5-4.5-4.5zm0 7c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5zM3 21.5h8v-8H3v8zm2-6h4v4H5v-4z"/>
                     </svg>
-                    Scene Editor
+                    Scene and Object Editor
                   </Link>
                 )}
 
@@ -290,6 +310,15 @@ export default function SessionLayout({
                       className="block px-4 py-2 text-sm text-base-content hover:bg-base-200 transition-colors"
                     >
                       🏠 Dashboard
+                    </Link>
+
+                    {/* New Session link */}
+                    <Link
+                      to="/new-session"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="block px-4 py-2 text-sm text-base-content hover:bg-base-200 transition-colors"
+                    >
+                      ➕ New Session
                     </Link>
 
                     {/* Logout */}

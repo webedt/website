@@ -3,7 +3,7 @@ import { useAuthStore } from '@/lib/store';
 import { authApi } from '@/lib/api';
 import { useState, useRef, useEffect } from 'react';
 import ThemeSelector from './ThemeSelector';
-import { VERSION } from '@/version';
+import { VERSION, VERSION_TIMESTAMP } from '@/version';
 
 export default function Layout() {
   const { user, isAuthenticated, clearUser } = useAuthStore();
@@ -20,6 +20,23 @@ export default function Layout() {
     } catch (error) {
       console.error('Logout error:', error);
     }
+  };
+
+  // Format timestamp to Central Time
+  const getVersionTooltip = () => {
+    if (!VERSION_TIMESTAMP) return 'Version information';
+
+    const date = new Date(VERSION_TIMESTAMP);
+    return date.toLocaleString('en-US', {
+      timeZone: 'America/Chicago',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      second: '2-digit',
+      timeZoneName: 'short'
+    });
   };
 
   // Close user menu when clicking outside
@@ -58,7 +75,10 @@ export default function Layout() {
                 className="flex flex-col justify-center py-2"
               >
                 <span className="font-semibold text-lg leading-tight">WebEDT</span>
-                <span className="text-[9px] text-base-content/40 leading-tight">
+                <span
+                  className="text-[9px] text-base-content/40 leading-tight cursor-help"
+                  title={getVersionTooltip()}
+                >
                   v{VERSION}
                 </span>
               </Link>
@@ -136,7 +156,7 @@ export default function Layout() {
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 2l-5.5 9h11L12 2zm0 3.84L13.93 9h-3.87L12 5.84zM17.5 13c-2.49 0-4.5 2.01-4.5 4.5s2.01 4.5 4.5 4.5 4.5-2.01 4.5-4.5-2.01-4.5-4.5-4.5zm0 7c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5zM3 21.5h8v-8H3v8zm2-6h4v4H5v-4z"/>
                   </svg>
-                  Scene Editor
+                  Scene and Object Editor
                 </Link>
 
                 <Link
@@ -181,6 +201,15 @@ export default function Layout() {
                       🏠 Dashboard
                     </Link>
 
+                    {/* New Session link */}
+                    <Link
+                      to="/new-session"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="block px-4 py-2 text-sm text-base-content hover:bg-base-200 transition-colors"
+                    >
+                      ➕ New Session
+                    </Link>
+
                     {/* Logout */}
                     <button
                       onClick={() => {
@@ -199,23 +228,25 @@ export default function Layout() {
         </div>
       </nav>
 
-      {/* Second Bar - Context-specific content */}
-      <div className="bg-base-100 border-b border-base-300">
-        <div className="px-4 h-12 flex items-center justify-center gap-4">
-          {location.pathname === '/new-session' ? (
-            <span className="text-sm text-base-content/70">
-              Configure your workspace settings below to create a new session
-            </span>
-          ) : (
-            <Link
-              to="/new-session"
-              className="btn btn-sm btn-primary"
-            >
-              New Session
-            </Link>
-          )}
+      {/* Second Bar - Context-specific content (hidden on dashboard, new session, and quick setup pages) */}
+      {!['/', '/new-session'].includes(location.pathname) && !location.pathname.startsWith('/quick-setup/') && (
+        <div className="bg-base-100 border-b border-base-300">
+          <div className="px-4 h-12 flex items-center justify-center gap-4">
+            {location.pathname === '/new-session' ? (
+              <span className="text-sm text-base-content/70">
+                Configure your workspace settings below to create a new session
+              </span>
+            ) : (
+              <Link
+                to="/new-session"
+                className="btn btn-sm btn-primary"
+              >
+                New Session
+              </Link>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Main Content */}
       <main className="flex-1">
