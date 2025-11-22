@@ -1,27 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link, useNavigate } from 'react-router-dom';
-import { sessionsApi, githubApi } from '@/lib/api';
-import { useAuthStore } from '@/lib/store';
-import ChatInput, { type ImageAttachment } from '@/components/ChatInput';
-import type { ChatSession, GitHubRepository } from '@webedt/shared';
+import { Link } from 'react-router-dom';
+import { sessionsApi } from '@/lib/api';
+import type { ChatSession } from '@webedt/shared';
 
 export default function Dashboard() {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
-  const user = useAuthStore((state) => state.user);
 
   // Session editing and deletion state
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [deletingId, setDeletingId] = useState<number | null>(null);
-
-  // Chat input state
-  const [input, setInput] = useState('');
-  const [images, setImages] = useState<ImageAttachment[]>([]);
-  const [selectedRepo, setSelectedRepo] = useState('');
-  const [branch, setBranch] = useState('');
-  const [autoCommit, setAutoCommit] = useState(true);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['sessions'],
@@ -29,42 +18,6 @@ export default function Dashboard() {
   });
 
   const sessions: ChatSession[] = data?.data?.sessions || [];
-
-  // Load repositories
-  const { data: reposData, isLoading: isLoadingRepos } = useQuery({
-    queryKey: ['repos'],
-    queryFn: githubApi.getRepos,
-    enabled: !!user?.githubAccessToken,
-  });
-
-  const repositories: GitHubRepository[] = reposData?.data || [];
-
-  // Load last selected repo from localStorage when repositories are loaded (only once)
-  const [hasLoadedFromStorage, setHasLoadedFromStorage] = useState(false);
-  useEffect(() => {
-    if (repositories.length > 0 && !hasLoadedFromStorage) {
-      const lastSelectedRepo = localStorage.getItem('lastSelectedRepo');
-      if (lastSelectedRepo) {
-        // Verify the repo still exists in the list
-        const repoExists = repositories.some(repo => repo.cloneUrl === lastSelectedRepo);
-        if (repoExists) {
-          setSelectedRepo(lastSelectedRepo);
-        }
-      }
-      setHasLoadedFromStorage(true);
-    }
-  }, [repositories, hasLoadedFromStorage]);
-
-  // Save selected repo to localStorage whenever it changes (including clearing)
-  useEffect(() => {
-    if (hasLoadedFromStorage) {
-      if (selectedRepo) {
-        localStorage.setItem('lastSelectedRepo', selectedRepo);
-      } else {
-        localStorage.removeItem('lastSelectedRepo');
-      }
-    }
-  }, [selectedRepo, hasLoadedFromStorage]);
 
   const updateMutation = useMutation({
     mutationFn: ({ id, title }: { id: number; title: string }) =>
@@ -112,60 +65,6 @@ export default function Dashboard() {
     setDeletingId(null);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if ((!input.trim() && images.length === 0) || !user?.claudeAuth) return;
-
-    // Build userRequest - either string or content blocks
-    let userRequestParam: string | any[];
-
-    if (images.length > 0) {
-      // Create content blocks for multimodal request
-      const contentBlocks: any[] = [];
-
-      // Add text block if there's text
-      if (input.trim()) {
-        contentBlocks.push({
-          type: 'text',
-          text: input.trim(),
-        });
-      }
-
-      // Add image blocks
-      images.forEach((image) => {
-        contentBlocks.push({
-          type: 'image',
-          source: {
-            type: 'base64',
-            media_type: image.mediaType,
-            data: image.data,
-          },
-        });
-      });
-
-      userRequestParam = contentBlocks;
-    } else {
-      userRequestParam = input.trim();
-    }
-
-    // Navigate to Chat with execute params - let Chat create the session and handle streaming
-    navigate('/chat/new', {
-      state: {
-        startStream: true,
-        streamParams: {
-          userRequest: userRequestParam,
-          repositoryUrl: selectedRepo || undefined,
-          branch: branch || undefined,
-          autoCommit: autoCommit || undefined,
-        }
-      }
-    });
-
-    setInput('');
-    setImages([]);
-  };
-
   // Handle Enter key in delete modal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -184,30 +83,13 @@ export default function Dashboard() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold text-base-content">Your Sessions</h1>
-      </div>
-
-      {/* New Chat Input */}
-      <div className="mb-8">
-        <ChatInput
-          input={input}
-          setInput={setInput}
-          images={images}
-          setImages={setImages}
-          onSubmit={handleSubmit}
-          isExecuting={false}
-          selectedRepo={selectedRepo}
-          setSelectedRepo={setSelectedRepo}
-          branch={branch}
-          setBranch={setBranch}
-          autoCommit={autoCommit}
-          setAutoCommit={setAutoCommit}
-          repositories={repositories}
-          isLoadingRepos={isLoadingRepos}
-          isLocked={false}
-          user={user}
-          centered={false}
-        />
+        <h1 className="text-3xl font-bold text-base-content mb-4">Your Sessions</h1>
+        <Link to="/new-session" className="btn btn-primary btn-lg">
+          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          New Session
+        </Link>
       </div>
 
       {isLoading && (
@@ -245,7 +127,7 @@ export default function Dashboard() {
           </p>
           <div className="mt-6">
             <Link
-              to="/chat"
+              to="/new-session"
               className="btn btn-primary"
             >
               New Session
