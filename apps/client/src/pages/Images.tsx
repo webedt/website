@@ -8,7 +8,7 @@ export default function Images() {
   if (sessionId) {
     return (
       <SessionLayout>
-        <div className="flex-1 bg-base-200 flex items-center justify-center px-4">
+        <div className="h-full bg-base-200 flex items-center justify-center px-4">
           <div className="text-center">
             <div className="text-primary mb-6">
               <svg className="w-24 h-24 mx-auto" fill="currentColor" viewBox="0 0 24 24">
