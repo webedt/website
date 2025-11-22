@@ -44,8 +44,14 @@ export default function SessionLayout({
   // Fetch session data when sessionId exists and no props provided
   const { data: sessionData } = useQuery({
     queryKey: ['session-for-layout', sessionId],
-    queryFn: () => sessionsApi.get(Number(sessionId)),
-    enabled: !!sessionId && !selectedRepoProp,
+    queryFn: () => {
+      const id = Number(sessionId);
+      if (isNaN(id)) {
+        throw new Error('Invalid session ID');
+      }
+      return sessionsApi.get(id);
+    },
+    enabled: !!sessionId && sessionId !== 'new' && !selectedRepoProp,
   });
 
   // Fetch repositories when needed
