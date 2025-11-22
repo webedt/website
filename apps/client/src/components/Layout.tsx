@@ -199,8 +199,8 @@ export default function Layout() {
         </div>
       </nav>
 
-      {/* Second Bar - Context-specific content (hidden on quick setup pages) */}
-      {!location.pathname.startsWith('/quick-setup/') && (
+      {/* Second Bar - Context-specific content (hidden on dashboard, new session, and quick setup pages) */}
+      {!['/', '/new-session'].includes(location.pathname) && !location.pathname.startsWith('/quick-setup/') && (
         <div className="bg-base-100 border-b border-base-300">
           <div className="px-4 h-12 flex items-center justify-center gap-4">
             {location.pathname === '/new-session' ? (
