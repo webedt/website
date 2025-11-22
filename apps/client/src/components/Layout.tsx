@@ -47,7 +47,7 @@ export default function Layout() {
                   Dashboard
                 </Link>
                 <Link
-                  to="/chat"
+                  to="/new-session"
                   className="inline-flex items-center px-1 pt-1 text-sm font-medium text-base-content/70 hover:text-primary"
                 >
                   New Session
@@ -114,7 +114,7 @@ export default function Layout() {
                 Dashboard
               </Link>
               <Link
-                to="/chat"
+                to="/new-session"
                 onClick={() => setMobileMenuOpen(false)}
                 className="block px-3 py-2 rounded-md text-base font-medium text-base-content/70 hover:bg-base-200"
               >

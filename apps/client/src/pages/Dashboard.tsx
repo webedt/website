@@ -183,12 +183,18 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold text-base-content">Your Sessions</h1>
-      </div>
-
-      {/* New Chat Input */}
       <div className="mb-8">
+        <div className="text-center mb-6">
+          <h1 className="text-3xl font-bold text-base-content mb-2">Your Sessions</h1>
+          <p className="text-sm text-base-content/70">
+            Quick start below, or{' '}
+            <Link to="/new-session" className="link link-primary">
+              choose an activity
+            </Link>
+          </p>
+        </div>
+
+        {/* Quick start chat input */}
         <ChatInput
           input={input}
           setInput={setInput}
@@ -245,7 +251,7 @@ export default function Dashboard() {
           </p>
           <div className="mt-6">
             <Link
-              to="/chat"
+              to="/new-session"
               className="btn btn-primary"
             >
               New Session
