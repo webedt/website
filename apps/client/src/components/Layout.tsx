@@ -208,23 +208,25 @@ export default function Layout() {
         </div>
       </nav>
 
-      {/* Second Bar - Context-specific content */}
-      <div className="bg-base-100 border-b border-base-300">
-        <div className="px-4 h-12 flex items-center justify-center gap-4">
-          {location.pathname === '/new-session' ? (
-            <span className="text-sm text-base-content/70">
-              Configure your workspace settings below to create a new session
-            </span>
-          ) : (
-            <Link
-              to="/new-session"
-              className="btn btn-sm btn-primary"
-            >
-              New Session
-            </Link>
-          )}
+      {/* Second Bar - Context-specific content (hidden on dashboard, new session, and quick setup pages) */}
+      {!['/', '/new-session'].includes(location.pathname) && !location.pathname.startsWith('/quick-setup/') && (
+        <div className="bg-base-100 border-b border-base-300">
+          <div className="px-4 h-12 flex items-center justify-center gap-4">
+            {location.pathname === '/new-session' ? (
+              <span className="text-sm text-base-content/70">
+                Configure your workspace settings below to create a new session
+              </span>
+            ) : (
+              <Link
+                to="/new-session"
+                className="btn btn-sm btn-primary"
+              >
+                New Session
+              </Link>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Main Content */}
       <main className="flex-1">
