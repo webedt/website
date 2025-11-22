@@ -455,13 +455,43 @@ export default function Chat() {
         // Invalidate the query to refetch session data with aiWorkerSessionId
         queryClient.invalidateQueries({ queryKey: ['currentSession', data.chatSessionId] });
 
-        // Refetch session after 20 seconds to pick up generated title
+        // Poll for generated title every 3 seconds for up to 60 seconds
         // (Title generation happens in background and completes ~15-20s after main request)
-        setTimeout(() => {
-          console.log('[Chat] Refetching session to pick up generated title...');
-          queryClient.invalidateQueries({ queryKey: ['session-details', String(data.chatSessionId)] });
+        const sessionIdToCheck = String(data.chatSessionId);
+        let pollAttempts = 0;
+        const maxPollAttempts = 20; // 20 attempts * 3 seconds = 60 seconds max
+
+        // Get initial title to compare against
+        const getInitialTitle = () => {
+          const sessionData = queryClient.getQueryData(['session-details', sessionIdToCheck]) as any;
+          return sessionData?.data?.userRequest || '';
+        };
+
+        const initialTitle = getInitialTitle();
+        console.log('[Chat] Starting title poll, initial title:', initialTitle);
+
+        const titlePollInterval = setInterval(() => {
+          pollAttempts++;
+          console.log(`[Chat] Polling for title update (attempt ${pollAttempts}/${maxPollAttempts})...`);
+
+          // Invalidate and refetch
+          queryClient.invalidateQueries({ queryKey: ['session-details', sessionIdToCheck] });
           queryClient.invalidateQueries({ queryKey: ['sessions'] });
-        }, 20000);
+
+          // Check if title has changed
+          setTimeout(() => {
+            const currentTitle = getInitialTitle();
+            console.log('[Chat] Current title after refetch:', currentTitle);
+
+            if (currentTitle && currentTitle !== initialTitle) {
+              console.log('[Chat] Title updated! Stopping poll.');
+              clearInterval(titlePollInterval);
+            } else if (pollAttempts >= maxPollAttempts) {
+              console.log('[Chat] Max poll attempts reached, stopping poll.');
+              clearInterval(titlePollInterval);
+            }
+          }, 500); // Small delay to let query refetch complete
+        }, 3000);
 
         // Navigate to the session URL if not already there
         if (!sessionId || Number(sessionId) !== data.chatSessionId) {
