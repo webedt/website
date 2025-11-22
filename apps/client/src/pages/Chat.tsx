@@ -28,9 +28,11 @@ export default function Chat() {
   const [editingTitle, setEditingTitle] = useState(false);
   const [editTitle, setEditTitle] = useState('');
   const [deletingSession, setDeletingSession] = useState(false);
-  const [currentSessionId, setCurrentSessionId] = useState<number | null>(
-    sessionId ? Number(sessionId) : null
-  );
+  const [currentSessionId, setCurrentSessionId] = useState<number | null>(() => {
+    if (!sessionId || sessionId === 'new') return null;
+    const parsed = Number(sessionId);
+    return isNaN(parsed) ? null : parsed;
+  });
   const [aiWorkerSessionId, setAiWorkerSessionId] = useState<string | null>(null);
   const [isLocked, setIsLocked] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -85,14 +87,14 @@ export default function Chat() {
   const { data: currentSessionData } = useQuery({
     queryKey: ['currentSession', currentSessionId],
     queryFn: async () => {
-      if (!currentSessionId || currentSessionId === 0) return null;
-      const response = await fetch(`./api/sessions/${currentSessionId}`, {
+      if (!currentSessionId || currentSessionId === 0 || isNaN(currentSessionId)) return null;
+      const response = await fetch(`${API_BASE_URL}/api/sessions/${currentSessionId}`, {
         credentials: 'include',
       });
       if (!response.ok) throw new Error('Failed to fetch session');
       return response.json();
     },
-    enabled: !!currentSessionId && currentSessionId !== 0,
+    enabled: !!currentSessionId && currentSessionId !== 0 && !isNaN(currentSessionId),
   });
 
   // Load repositories
