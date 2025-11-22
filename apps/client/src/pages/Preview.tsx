@@ -25,7 +25,7 @@ export default function Preview() {
 
   // Otherwise render standalone
   return (
-    <div className="min-h-screen bg-base-200 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-base-200 flex items-start justify-center px-4 pt-32">
       <div className="text-center">
         <div className="text-primary mb-6">
           <svg className="w-24 h-24 mx-auto" fill="currentColor" viewBox="0 0 24 24">

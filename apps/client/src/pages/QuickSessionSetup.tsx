@@ -229,7 +229,7 @@ export default function QuickSessionSetup() {
   }
 
   return (
-    <div className="min-h-screen bg-base-200 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-base-200 flex items-start justify-center px-4 pt-20">
       <div className="max-w-4xl w-full">
         <div className="bg-base-100 rounded-2xl shadow-xl p-8">
           {/* Title and Description */}
