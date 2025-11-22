@@ -28,6 +28,7 @@ interface ChatInputProps {
   isLocked: boolean;
   user: User | null;
   centered?: boolean;
+  hideRepoSelection?: boolean;
 }
 
 export interface ChatInputRef {
@@ -52,6 +53,7 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
   isLocked,
   user,
   centered = false,
+  hideRepoSelection = false,
 }, ref) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -472,7 +474,7 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
 
         {/* Controls inside the box */}
         <div className="absolute bottom-3 left-3 right-14 flex flex-wrap gap-2 items-center">
-          {hasGithubAuth && (
+          {!hideRepoSelection && hasGithubAuth && (
             <>
               {isLoadingRepos ? (
                 /* Skeleton loading state */

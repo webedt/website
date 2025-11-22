@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import ThemeSelector from './ThemeSelector';
 import { VERSION } from '@/version';
+import type { GitHubRepository } from '@webedt/shared';
 
 interface SessionLayoutProps {
   selectedRepo?: string;
@@ -13,7 +14,7 @@ interface SessionLayoutProps {
   onRepoChange?: (repo: string) => void;
   onBranchChange?: (branch: string) => void;
   onAutoCommitChange?: (autoCommit: boolean) => void;
-  repositories?: any[];
+  repositories?: GitHubRepository[];
   isLoadingRepos?: boolean;
   isLocked?: boolean;
   children: React.ReactNode;
@@ -279,7 +280,7 @@ export default function SessionLayout({
                   <div className="absolute right-0 top-full mt-2 w-56 bg-base-100 rounded-lg shadow-xl border border-base-300 py-2 z-50">
                     {/* User email - non-clickable */}
                     <div className="px-4 py-2 text-sm text-base-content/70 border-b border-base-300">
-                      {user?.email}
+                      📧 {user?.email}
                     </div>
 
                     {/* Dashboard link */}
@@ -288,7 +289,7 @@ export default function SessionLayout({
                       onClick={() => setUserMenuOpen(false)}
                       className="block px-4 py-2 text-sm text-base-content hover:bg-base-200 transition-colors"
                     >
-                      Dashboard
+                      🏠 Dashboard
                     </Link>
 
                     {/* Logout */}
@@ -299,7 +300,7 @@ export default function SessionLayout({
                       }}
                       className="block w-full text-left px-4 py-2 text-sm text-base-content hover:bg-base-200 transition-colors"
                     >
-                      Log out
+                      🚪 Log out
                     </button>
                   </div>
                 )}
@@ -320,7 +321,7 @@ export default function SessionLayout({
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-base-content/70">Repository:</span>
                     <span className="text-sm text-base-content">
-                      {repositories.find((repo: any) => repo.cloneUrl === selectedRepo)?.fullName || selectedRepo}
+                      {repositories.find((repo: GitHubRepository) => repo.cloneUrl === selectedRepo)?.fullName || selectedRepo}
                     </span>
                   </div>
 
@@ -352,7 +353,7 @@ export default function SessionLayout({
                       className="select select-sm select-bordered"
                     >
                       <option value="">No repository</option>
-                      {repositories.map((repo: any) => (
+                      {repositories.map((repo: GitHubRepository) => (
                         <option key={repo.id} value={repo.cloneUrl}>
                           {repo.fullName}
                         </option>
