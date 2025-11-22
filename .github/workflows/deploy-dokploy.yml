@@ -8,6 +8,12 @@ on:
 jobs:
   configure-dokploy:
     runs-on: self-hosted
+    # Skip deployment for automated version update commits
+    if: |
+      !(
+        github.event.head_commit.author.name == 'github-actions[bot]' &&
+        contains(github.event.head_commit.message, 'Update version numbers')
+      )
 
     steps:
       - name: Checkout code
