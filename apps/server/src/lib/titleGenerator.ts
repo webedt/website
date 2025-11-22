@@ -61,7 +61,9 @@ Title:`;
           signal: controller.signal,
         });
 
+        const containerId = response.headers.get('X-Container-ID') || 'unknown';
         console.log(`[Title Generator] Successfully connected to AI worker on attempt ${attempt}`);
+        console.log(`[Title Generator] Worker Container ID: ${containerId}`);
         break; // Success!
 
       } catch (err) {
@@ -103,9 +105,12 @@ Title:`;
 
     clearTimeout(timeout);
 
+    const responseContainerId = response.headers.get('X-Container-ID') || 'unknown';
     console.log(`[Title Generator] Received response from AI worker: ${response.status} ${response.statusText}`);
+    console.log(`[Title Generator] Response Container ID: ${responseContainerId}`);
 
     if (!response.ok) {
+      console.error(`[Title Generator] Worker returned error from container: ${responseContainerId}`);
       throw new Error(`AI worker request failed: ${response.status}`);
     }
 

@@ -384,7 +384,9 @@ const executeHandler = async (req: any, res: any) => {
             signal: controller.signal,
           });
 
+          const containerId = response.headers.get('X-Container-ID') || 'unknown';
           console.log(`[Execute] Successfully connected to AI worker on attempt ${attempt}`);
+          console.log(`[Execute] Worker Container ID: ${containerId}`);
           clearTimeout(timeout);
           break; // Success!
 
@@ -428,9 +430,11 @@ const executeHandler = async (req: any, res: any) => {
       }
 
       if (!response.ok) {
+      const errorContainerId = response.headers.get('X-Container-ID') || 'unknown';
       const errorText = await response.text();
       console.error('[Execute] ========== AI WORKER ERROR RESPONSE ==========');
       console.error('[Execute] HTTP Status:', response.status, response.statusText);
+      console.error('[Execute] Worker Container ID:', errorContainerId);
       console.error('[Execute] Chat Session ID:', chatSession.id);
       console.error('[Execute] Error Response:', truncateContent(errorText, 2000));
       console.error('[Execute] ===================================================');
