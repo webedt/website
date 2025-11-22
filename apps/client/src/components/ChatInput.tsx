@@ -511,7 +511,7 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
                           type="button"
                           onClick={() => setIsRepoDropdownOpen(!isRepoDropdownOpen)}
                           className="btn btn-xs btn-outline normal-case"
-                          disabled={isLocked}
+                          disabled={isExecuting || isLocked}
                         >
                           {selectedRepo
                             ? sortedRepositories.find((r) => r.cloneUrl === selectedRepo)?.fullName ||
@@ -587,14 +587,14 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
                             onChange={(e) => setBranch(e.target.value)}
                             placeholder="main"
                             className="input input-bordered input-xs w-24"
-                            disabled={isLocked}
+                            disabled={isExecuting || isLocked}
                           />
                           {/* Branch selector button */}
                           <div className="relative branch-dropdown">
                             <button
                               type="button"
                               onClick={fetchBranches}
-                              disabled={isLocked || isLoadingBranches}
+                              disabled={isExecuting || isLocked || isLoadingBranches}
                               className="btn btn-xs btn-circle btn-ghost"
                               title="Browse branches"
                             >
@@ -656,7 +656,7 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
                           checked={autoCommit}
                           onChange={(e) => setAutoCommit(e.target.checked)}
                           className="checkbox checkbox-xs"
-                          disabled={isLocked}
+                          disabled={isExecuting || isLocked}
                         />
                         <span className="text-xs text-base-content/70">Auto-commit/push</span>
                       </label>
