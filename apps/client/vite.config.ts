@@ -3,7 +3,9 @@ import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 
 export default defineConfig({
-  base: './', // REQUIRED: Use relative paths for assets to work with Strip Path routing
+  // Use relative paths to work with runtime base path detection
+  // The <base> tag in index.html handles path-based routing dynamically
+  base: './',
   plugins: [react()],
   resolve: {
     alias: {
