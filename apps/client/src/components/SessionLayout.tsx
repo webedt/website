@@ -116,7 +116,7 @@ export default function SessionLayout({
             {/* Center - Navigation Items */}
             <div className="flex-1 flex items-center justify-center">
               <div className="flex items-center gap-1">
-                {hasRepository && sessionId ? (
+                {sessionId ? (
                   <Link
                     to={`/session/${sessionId}/chat`}
                     className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded transition-colors text-primary hover:bg-base-200"
@@ -138,7 +138,7 @@ export default function SessionLayout({
                   </button>
                 )}
 
-                {hasRepository && sessionId ? (
+                {sessionId ? (
                   <Link
                     to={`/session/${sessionId}/code`}
                     className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded transition-colors text-base-content/70 hover:bg-base-200"
@@ -160,7 +160,7 @@ export default function SessionLayout({
                   </button>
                 )}
 
-                {hasRepository && sessionId ? (
+                {sessionId ? (
                   <Link
                     to={`/session/${sessionId}/images`}
                     className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded transition-colors text-base-content/70 hover:bg-base-200"
@@ -182,7 +182,7 @@ export default function SessionLayout({
                   </button>
                 )}
 
-                {hasRepository && sessionId ? (
+                {sessionId ? (
                   <Link
                     to={`/session/${sessionId}/sound`}
                     className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded transition-colors text-base-content/70 hover:bg-base-200"
@@ -204,7 +204,7 @@ export default function SessionLayout({
                   </button>
                 )}
 
-                {hasRepository && sessionId ? (
+                {sessionId ? (
                   <Link
                     to={`/session/${sessionId}/scene-editor`}
                     className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded transition-colors text-base-content/70 hover:bg-base-200"
@@ -226,7 +226,7 @@ export default function SessionLayout({
                   </button>
                 )}
 
-                {hasRepository && sessionId ? (
+                {sessionId ? (
                   <Link
                     to={`/session/${sessionId}/preview`}
                     className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded transition-colors text-base-content/70 hover:bg-base-200"
