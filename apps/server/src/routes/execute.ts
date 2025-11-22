@@ -585,9 +585,11 @@ const executeHandler = async (req: any, res: any) => {
                     }
                   }
                 }
-                // Handle result type
-                else if (msgData.type === 'result' && msgData.result) {
-                  messageContent = typeof msgData.result === 'string' ? msgData.result : JSON.stringify(msgData.result);
+                // Skip result type - content already saved from assistant message
+                // (result contains duplicate content that was already in the assistant message)
+                else if (msgData.type === 'result') {
+                  // Don't save result messages to prevent duplicates
+                  messageContent = null;
                 }
               }
               // Fallback to direct fields
