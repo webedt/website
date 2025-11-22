@@ -6,6 +6,7 @@ import type { AuthRequest } from '../middleware/auth';
 import { requireAuth } from '../middleware/auth';
 import { ensureValidToken } from '../lib/claudeAuth';
 import type { ClaudeAuth } from '@webedt/shared';
+import { generateSessionTitle } from '../lib/titleGenerator';
 
 const router = Router();
 
@@ -255,8 +256,43 @@ const executeHandler = async (req: any, res: any) => {
       res.write(`event: session-created\n`);
       res.write(`data: ${JSON.stringify({ chatSessionId: chatSession.id })}\n\n`);
       console.log(`[Execute] Sent session-created event for new chatSession: ${chatSession.id}`);
+      // Note: session_name event will be sent by background title generation when ready
     } else {
       console.log(`[Execute] Resuming chatSession ${chatSession.id}, not sending session-created event`);
+    }
+
+    // Generate session title for new sessions (not resuming) - run in background AFTER main request starts
+    if (!chatSessionId && userRequest) {
+      // Fire and forget - delay 2 seconds to let main request establish connection first
+      (async () => {
+        try {
+          console.log('[Execute] Will generate session title in 2 seconds (after main request starts)...');
+          await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second delay
+
+          console.log('[Execute] Generating session title for new session (background)...');
+          const aiWorkerUrl = process.env.AI_WORKER_URL || 'http://localhost:5001';
+          const generatedTitle = await generateSessionTitle(userRequest, claudeAuth, aiWorkerUrl);
+          console.log('[Execute] Generated title:', generatedTitle);
+
+          // Update database with generated title
+          await db
+            .update(chatSessions)
+            .set({ userRequest: generatedTitle })
+            .where(eq(chatSessions.id, chatSession.id));
+
+          console.log('[Execute] Updated session title in database');
+
+          // Send session_name event to client if response is still writable
+          if (!res.writableEnded) {
+            res.write(`event: session_name\n`);
+            res.write(`data: ${JSON.stringify({ type: 'session_name', sessionName: generatedTitle, timestamp: new Date().toISOString() })}\n\n`);
+            console.log(`[Execute] Sent session_name event: ${generatedTitle}`);
+          }
+        } catch (error) {
+          console.error('[Execute] Failed to generate session title (background):', error);
+          // Continue anyway - not critical
+        }
+      })();
     }
 
     // Prepare request to ai-coding-worker
@@ -312,7 +348,8 @@ const executeHandler = async (req: any, res: any) => {
     // Log outbound request to AI worker
     const aiWorkerUrl = process.env.AI_WORKER_URL || 'http://localhost:5001';
     const sanitizedPayload = sanitizeForLogging(executePayload);
-    console.log(`[Execute] ========== OUTBOUND REQUEST TO AI WORKER ==========`);
+    console.log(`[Execute] ========== OUTBOUND **MAIN** REQUEST TO AI WORKER ==========`);
+    console.log(`[Execute] Request type: MAIN user request (separate from title generation)`);
     console.log(`[Execute] Destination: ${aiWorkerUrl}/execute`);
     console.log(`[Execute] Chat Session ID: ${chatSession.id}`);
     console.log(`[Execute] Resume Session ID: ${resumeSessionId || 'N/A'}`);
@@ -321,22 +358,83 @@ const executeHandler = async (req: any, res: any) => {
     console.log(`[Execute] Branch: ${executePayload.github?.branch || 'N/A'}`);
     console.log(`[Execute] Auto Commit: ${executePayload.autoCommit || false}`);
     console.log(`[Execute] Full Payload (sanitized): ${JSON.stringify(sanitizedPayload, null, 2)}`);
-    console.log(`[Execute] ======================================================`);
+    console.log(`[Execute] ==================================================================`);
 
-    // Forward to ai-coding-worker
-    const response = await fetch(`${aiWorkerUrl}/execute`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'text/event-stream',
-      },
-      body: JSON.stringify(executePayload),
-    });
+    // Forward to ai-coding-worker with increased timeout and retry logic
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 120000); // 2 minutes timeout
 
-    if (!response.ok) {
+    let response: Response | null = null;
+    let lastError: Error | null = null;
+    const maxRetries = 3;
+
+    try {
+      // Retry connection failures with exponential backoff
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          console.log(`[Execute] Attempt ${attempt}/${maxRetries} to connect to AI worker...`);
+
+          response = await fetch(`${aiWorkerUrl}/execute`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'text/event-stream',
+            },
+            body: JSON.stringify(executePayload),
+            signal: controller.signal,
+          });
+
+          const containerId = response.headers.get('X-Container-ID') || 'unknown';
+          console.log(`[Execute] Successfully connected to AI worker on attempt ${attempt}`);
+          console.log(`[Execute] Worker Container ID: ${containerId}`);
+          clearTimeout(timeout);
+          break; // Success!
+
+        } catch (err) {
+          lastError = err as Error;
+
+          // Debug: log the error details
+          console.log(`[Execute] Caught error on attempt ${attempt}:`);
+          console.log(`[Execute] Error type: ${err instanceof Error ? 'Error' : typeof err}`);
+          console.log(`[Execute] Error name: ${err instanceof Error ? err.name : 'N/A'}`);
+          console.log(`[Execute] Error message: ${err instanceof Error ? err.message : String(err)}`);
+          console.log(`[Execute] Has cause: ${(err as any).cause ? 'yes' : 'no'}`);
+          if ((err as any).cause) {
+            console.log(`[Execute] Cause message: ${(err as any).cause.message}`);
+            console.log(`[Execute] Cause code: ${(err as any).cause.code}`);
+          }
+
+          const isConnectionTimeout = err instanceof Error &&
+            (err.message.includes('Connect Timeout') ||
+             err.message.includes('ETIMEDOUT') ||
+             err.message.includes('fetch failed') ||
+             (err as any).cause?.code === 'UND_ERR_CONNECT_TIMEOUT');
+
+          console.log(`[Execute] Is connection timeout: ${isConnectionTimeout}`);
+          console.log(`[Execute] Attempt: ${attempt}, Max retries: ${maxRetries}, Will retry: ${isConnectionTimeout && attempt < maxRetries}`);
+
+          if (isConnectionTimeout && attempt < maxRetries) {
+            const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // Max 5s delay
+            console.log(`[Execute] Connection timeout on attempt ${attempt}, retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+          }
+
+          console.log(`[Execute] Not retrying - throwing error`);
+          throw err; // Not a connection timeout or last attempt - rethrow
+        }
+      }
+
+      if (!response) {
+        throw lastError || new Error('Failed to connect after retries');
+      }
+
+      if (!response.ok) {
+      const errorContainerId = response.headers.get('X-Container-ID') || 'unknown';
       const errorText = await response.text();
       console.error('[Execute] ========== AI WORKER ERROR RESPONSE ==========');
       console.error('[Execute] HTTP Status:', response.status, response.statusText);
+      console.error('[Execute] Worker Container ID:', errorContainerId);
       console.error('[Execute] Chat Session ID:', chatSession.id);
       console.error('[Execute] Error Response:', truncateContent(errorText, 2000));
       console.error('[Execute] ===================================================');
@@ -583,6 +681,25 @@ const executeHandler = async (req: any, res: any) => {
         res.write(`data: ${JSON.stringify({ completed: true })}\n\n`);
         res.end();
       }
+    }
+    } catch (fetchError) {
+      clearTimeout(timeout);
+      console.error('[Execute] ========== AI WORKER FETCH ERROR ==========');
+      console.error('[Execute] Fetch error:', fetchError);
+      console.error('[Execute] Error name:', fetchError instanceof Error ? fetchError.name : 'Unknown');
+      console.error('[Execute] ===================================================');
+
+      await db
+        .update(chatSessions)
+        .set({ status: 'error', completedAt: new Date() })
+        .where(eq(chatSessions.id, chatSession.id));
+
+      res.write(`event: error\n`);
+      res.write(`data: ${JSON.stringify({ error: 'Failed to connect to AI worker. Please try again.' })}\n\n`);
+      res.write(`event: completed\n`);
+      res.write(`data: ${JSON.stringify({ completed: true })}\n\n`);
+      res.end();
+      return;
     }
   } catch (error) {
     console.error('[Execute] ========== EXECUTE HANDLER ERROR ==========');

@@ -22,7 +22,9 @@ function getApiBaseUrl(): string {
   return '';
 }
 
-const API_BASE_URL = getApiBaseUrl();
+export const API_BASE_URL = getApiBaseUrl();
+console.log('[API] Detected API_BASE_URL:', API_BASE_URL);
+console.log('[API] Current pathname:', window.location.pathname);
 
 interface ApiOptions extends RequestInit {
   body?: any;
@@ -148,7 +150,11 @@ export function createExecuteEventSource(data: {
     }
   });
 
-  return new EventSource(`${API_BASE_URL}/api/execute?${params}`, {
+  const fullUrl = `${API_BASE_URL}/api/execute?${params}`;
+  console.log('[API] Creating EventSource with URL:', fullUrl);
+  console.log('[API] API_BASE_URL:', API_BASE_URL);
+
+  return new EventSource(fullUrl, {
     withCredentials: true,
   });
 }

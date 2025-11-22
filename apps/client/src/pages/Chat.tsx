@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { sessionsApi, githubApi } from '@/lib/api';
+import { sessionsApi, githubApi, API_BASE_URL } from '@/lib/api';
 import { useEventSource } from '@/hooks/useEventSource';
 import { useAuthStore } from '@/lib/store';
 import ChatInput, { type ChatInputRef, type ImageAttachment } from '@/components/ChatInput';
@@ -265,7 +265,7 @@ export default function Chat() {
         // Use POST for requests with images
         setStreamMethod('POST');
         setStreamBody(state.streamParams);
-        setStreamUrl(`/api/execute`);
+        setStreamUrl(`${API_BASE_URL}/api/execute`);
       } else {
         // Use GET for text-only requests
         setStreamMethod('GET');
@@ -276,7 +276,7 @@ export default function Chat() {
             params.append(key, String(value));
           }
         });
-        setStreamUrl(`/api/execute?${params}`);
+        setStreamUrl(`${API_BASE_URL}/api/execute?${params}`);
       }
 
       setIsExecuting(true);
@@ -455,6 +455,44 @@ export default function Chat() {
         // Invalidate the query to refetch session data with aiWorkerSessionId
         queryClient.invalidateQueries({ queryKey: ['currentSession', data.chatSessionId] });
 
+        // Poll for generated title every 3 seconds for up to 60 seconds
+        // (Title generation happens in background and completes ~15-20s after main request)
+        const sessionIdToCheck = String(data.chatSessionId);
+        let pollAttempts = 0;
+        const maxPollAttempts = 20; // 20 attempts * 3 seconds = 60 seconds max
+
+        // Get initial title to compare against
+        const getInitialTitle = () => {
+          const sessionData = queryClient.getQueryData(['session-details', sessionIdToCheck]) as any;
+          return sessionData?.data?.userRequest || '';
+        };
+
+        const initialTitle = getInitialTitle();
+        console.log('[Chat] Starting title poll, initial title:', initialTitle);
+
+        const titlePollInterval = setInterval(() => {
+          pollAttempts++;
+          console.log(`[Chat] Polling for title update (attempt ${pollAttempts}/${maxPollAttempts})...`);
+
+          // Invalidate and refetch
+          queryClient.invalidateQueries({ queryKey: ['session-details', sessionIdToCheck] });
+          queryClient.invalidateQueries({ queryKey: ['sessions'] });
+
+          // Check if title has changed
+          setTimeout(() => {
+            const currentTitle = getInitialTitle();
+            console.log('[Chat] Current title after refetch:', currentTitle);
+
+            if (currentTitle && currentTitle !== initialTitle) {
+              console.log('[Chat] Title updated! Stopping poll.');
+              clearInterval(titlePollInterval);
+            } else if (pollAttempts >= maxPollAttempts) {
+              console.log('[Chat] Max poll attempts reached, stopping poll.');
+              clearInterval(titlePollInterval);
+            }
+          }, 500); // Small delay to let query refetch complete
+        }, 3000);
+
         // Navigate to the session URL if not already there
         if (!sessionId || Number(sessionId) !== data.chatSessionId) {
           console.log('[Chat] Navigating to session:', data.chatSessionId);
@@ -594,7 +632,7 @@ export default function Chat() {
       // Use POST for large requests with images
       setStreamMethod('POST');
       setStreamBody(requestParams);
-      setStreamUrl(`/api/execute`);
+      setStreamUrl(`${API_BASE_URL}/api/execute`);
     } else {
       // Use GET with query params for text-only requests
       setStreamMethod('GET');
@@ -605,7 +643,7 @@ export default function Chat() {
           params.append(key, String(value));
         }
       });
-      setStreamUrl(`/api/execute?${params}`);
+      setStreamUrl(`${API_BASE_URL}/api/execute?${params}`);
     }
 
     setInput('');
@@ -657,7 +695,7 @@ export default function Chat() {
       }
     }
 
-    setStreamUrl(`/api/execute?${params}`);
+    setStreamUrl(`${API_BASE_URL}/api/execute?${params}`);
   };
 
   return (
