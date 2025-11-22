@@ -549,9 +549,8 @@ export default function Chat() {
       id: Date.now() + messageIdCounter.current,
       chatSessionId: Number(sessionId) || 0,
       type: 'user',
-      content: images.length > 0
-        ? `${input}\n[${images.length} image${images.length > 1 ? 's' : ''} attached]`
-        : input,
+      content: input.trim() || (images.length > 0 ? `[${images.length} image${images.length > 1 ? 's' : ''} attached]` : ''),
+      images: images.length > 0 ? images : undefined,
       timestamp: new Date(),
     };
 
@@ -810,6 +809,7 @@ export default function Chat() {
         /* Centered input for new session */
         <div className="flex-1 flex items-center justify-center p-6">
           <ChatInput
+            key="centered-input"
             ref={chatInputRef}
             input={input}
             setInput={setInput}
@@ -935,6 +935,7 @@ export default function Chat() {
           {/* Input panel at bottom when messages exist */}
           <div className="bg-base-100 border-t border-base-300 p-6">
             <ChatInput
+              key="bottom-input"
               ref={chatInputRef}
               input={input}
               setInput={setInput}
