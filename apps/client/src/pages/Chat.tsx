@@ -549,9 +549,8 @@ export default function Chat() {
       id: Date.now() + messageIdCounter.current,
       chatSessionId: Number(sessionId) || 0,
       type: 'user',
-      content: images.length > 0
-        ? `${input}\n[${images.length} image${images.length > 1 ? 's' : ''} attached]`
-        : input,
+      content: input.trim() || (images.length > 0 ? `[${images.length} image${images.length > 1 ? 's' : ''} attached]` : ''),
+      images: images.length > 0 ? images : undefined,
       timestamp: new Date(),
     };
 
