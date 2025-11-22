@@ -9,6 +9,7 @@ import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import Dashboard from '@/pages/Dashboard';
 import Chat from '@/pages/Chat';
+import CodeSession from '@/pages/CodeSession';
 import NewSession from '@/pages/NewSession';
 import Settings from '@/pages/Settings';
 
@@ -53,7 +54,7 @@ function App() {
 
     // Check if we're in a path-based deployment (3+ path segments)
     const pathSegments = pathname.split('/').filter(Boolean);
-    if (pathSegments.length >= 3 && !['login', 'register', 'chat', 'settings', 'new-session'].includes(pathSegments[0])) {
+    if (pathSegments.length >= 3 && !['login', 'register', 'chat', 'code', 'settings', 'new-session'].includes(pathSegments[0])) {
       // Assume format: /owner/repo/branch/...
       return `/${pathSegments[0]}/${pathSegments[1]}/${pathSegments[2]}`;
     }
@@ -100,6 +101,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Chat />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/code/:sessionId"
+              element={
+                <ProtectedRoute>
+                  <CodeSession />
                 </ProtectedRoute>
               }
             />

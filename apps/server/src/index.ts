@@ -16,6 +16,7 @@ import executeRoutes from './routes/execute';
 import sessionsRoutes from './routes/sessions';
 import userRoutes from './routes/user';
 import transcribeRoutes from './routes/transcribe';
+import filesRoutes from './routes/files';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -40,6 +41,7 @@ app.use('/api/github', githubRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api', executeRoutes);
 app.use('/api/sessions', sessionsRoutes);
+app.use('/api/sessions', filesRoutes);
 app.use('/api', transcribeRoutes);
 
 // Health check
