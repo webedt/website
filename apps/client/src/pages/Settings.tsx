@@ -287,13 +287,13 @@ export default function Settings() {
               <div className="divider my-4"></div>
 
               <div className="form-control w-full">
-                <label className="label pb-2">
-                  <span className="label-text font-medium text-base">Maximum Image Dimension</span>
-                </label>
+                <div className="mb-3">
+                  <span className="font-medium text-base text-base-content">Maximum Image Dimension</span>
+                </div>
                 <select
                   value={imageResizeDimension}
                   onChange={(e) => setImageResizeDimension(Number(e.target.value))}
-                  className="select select-bordered w-full max-w-md mt-2"
+                  className="select select-bordered w-full max-w-md"
                 >
                   <option value={512}>512 x 512</option>
                   <option value={1024}>1024 x 1024 (default)</option>
@@ -301,11 +301,11 @@ export default function Settings() {
                   <option value={4096}>4096 x 4096</option>
                   <option value={8000}>8000 x 8000 (max)</option>
                 </select>
-                <label className="label pt-2">
-                  <span className="label-text-alt text-base-content/60">
+                <div className="mt-2">
+                  <span className="text-sm text-base-content/60">
                     Smaller sizes reduce upload time and bandwidth usage
                   </span>
-                </label>
+                </div>
               </div>
 
               <div className="flex justify-start pt-2">
