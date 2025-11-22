@@ -379,7 +379,6 @@ const executeHandler = async (req: any, res: any) => {
             headers: {
               'Content-Type': 'application/json',
               Accept: 'text/event-stream',
-              Connection: 'close', // Force new TCP connection (no keep-alive)
             },
             body: JSON.stringify(executePayload),
             signal: controller.signal,
