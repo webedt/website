@@ -75,10 +75,9 @@ export default function SessionLayout({
       {/* Top Navigation Bar */}
       <nav className="bg-base-100 border-b border-base-300">
         <div className="px-4">
-          <div className="flex justify-between h-14">
-            {/* Left side - Logo and nav items */}
-            <div className="flex items-center gap-6">
-              {/* Logo */}
+          <div className="flex items-center h-14">
+            {/* Left side - Logo */}
+            <div className="flex items-center">
               <Link
                 to="/"
                 className="flex flex-col justify-center py-2"
@@ -88,8 +87,10 @@ export default function SessionLayout({
                   v{VERSION}
                 </span>
               </Link>
+            </div>
 
-              {/* Navigation Items */}
+            {/* Center - Navigation Items */}
+            <div className="flex-1 flex items-center justify-center">
               <div className="flex items-center gap-1">
                 <button
                   disabled={!hasRepository}
@@ -227,7 +228,7 @@ export default function SessionLayout({
 
       {/* Second Bar - Repository Controls or New Session */}
       <div className="bg-base-100 border-b border-base-300">
-        <div className="px-4 h-12 flex items-center gap-4">
+        <div className="px-4 h-12 flex items-center justify-center gap-4">
           {hasRepository ? (
             <>
               {/* Repository */}
@@ -275,9 +276,6 @@ export default function SessionLayout({
                   {autoCommit ? 'On' : 'Off'}
                 </span>
               </div>
-
-              {/* Spacer */}
-              <div className="flex-1" />
 
               {/* New Session Button */}
               <Link

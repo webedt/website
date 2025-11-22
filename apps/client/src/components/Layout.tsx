@@ -49,10 +49,9 @@ export default function Layout() {
       {/* Top Navigation Bar */}
       <nav className="bg-base-100 border-b border-base-300">
         <div className="px-4">
-          <div className="flex justify-between h-14">
-            {/* Left side - Logo and nav items */}
-            <div className="flex items-center gap-6">
-              {/* Logo */}
+          <div className="flex items-center h-14">
+            {/* Left side - Logo */}
+            <div className="flex items-center">
               <Link
                 to="/"
                 className="flex flex-col justify-center py-2"
@@ -62,8 +61,10 @@ export default function Layout() {
                   v{VERSION}
                 </span>
               </Link>
+            </div>
 
-              {/* Navigation Items - all disabled/grayed since no repository context on these pages */}
+            {/* Center - Navigation Items - all disabled/grayed since no repository context on these pages */}
+            <div className="flex-1 flex items-center justify-center">
               <div className="flex items-center gap-1">
                 <button
                   disabled
@@ -177,7 +178,7 @@ export default function Layout() {
 
       {/* Second Bar - Just New Session button for non-session pages */}
       <div className="bg-base-100 border-b border-base-300">
-        <div className="px-4 h-12 flex items-center gap-4">
+        <div className="px-4 h-12 flex items-center justify-center gap-4">
           <Link
             to="/new-session"
             className="btn btn-sm btn-primary"
