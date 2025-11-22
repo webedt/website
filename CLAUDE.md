@@ -35,43 +35,60 @@ https://github.etdofresh.com/webedt/website/develop/
 
 ### Critical Path Requirements for Strip Path
 
-**IMPORTANT**: Static assets must use absolute paths to support direct deep links in SPAs.
+**IMPORTANT**: This project supports both root-based and path-based deployments using runtime base path detection.
 
 **Vite Configuration:**
 
-For **root-based deployments** (e.g., `webedt.etdofresh.com`):
+Use relative paths to work with runtime base path detection:
 ```typescript
 // vite.config.ts
 export default defineConfig({
-  base: '/', // Use absolute paths from root
+  base: './', // Relative paths work with <base> tag
   // ... other config
 });
 ```
 
-For **path-based deployments** (e.g., `github.etdofresh.com/owner/repo/branch/`):
-```typescript
-// vite.config.ts
-export default defineConfig({
-  base: process.env.VITE_BASE_PATH || '/', // Set via environment variable at build time
-  // ... other config
-});
+**Runtime Base Path Detection:**
+
+The `index.html` includes a script that automatically detects path-based deployments and injects a `<base>` tag:
+
+```html
+<script>
+  (function() {
+    const pathname = window.location.pathname;
+    const pathSegments = pathname.split('/').filter(Boolean);
+    const appRoutes = ['login', 'register', 'session', ...];
+
+    if (pathSegments.length >= 3 && !appRoutes.includes(pathSegments[0])) {
+      // Path-based: /owner/repo/branch/
+      const basePath = '/' + pathSegments[0] + '/' + pathSegments[1] + '/' + pathSegments[2] + '/';
+      document.write('<base href="' + basePath + '">');
+    }
+    // Root-based: no base tag needed
+  })();
+</script>
 ```
 
-Then build with: `VITE_BASE_PATH=/webedt/website/main/ pnpm build`
+**How It Works:**
 
-**Static Assets in HTML:**
+For **path-based deployments** (`github.etdofresh.com/owner/repo/branch/`):
+- Script detects 3+ path segments not matching app routes
+- Injects `<base href="/owner/repo/branch/">`
+- Relative path `./assets/app.js` resolves to `/owner/repo/branch/assets/app.js` ✓
+- Deep links work because base path is fixed
 
-For root deployments, use absolute paths from root:
-- ✅ Correct: `<link rel="stylesheet" href="/styles.css">`
-- ✅ Correct: `<script src="/src/main.tsx"></script>`
-- ✅ Correct: `<link rel="icon" href="/vite.svg" />`
-- ❌ Wrong: `<link rel="stylesheet" href="./styles.css">` (breaks deep links!)
+For **root-based deployments** (`webedt.etdofresh.com`):
+- Script detects root deployment (no owner/repo/branch pattern)
+- Injects `<base href="/">`
+- Relative path `./assets/app.js` resolves to `/assets/app.js` ✓
+- Deep links work because base path is fixed to root
 
-**Why Relative Paths Don't Work:**
+**Why This Approach:**
 
-When accessing a deep link like `/quick-setup/code`:
-- Relative path `./assets/app.js` resolves to `/quick-setup/code/assets/app.js` ❌
-- Absolute path `/assets/app.js` resolves to `/assets/app.js` ✓
+The `<base>` tag tells the browser where to resolve all relative URLs from, regardless of the current page URL. This solves the deep link problem:
+- Without `<base>`: `/quick-setup/code` + `./assets/app.js` → `/quick-setup/code/assets/app.js` ❌
+- With `<base href="/">`: `/quick-setup/code` + `./assets/app.js` → `/assets/app.js` ✓
+- With `<base href="/owner/repo/branch/">`: any URL + `./assets/app.js` → `/owner/repo/branch/assets/app.js` ✓
 
 **API Calls in JavaScript/TypeScript:**
 
@@ -110,7 +127,7 @@ With path-based routing at `https://github.etdofresh.com/webedt/website/main/`:
 
 Simple relative paths (`./api/...`) don't work because they resolve relative to the current page URL, not the basename. If you're on `/webedt/website/main/login`, then `./api/auth/login` becomes `/webedt/website/main/login/api/auth/login` (wrong!).
 
-**DO NOT use `<base>` tag:** The `<base href>` tag affects ALL URL resolution including absolute paths, which breaks the routing.
+**Important:** The `<base>` tag affects ALL relative URLs including those in JavaScript, so API calls must use the absolute path approach shown above (not relative paths).
 
 **React Router Configuration:**
 

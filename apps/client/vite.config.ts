@@ -3,10 +3,9 @@ import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 
 export default defineConfig({
-  // Use absolute paths from root for proper deep link support
-  // For path-based deployments (github.etdofresh.com/owner/repo/branch/),
-  // set VITE_BASE_PATH environment variable at build time
-  base: process.env.VITE_BASE_PATH || '/',
+  // Use relative paths to work with runtime base path detection
+  // The <base> tag in index.html handles path-based routing dynamically
+  base: './',
   plugins: [react()],
   resolve: {
     alias: {
