@@ -249,6 +249,44 @@ Live Site: [https://github.etdofresh.com/webedt/website/feature-new-UI/](https:/
 - Do NOT skip this step - users rely on these links for quick access
 - If logs are relevant, also include: `Deployment Logs: [https://logs.etdofresh.com/{app-name}/](https://logs.etdofresh.com/{app-name}/)`
 
+## Git Commit Messages
+
+**MANDATORY REQUIREMENT:** All git commit messages MUST follow the format specified in `GIT_COMMIT_MESSAGE_INSTRUCTIONS.md`.
+
+### Key Rules
+
+- Use imperative mood, present active tense
+- Start with a capital letter and a verb (Add, Update, Remove, Fix, etc)
+- **NO prefixes** like `feat:`, `fix:`, `chore:`, etc
+- **NO emojis**
+- Optional detail lines with `-` bullets for larger changes
+
+### Format
+
+```
+Subject Line [Required]
+- Detail Line 1 [Optional]
+- Detail Line 2 [Optional]
+```
+
+### Examples
+
+✅ **Good:**
+```
+Add commit-based versioning system
+Update API endpoint to support dynamic paths
+Fix navigation overlay height issue
+```
+
+❌ **Bad:**
+```
+feat: add versioning system
+✨ Update API endpoint
+fixed navigation bug
+```
+
+See `GIT_COMMIT_MESSAGE_INSTRUCTIONS.md` for complete rules and examples.
+
 ## Version Management
 
 **MANDATORY REQUIREMENT:** Before creating ANY git commit, you MUST run the version generation script.
