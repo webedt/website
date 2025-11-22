@@ -247,16 +247,8 @@ export default function Dashboard() {
           </svg>
           <h3 className="mt-2 text-sm font-medium text-base-content">No sessions</h3>
           <p className="mt-1 text-sm text-base-content/70">
-            Get started by creating a new session.
+            Get started by using the quick start chat above.
           </p>
-          <div className="mt-6">
-            <Link
-              to="/new-session"
-              className="btn btn-primary"
-            >
-              New Session
-            </Link>
-          </div>
         </div>
       )}
 
