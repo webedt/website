@@ -1,2 +1,3 @@
-// This version is synced with package.json
-export const VERSION = '1.0.0';
+// Auto-generated from git tags and commits
+// Run 'pnpm version:generate' to update
+export const VERSION = '0.0.276';
