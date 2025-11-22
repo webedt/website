@@ -64,7 +64,7 @@ export default function Layout() {
               </Link>
             </div>
 
-            {/* Center - Navigation Items - all disabled/grayed since no repository context on these pages */}
+            {/* Center - Navigation Items */}
             <div className="flex-1 flex items-center justify-center">
               <div className="flex items-center gap-1">
                 <button

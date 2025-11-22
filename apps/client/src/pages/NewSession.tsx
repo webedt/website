@@ -198,19 +198,35 @@ export default function NewSession() {
     }
   }, [isRepoDropdownOpen, isBranchDropdownOpen]);
 
-  const handleActivityClick = (_activityId: ActivityType) => {
-    // Navigate to chat with pre-selected repository/branch/autoCommit settings
-    // These will be locked in the chat page, but no stream will auto-start
-    navigate('/session/new', {
-      state: {
-        preSelectedSettings: {
-          repositoryUrl: selectedRepo || undefined,
-          branch: branch || undefined,
-          autoCommit: autoCommit !== undefined ? autoCommit : true,
-          locked: true, // Lock these settings
+  const handleActivityClick = (activityId: ActivityType) => {
+    // Navigate to the appropriate page based on activity type
+    const routeMap: Record<ActivityType, string> = {
+      chat: '/session/new',
+      code: '/code',
+      images: '/images',
+      sound: '/sound',
+      scene: '/scene-editor',
+      preview: '/preview',
+    };
+
+    const route = routeMap[activityId];
+
+    // For chat, navigate with pre-selected settings
+    if (activityId === 'chat') {
+      navigate(route, {
+        state: {
+          preSelectedSettings: {
+            repositoryUrl: selectedRepo || undefined,
+            branch: branch || undefined,
+            autoCommit: autoCommit !== undefined ? autoCommit : true,
+            locked: true, // Lock these settings
+          }
         }
-      }
-    });
+      });
+    } else {
+      // For other activities, just navigate to the page
+      navigate(route);
+    }
   };
 
   return (
