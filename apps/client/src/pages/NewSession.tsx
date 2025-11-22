@@ -214,7 +214,7 @@ export default function NewSession() {
   };
 
   return (
-    <div className="min-h-screen bg-base-200 flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen bg-base-200 flex items-start justify-center px-4 pt-16">
       <div className="max-w-5xl w-full">
         <div className="text-center mb-8">
           <h1 className="text-5xl font-bold text-base-content mb-4">Start a New Session</h1>
