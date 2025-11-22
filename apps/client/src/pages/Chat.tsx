@@ -933,6 +933,7 @@ export default function Chat() {
             isLocked={isLocked}
             user={user}
             centered={true}
+            hideRepoSelection={true}
           />
         </div>
       ) : (
@@ -1059,6 +1060,7 @@ export default function Chat() {
               isLocked={isLocked}
               user={user}
               centered={false}
+              hideRepoSelection={true}
             />
           </div>
         </>
