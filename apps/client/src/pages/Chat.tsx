@@ -458,38 +458,45 @@ export default function Chat() {
         // Poll for generated title every 3 seconds for up to 60 seconds
         // (Title generation happens in background and completes ~15-20s after main request)
         const sessionIdToCheck = String(data.chatSessionId);
-        let pollAttempts = 0;
-        const maxPollAttempts = 20; // 20 attempts * 3 seconds = 60 seconds max
 
-        // Get initial title to compare against
-        const getInitialTitle = () => {
-          const sessionData = queryClient.getQueryData(['session-details', sessionIdToCheck]) as any;
-          return sessionData?.data?.userRequest || '';
-        };
-
-        const initialTitle = getInitialTitle();
-        console.log('[Chat] Starting title poll, initial title:', initialTitle);
-
-        const titlePollInterval = setInterval(async () => {
-          pollAttempts++;
-          console.log(`[Chat] Polling for title update (attempt ${pollAttempts}/${maxPollAttempts})...`);
-
-          // Refetch and wait for completion
+        // Start polling after a short delay to allow navigation and initial query to complete
+        setTimeout(async () => {
+          // First, ensure we have the initial session data loaded
           await queryClient.refetchQueries({ queryKey: ['session-details', sessionIdToCheck] });
-          await queryClient.refetchQueries({ queryKey: ['sessions'] });
 
-          // Check if title has changed
-          const currentTitle = getInitialTitle();
-          console.log('[Chat] Current title after refetch:', currentTitle);
+          // Get initial title to compare against
+          const getInitialTitle = () => {
+            const sessionData = queryClient.getQueryData(['session-details', sessionIdToCheck]) as any;
+            return sessionData?.data?.userRequest || '';
+          };
 
-          if (currentTitle && currentTitle !== initialTitle) {
-            console.log('[Chat] Title updated! Stopping poll.');
-            clearInterval(titlePollInterval);
-          } else if (pollAttempts >= maxPollAttempts) {
-            console.log('[Chat] Max poll attempts reached, stopping poll.');
-            clearInterval(titlePollInterval);
-          }
-        }, 3000);
+          const initialTitle = getInitialTitle();
+          console.log('[Chat] Starting title poll, initial title:', initialTitle);
+
+          let pollAttempts = 0;
+          const maxPollAttempts = 20; // 20 attempts * 3 seconds = 60 seconds max
+
+          const titlePollInterval = setInterval(async () => {
+            pollAttempts++;
+            console.log(`[Chat] Polling for title update (attempt ${pollAttempts}/${maxPollAttempts})...`);
+
+            // Refetch and wait for completion
+            await queryClient.refetchQueries({ queryKey: ['session-details', sessionIdToCheck] });
+            await queryClient.refetchQueries({ queryKey: ['sessions'] });
+
+            // Check if title has changed
+            const currentTitle = getInitialTitle();
+            console.log('[Chat] Current title after refetch:', currentTitle);
+
+            if (currentTitle && currentTitle !== initialTitle) {
+              console.log('[Chat] Title updated! Stopping poll.');
+              clearInterval(titlePollInterval);
+            } else if (pollAttempts >= maxPollAttempts) {
+              console.log('[Chat] Max poll attempts reached, stopping poll.');
+              clearInterval(titlePollInterval);
+            }
+          }, 3000);
+        }, 1000); // 1 second delay to allow navigation and query to load
 
         // Navigate to the session URL if not already there
         if (!sessionId || Number(sessionId) !== data.chatSessionId) {
