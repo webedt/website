@@ -104,19 +104,19 @@ Each branch independently counts commits from its most recent ancestor tag.
 
 ### How It Works
 
-When you create or update a pull request targeting the `main` branch:
+When a pull request is merged into the `main` branch:
 
-1. The `update-version-on-pr.yml` workflow automatically runs
+1. The `update-version-on-merge.yml` workflow automatically runs
 2. It executes `pnpm version:generate` to calculate the current version
-3. If `package.json` or `apps/client/src/version.ts` need updating, it commits them to your PR branch
-4. The PR shows the updated version files ready for review
+3. If `package.json` or `apps/client/src/version.ts` need updating, it commits them directly to main
+4. Version files are updated immediately after the merge
 
 ### Benefits
 
 - ✅ No manual version management required during development
-- ✅ Versions are always accurate before merging to main
-- ✅ Reduces merge conflicts and forgotten version updates
-- ✅ Clear audit trail in PR history
+- ✅ Versions are automatically updated when code lands on main
+- ✅ No extra commits cluttering PR history
+- ✅ Version always reflects the actual state of main
 
 ### During Development
 
@@ -127,11 +127,13 @@ You don't need to run `pnpm version:generate` during development. Just commit yo
 git add src/my-feature.ts
 git commit -m "Add new feature"
 
-# Create PR to main - GitHub Actions handles versioning
+# Create PR to main
 gh pr create --base main
+
+# After merge, GitHub Actions automatically updates version files on main
 ```
 
-The automation ensures version files are updated before your PR is merged.
+The automation ensures version files are updated after your PR is merged to main.
 
 ## Build Integration
 

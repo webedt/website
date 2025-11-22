@@ -1,8 +1,7 @@
-name: Update Version on PR
+name: Update Version on Merge
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  push:
     branches:
       - main
 
@@ -11,13 +10,12 @@ jobs:
     runs-on: self-hosted
     permissions:
       contents: write
-      pull-requests: write
 
     steps:
-      - name: Checkout PR branch
+      - name: Checkout main branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          ref: main
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -66,7 +64,7 @@ jobs:
       - name: Push changes
         if: steps.check_changes.outputs.changes == 'true'
         run: |
-          git push origin ${{ github.head_ref }}
+          git push origin main
 
       - name: Summary
         if: always()
@@ -74,7 +72,7 @@ jobs:
           echo "## Version Update Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           if [ "${{ steps.check_changes.outputs.changes }}" = "true" ]; then
-            echo "✅ Version files updated and committed to PR" >> $GITHUB_STEP_SUMMARY
+            echo "✅ Version files updated and committed to main" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "Updated files:" >> $GITHUB_STEP_SUMMARY
             echo "- package.json" >> $GITHUB_STEP_SUMMARY

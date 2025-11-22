@@ -328,14 +328,14 @@ See `GIT_COMMIT_MESSAGE_INSTRUCTIONS.md` for complete rules and examples.
 
 ## Version Management
 
-Version numbers are **automatically managed** by GitHub Actions when pull requests are created or updated targeting the main branch.
+Version numbers are **automatically managed** by GitHub Actions when pull requests are merged into the main branch.
 
 ### Automated Workflow
 
-When you create or update a pull request to main:
+When you merge a pull request into main:
 1. A GitHub Action automatically runs `pnpm version:generate`
-2. If version files need updating, they are committed to your PR branch
-3. No manual intervention required during development
+2. If version files need updating, they are committed directly to main
+3. No manual intervention required during development or PR review
 
 ### Manual Updates (Optional)
 
@@ -345,7 +345,7 @@ pnpm version:show  # View current version
 pnpm version:generate  # Update version files
 ```
 
-However, this is **not required** - the automation handles it when preparing PRs for main.
+However, this is **not required** - the automation handles it automatically after merging to main.
 
 See `VERSIONING.md` for complete documentation on the versioning system.
 
