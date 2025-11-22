@@ -455,6 +455,14 @@ export default function Chat() {
         // Invalidate the query to refetch session data with aiWorkerSessionId
         queryClient.invalidateQueries({ queryKey: ['currentSession', data.chatSessionId] });
 
+        // Refetch session after 20 seconds to pick up generated title
+        // (Title generation happens in background and completes ~15-20s after main request)
+        setTimeout(() => {
+          console.log('[Chat] Refetching session to pick up generated title...');
+          queryClient.invalidateQueries({ queryKey: ['session-details', String(data.chatSessionId)] });
+          queryClient.invalidateQueries({ queryKey: ['sessions'] });
+        }, 20000);
+
         // Navigate to the session URL if not already there
         if (!sessionId || Number(sessionId) !== data.chatSessionId) {
           console.log('[Chat] Navigating to session:', data.chatSessionId);
