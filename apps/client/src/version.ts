@@ -1,3 +1,4 @@
 // Auto-generated from git tags and commits
 // Run 'pnpm version:generate' to update
-export const VERSION = '0.0.294';
+export const VERSION = '0.0.295';
+export const VERSION_TIMESTAMP = '2025-11-22T14:40:53+00:00';

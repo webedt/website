@@ -4,7 +4,7 @@ import { authApi, sessionsApi, githubApi } from '@/lib/api';
 import { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import ThemeSelector from './ThemeSelector';
-import { VERSION } from '@/version';
+import { VERSION, VERSION_TIMESTAMP } from '@/version';
 import type { GitHubRepository } from '@webedt/shared';
 
 interface SessionLayoutProps {
@@ -71,6 +71,23 @@ export default function SessionLayout({
     }
   };
 
+  // Format timestamp to Central Time
+  const getVersionTooltip = () => {
+    if (!VERSION_TIMESTAMP) return 'Version information';
+
+    const date = new Date(VERSION_TIMESTAMP);
+    return date.toLocaleString('en-US', {
+      timeZone: 'America/Chicago',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      second: '2-digit',
+      timeZoneName: 'short'
+    });
+  };
+
   // Close user menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -109,7 +126,10 @@ export default function SessionLayout({
                 className="flex flex-col justify-center py-2"
               >
                 <span className="font-semibold text-lg leading-tight">WebEDT</span>
-                <span className="text-[9px] text-base-content/40 leading-tight">
+                <span
+                  className="text-[9px] text-base-content/40 leading-tight cursor-help"
+                  title={getVersionTooltip()}
+                >
                   v{VERSION}
                 </span>
               </Link>
