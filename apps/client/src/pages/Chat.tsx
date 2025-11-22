@@ -56,7 +56,13 @@ export default function Chat() {
   // Load session details first to check status
   const { data: sessionDetailsData } = useQuery({
     queryKey: ['session-details', sessionId],
-    queryFn: () => sessionsApi.get(Number(sessionId)),
+    queryFn: () => {
+      const id = Number(sessionId);
+      if (isNaN(id)) {
+        throw new Error('Invalid session ID');
+      }
+      return sessionsApi.get(id);
+    },
     enabled: !!sessionId && sessionId !== 'new',
     // Poll every 2 seconds if session is running or pending
     refetchInterval: (query) => {
@@ -68,7 +74,13 @@ export default function Chat() {
   // Load existing session messages if sessionId provided
   const { data: sessionData } = useQuery({
     queryKey: ['session', sessionId],
-    queryFn: () => sessionsApi.getMessages(Number(sessionId)),
+    queryFn: () => {
+      const id = Number(sessionId);
+      if (isNaN(id)) {
+        throw new Error('Invalid session ID');
+      }
+      return sessionsApi.getMessages(id);
+    },
     enabled: !!sessionId && sessionId !== 'new',
     // Poll every 2 seconds if session is running or pending, but NOT while SSE stream is active
     // This prevents duplicate messages from both SSE and polling
