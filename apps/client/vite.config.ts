@@ -3,7 +3,10 @@ import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 
 export default defineConfig({
-  base: './', // REQUIRED: Use relative paths for assets to work with Strip Path routing
+  // Use absolute paths from root for proper deep link support
+  // For path-based deployments (github.etdofresh.com/owner/repo/branch/),
+  // set VITE_BASE_PATH environment variable at build time
+  base: process.env.VITE_BASE_PATH || '/',
   plugins: [react()],
   resolve: {
     alias: {

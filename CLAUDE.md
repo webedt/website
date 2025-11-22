@@ -35,24 +35,43 @@ https://github.etdofresh.com/webedt/website/develop/
 
 ### Critical Path Requirements for Strip Path
 
-**IMPORTANT**: All static assets and API calls MUST use relative paths (starting with `./`) to work correctly with Strip Path routing.
+**IMPORTANT**: Static assets must use absolute paths to support direct deep links in SPAs.
 
 **Vite Configuration:**
+
+For **root-based deployments** (e.g., `webedt.etdofresh.com`):
 ```typescript
 // vite.config.ts
 export default defineConfig({
-  base: './', // REQUIRED: Use relative paths for assets
+  base: '/', // Use absolute paths from root
   // ... other config
 });
 ```
 
+For **path-based deployments** (e.g., `github.etdofresh.com/owner/repo/branch/`):
+```typescript
+// vite.config.ts
+export default defineConfig({
+  base: process.env.VITE_BASE_PATH || '/', // Set via environment variable at build time
+  // ... other config
+});
+```
+
+Then build with: `VITE_BASE_PATH=/webedt/website/main/ pnpm build`
+
 **Static Assets in HTML:**
-- ✅ Correct: `<link rel="stylesheet" href="./styles.css">`
-- ❌ Wrong: `<link rel="stylesheet" href="/styles.css">`
-- ✅ Correct: `<script src="./src/main.tsx"></script>`
-- ❌ Wrong: `<script src="/src/main.tsx"></script>`
-- ✅ Correct: `<link rel="icon" href="./vite.svg" />`
-- ❌ Wrong: `<link rel="icon" href="/vite.svg" />`
+
+For root deployments, use absolute paths from root:
+- ✅ Correct: `<link rel="stylesheet" href="/styles.css">`
+- ✅ Correct: `<script src="/src/main.tsx"></script>`
+- ✅ Correct: `<link rel="icon" href="/vite.svg" />`
+- ❌ Wrong: `<link rel="stylesheet" href="./styles.css">` (breaks deep links!)
+
+**Why Relative Paths Don't Work:**
+
+When accessing a deep link like `/quick-setup/code`:
+- Relative path `./assets/app.js` resolves to `/quick-setup/code/assets/app.js` ❌
+- Absolute path `/assets/app.js` resolves to `/assets/app.js` ✓
 
 **API Calls in JavaScript/TypeScript:**
 
