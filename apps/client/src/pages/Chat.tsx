@@ -66,8 +66,12 @@ export default function Chat() {
     queryKey: ['session', sessionId],
     queryFn: () => sessionsApi.getMessages(Number(sessionId)),
     enabled: !!sessionId && sessionId !== 'new',
-    // Poll every 2 seconds if session is running or pending
+    // Poll every 2 seconds if session is running or pending, but NOT while SSE stream is active
+    // This prevents duplicate messages from both SSE and polling
     refetchInterval: () => {
+      // Don't poll while SSE stream is active to avoid duplicates
+      if (isExecuting) return false;
+
       const session = sessionDetailsData?.data;
       return session?.status === 'running' || session?.status === 'pending' ? 2000 : false;
     },
@@ -452,8 +456,10 @@ export default function Chat() {
           console.log('[Chat] Locking fields after first submission');
           setIsLocked(true);
         }
-        // Invalidate the query to refetch session data with aiWorkerSessionId
+        // Invalidate queries to refetch session data and messages from database
+        // This syncs the final state after SSE stream completes
         queryClient.invalidateQueries({ queryKey: ['currentSession', data.chatSessionId] });
+        queryClient.invalidateQueries({ queryKey: ['session', String(data.chatSessionId)] });
 
         // Poll for generated title every 3 seconds for up to 60 seconds
         // (Title generation happens in background and completes ~15-20s after main request)
