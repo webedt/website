@@ -53,7 +53,7 @@ function App() {
 
     // Check if we're in a path-based deployment (3+ path segments)
     const pathSegments = pathname.split('/').filter(Boolean);
-    if (pathSegments.length >= 3 && !['login', 'register', 'chat', 'settings', 'new-session'].includes(pathSegments[0])) {
+    if (pathSegments.length >= 3 && !['login', 'register', 'session', 'settings', 'new-session'].includes(pathSegments[0])) {
       // Assume format: /owner/repo/branch/...
       return `/${pathSegments[0]}/${pathSegments[1]}/${pathSegments[2]}`;
     }
@@ -88,7 +88,7 @@ function App() {
               }
             />
             <Route
-              path="/chat"
+              path="/session"
               element={
                 <ProtectedRoute>
                   <Chat />
@@ -96,7 +96,7 @@ function App() {
               }
             />
             <Route
-              path="/chat/:sessionId"
+              path="/session/:sessionId"
               element={
                 <ProtectedRoute>
                   <Chat />
