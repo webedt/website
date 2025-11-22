@@ -91,17 +91,24 @@ export function useEventSource(url: string | null, options: UseEventSourceOption
       const decoder = new TextDecoder();
       let buffer = '';
 
+      let currentEvent = '';
+      let currentData = '';
+
       while (true) {
         const { done, value } = await reader.read();
 
-        if (done) break;
+        if (done) {
+          // Flush any remaining event in the buffer
+          if (currentEvent || currentData) {
+            console.log('[SSE] Flushing final event:', currentEvent || 'message', currentData.substring(0, 100));
+            handleSSEEvent(currentEvent || 'message', currentData);
+          }
+          break;
+        }
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
         buffer = lines.pop() || '';
-
-        let currentEvent = '';
-        let currentData = '';
 
         for (const line of lines) {
           if (!line.trim()) {
