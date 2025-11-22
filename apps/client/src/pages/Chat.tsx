@@ -28,9 +28,11 @@ export default function Chat() {
   const [editingTitle, setEditingTitle] = useState(false);
   const [editTitle, setEditTitle] = useState('');
   const [deletingSession, setDeletingSession] = useState(false);
-  const [currentSessionId, setCurrentSessionId] = useState<number | null>(
-    sessionId ? Number(sessionId) : null
-  );
+  const [currentSessionId, setCurrentSessionId] = useState<number | null>(() => {
+    if (!sessionId || sessionId === 'new') return null;
+    const parsed = Number(sessionId);
+    return isNaN(parsed) ? null : parsed;
+  });
   const [aiWorkerSessionId, setAiWorkerSessionId] = useState<string | null>(null);
   const [isLocked, setIsLocked] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -54,7 +56,13 @@ export default function Chat() {
   // Load session details first to check status
   const { data: sessionDetailsData } = useQuery({
     queryKey: ['session-details', sessionId],
-    queryFn: () => sessionsApi.get(Number(sessionId)),
+    queryFn: () => {
+      const id = Number(sessionId);
+      if (isNaN(id)) {
+        throw new Error('Invalid session ID');
+      }
+      return sessionsApi.get(id);
+    },
     enabled: !!sessionId && sessionId !== 'new',
     // Poll every 2 seconds if session is running or pending
     refetchInterval: (query) => {
@@ -66,7 +74,13 @@ export default function Chat() {
   // Load existing session messages if sessionId provided
   const { data: sessionData } = useQuery({
     queryKey: ['session', sessionId],
-    queryFn: () => sessionsApi.getMessages(Number(sessionId)),
+    queryFn: () => {
+      const id = Number(sessionId);
+      if (isNaN(id)) {
+        throw new Error('Invalid session ID');
+      }
+      return sessionsApi.getMessages(id);
+    },
     enabled: !!sessionId && sessionId !== 'new',
     // Poll every 2 seconds if session is running or pending, but NOT while SSE stream is active
     // This prevents duplicate messages from both SSE and polling
@@ -85,14 +99,14 @@ export default function Chat() {
   const { data: currentSessionData } = useQuery({
     queryKey: ['currentSession', currentSessionId],
     queryFn: async () => {
-      if (!currentSessionId || currentSessionId === 0) return null;
-      const response = await fetch(`./api/sessions/${currentSessionId}`, {
+      if (!currentSessionId || currentSessionId === 0 || isNaN(currentSessionId)) return null;
+      const response = await fetch(`${API_BASE_URL}/api/sessions/${currentSessionId}`, {
         credentials: 'include',
       });
       if (!response.ok) throw new Error('Failed to fetch session');
       return response.json();
     },
-    enabled: !!currentSessionId && currentSessionId !== 0,
+    enabled: !!currentSessionId && currentSessionId !== 0 && !isNaN(currentSessionId),
   });
 
   // Load repositories
