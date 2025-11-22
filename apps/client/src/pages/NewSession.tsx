@@ -237,6 +237,7 @@ export default function NewSession() {
             <div>
               <label className="label">
                 <span className="label-text font-semibold">Repository</span>
+                <span className="label-text-alt text-base-content/50">Optional</span>
               </label>
               <div className="relative repo-dropdown">
                 <button
@@ -275,8 +276,12 @@ export default function NewSession() {
                           setRepoSearchQuery('');
                         }}
                         className={`w-full text-left px-4 py-2 text-sm hover:bg-base-200 ${!selectedRepo ? 'bg-primary/10 font-semibold' : ''}`}
+                        title="Session won't be saved to a repository"
                       >
-                        No repository
+                        <div>
+                          <div>No repository</div>
+                          <div className="text-xs text-base-content/50">Session only (not saved)</div>
+                        </div>
                       </button>
                       {filteredRepositories.length > 0 ? (
                         filteredRepositories.map((repo) => (
