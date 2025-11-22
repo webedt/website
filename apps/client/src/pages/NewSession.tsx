@@ -222,18 +222,17 @@ export default function NewSession() {
         </div>
 
         <div className="bg-base-100 rounded-2xl shadow-xl p-8 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="flex flex-col md:flex-row gap-6">
             {/* Repository Selector */}
-            <div>
+            <div className="flex-1">
               <label className="label">
                 <span className="label-text font-semibold">Repository</span>
-                <span className="label-text-alt text-base-content/50">Optional</span>
               </label>
               <div className="relative repo-dropdown">
                 <button
                   type="button"
                   onClick={() => setIsRepoDropdownOpen(!isRepoDropdownOpen)}
-                  className="btn btn-outline w-full justify-between normal-case h-12"
+                  className="relative flex items-center justify-between w-full h-12 px-4 border border-base-300 rounded-lg hover:border-base-content/20 transition-colors disabled:opacity-50 bg-transparent text-left"
                   disabled={!hasGithubAuth || isLoadingRepos}
                 >
                   <span className="truncate">
@@ -300,7 +299,7 @@ export default function NewSession() {
             </div>
 
             {/* Branch Selector */}
-            <div>
+            <div className="flex-1">
               <label className="label">
                 <span className="label-text font-semibold">Branch</span>
               </label>
@@ -370,7 +369,7 @@ export default function NewSession() {
             </div>
 
             {/* Auto-commit checkbox */}
-            <div>
+            <div className="flex-shrink-0">
               <label className="label">
                 <span className="label-text font-semibold">&nbsp;</span>
               </label>
@@ -382,7 +381,7 @@ export default function NewSession() {
                     onChange={(e) => setAutoCommit(e.target.checked)}
                     className="checkbox checkbox-primary"
                   />
-                  <span className="label-text font-semibold">Auto-commit on Save</span>
+                  <span className="label-text font-semibold whitespace-nowrap">Auto-commit on Save</span>
                 </label>
               </div>
             </div>
