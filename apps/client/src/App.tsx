@@ -159,6 +159,54 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/session/:sessionId/chat"
+            element={
+              <ProtectedRoute>
+                <Chat />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/session/:sessionId/code"
+            element={
+              <ProtectedRoute>
+                <Code />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/session/:sessionId/images"
+            element={
+              <ProtectedRoute>
+                <Images />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/session/:sessionId/sound"
+            element={
+              <ProtectedRoute>
+                <Sound />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/session/:sessionId/scene-editor"
+            element={
+              <ProtectedRoute>
+                <SceneEditor />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/session/:sessionId/preview"
+            element={
+              <ProtectedRoute>
+                <Preview />
+              </ProtectedRoute>
+            }
+          />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
