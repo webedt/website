@@ -470,27 +470,25 @@ export default function Chat() {
         const initialTitle = getInitialTitle();
         console.log('[Chat] Starting title poll, initial title:', initialTitle);
 
-        const titlePollInterval = setInterval(() => {
+        const titlePollInterval = setInterval(async () => {
           pollAttempts++;
           console.log(`[Chat] Polling for title update (attempt ${pollAttempts}/${maxPollAttempts})...`);
 
-          // Invalidate and refetch
-          queryClient.invalidateQueries({ queryKey: ['session-details', sessionIdToCheck] });
-          queryClient.invalidateQueries({ queryKey: ['sessions'] });
+          // Refetch and wait for completion
+          await queryClient.refetchQueries({ queryKey: ['session-details', sessionIdToCheck] });
+          await queryClient.refetchQueries({ queryKey: ['sessions'] });
 
           // Check if title has changed
-          setTimeout(() => {
-            const currentTitle = getInitialTitle();
-            console.log('[Chat] Current title after refetch:', currentTitle);
+          const currentTitle = getInitialTitle();
+          console.log('[Chat] Current title after refetch:', currentTitle);
 
-            if (currentTitle && currentTitle !== initialTitle) {
-              console.log('[Chat] Title updated! Stopping poll.');
-              clearInterval(titlePollInterval);
-            } else if (pollAttempts >= maxPollAttempts) {
-              console.log('[Chat] Max poll attempts reached, stopping poll.');
-              clearInterval(titlePollInterval);
-            }
-          }, 500); // Small delay to let query refetch complete
+          if (currentTitle && currentTitle !== initialTitle) {
+            console.log('[Chat] Title updated! Stopping poll.');
+            clearInterval(titlePollInterval);
+          } else if (pollAttempts >= maxPollAttempts) {
+            console.log('[Chat] Max poll attempts reached, stopping poll.');
+            clearInterval(titlePollInterval);
+          }
         }, 3000);
 
         // Navigate to the session URL if not already there
