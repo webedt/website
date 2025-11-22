@@ -248,8 +248,8 @@ export default function NewSession() {
                 >
                   <span className="truncate">
                     {isLoadingRepos ? 'Loading...' : selectedRepo
-                      ? sortedRepositories.find((r) => r.cloneUrl === selectedRepo)?.fullName || 'Select a repository'
-                      : 'Select a repository'}
+                      ? sortedRepositories.find((r) => r.cloneUrl === selectedRepo)?.fullName || 'No repository'
+                      : 'No repository'}
                   </span>
                   <svg className="w-4 h-4 ml-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
