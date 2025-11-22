@@ -263,11 +263,11 @@ const executeHandler = async (req: any, res: any) => {
 
     // Generate session title for new sessions (not resuming) - run in background AFTER main request starts
     if (!chatSessionId && userRequest) {
-      // Fire and forget - delay 2 seconds to let main request get to worker first
+      // Fire and forget - delay 7 seconds to let main request complete first (avoids timeout)
       (async () => {
         try {
-          console.log('[Execute] Will generate session title in 2 seconds (after main request starts)...');
-          await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second delay
+          console.log('[Execute] Will generate session title in 7 seconds (after main request completes)...');
+          await new Promise(resolve => setTimeout(resolve, 7000)); // 7 second delay
 
           console.log('[Execute] Generating session title for new session (background)...');
           const aiWorkerUrl = process.env.AI_WORKER_URL || 'http://localhost:5001';
