@@ -1,4 +1,4 @@
-import { Link, Outlet, useNavigate } from 'react-router-dom';
+import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/lib/store';
 import { authApi } from '@/lib/api';
 import { useState, useRef, useEffect } from 'react';
@@ -8,6 +8,7 @@ import { VERSION } from '@/version';
 export default function Layout() {
   const { user, isAuthenticated, clearUser } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -176,15 +177,21 @@ export default function Layout() {
         </div>
       </nav>
 
-      {/* Second Bar - Just New Session button for non-session pages */}
+      {/* Second Bar - Context-specific content */}
       <div className="bg-base-100 border-b border-base-300">
         <div className="px-4 h-12 flex items-center justify-center gap-4">
-          <Link
-            to="/new-session"
-            className="btn btn-sm btn-primary"
-          >
-            New Session
-          </Link>
+          {location.pathname === '/new-session' ? (
+            <span className="text-sm text-base-content/70">
+              Configure your workspace settings below to create a new session
+            </span>
+          ) : (
+            <Link
+              to="/new-session"
+              className="btn btn-sm btn-primary"
+            >
+              New Session
+            </Link>
+          )}
         </div>
       </div>
 
