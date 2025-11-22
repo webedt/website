@@ -201,7 +201,7 @@ export default function NewSession() {
   const handleActivityClick = (_activityId: ActivityType) => {
     // Navigate to chat with pre-selected repository/branch/autoCommit settings
     // These will be locked in the chat page, but no stream will auto-start
-    navigate('/chat/new', {
+    navigate('/session/new', {
       state: {
         preSelectedSettings: {
           repositoryUrl: selectedRepo || undefined,

@@ -341,10 +341,10 @@ export default function Chat() {
         console.log('[Chat] Session created with ID:', data.chatSessionId);
         setCurrentSessionId(data.chatSessionId);
 
-        // Navigate to the actual session URL if we're on /chat/new
+        // Navigate to the actual session URL if we're on /session/new
         if (!sessionId || sessionId === 'new') {
           console.log('[Chat] Navigating to session:', data.chatSessionId);
-          navigate(`/chat/${data.chatSessionId}`, { replace: true });
+          navigate(`/session/${data.chatSessionId}`, { replace: true });
         }
 
         // Don't display this as a message
@@ -535,7 +535,7 @@ export default function Chat() {
         // Navigate to the session URL if not already there
         if (!sessionId || Number(sessionId) !== data.chatSessionId) {
           console.log('[Chat] Navigating to session:', data.chatSessionId);
-          navigate(`/chat/${data.chatSessionId}`, { replace: true });
+          navigate(`/session/${data.chatSessionId}`, { replace: true });
         }
       }
       // Refocus input after processing completes (with delay to ensure DOM updates)

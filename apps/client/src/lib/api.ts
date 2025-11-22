@@ -13,7 +13,7 @@ function getApiBaseUrl(): string {
 
   // Check if we're in a path-based deployment (3+ path segments)
   // and first segment is not a route name
-  if (pathSegments.length >= 3 && !['login', 'register', 'chat', 'settings'].includes(pathSegments[0])) {
+  if (pathSegments.length >= 3 && !['login', 'register', 'session', 'settings'].includes(pathSegments[0])) {
     // Assume format: /owner/repo/branch/...
     return `/${pathSegments[0]}/${pathSegments[1]}/${pathSegments[2]}`;
   }

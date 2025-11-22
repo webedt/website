@@ -150,7 +150,7 @@ export default function Dashboard() {
     }
 
     // Navigate to Chat with execute params - let Chat create the session and handle streaming
-    navigate('/chat/new', {
+    navigate('/session/new', {
       state: {
         startStream: true,
         streamParams: {
@@ -296,7 +296,7 @@ export default function Dashboard() {
                           </button>
                         </div>
                       ) : (
-                        <Link to={`/chat/${session.id}`}>
+                        <Link to={`/session/${session.id}`}>
                           <p className="text-sm font-medium text-primary truncate">
                             {session.userRequest}
                           </p>
