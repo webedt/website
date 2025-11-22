@@ -18,7 +18,7 @@ const activities: Activity[] = [
     id: 'chat',
     title: 'Chat',
     icon: (
-      <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
+      <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
         <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/>
       </svg>
     ),
@@ -27,7 +27,7 @@ const activities: Activity[] = [
     id: 'code',
     title: 'Code',
     icon: (
-      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
       </svg>
     ),
@@ -36,7 +36,7 @@ const activities: Activity[] = [
     id: 'images',
     title: 'Images and Animations',
     icon: (
-      <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
+      <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2-3.5l-3-4 4-5 3 4 2-2.5 4 5H10z"/>
       </svg>
     ),
@@ -45,7 +45,7 @@ const activities: Activity[] = [
     id: 'sound',
     title: 'Sound and Music',
     icon: (
-      <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
+      <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
         <path d="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/>
       </svg>
     ),
@@ -54,7 +54,7 @@ const activities: Activity[] = [
     id: 'scene',
     title: 'Scene and Object Editor',
     icon: (
-      <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
+      <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
         <path d="M12 2l-5.5 9h11L12 2zm0 3.84L13.93 9h-3.87L12 5.84zM17.5 13c-2.49 0-4.5 2.01-4.5 4.5s2.01 4.5 4.5 4.5 4.5-2.01 4.5-4.5-2.01-4.5-4.5-4.5zm0 7c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5zM3 21.5h8v-8H3v8zm2-6h4v4H5v-4z"/>
       </svg>
     ),
@@ -63,7 +63,7 @@ const activities: Activity[] = [
     id: 'preview',
     title: 'Preview',
     icon: (
-      <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
+      <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
         <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
       </svg>
     ),
@@ -230,25 +230,25 @@ export default function NewSession() {
   };
 
   return (
-    <div className="min-h-screen bg-base-200 flex items-start justify-center px-4 pt-16">
+    <div className="min-h-screen bg-base-200 flex items-start justify-center px-4 pt-8">
       <div className="max-w-5xl w-full">
-        <div className="text-center mb-8">
-          <h1 className="text-5xl font-bold text-base-content mb-4">Start a New Session</h1>
-          <p className="text-lg text-base-content/70">Configure your workspace and choose an activity to begin.</p>
+        <div className="text-center mb-4">
+          <h1 className="text-3xl font-bold text-base-content mb-2">Start a New Session</h1>
+          <p className="text-sm text-base-content/70">Configure your workspace and choose an activity to begin.</p>
         </div>
 
-        <div className="bg-base-100 rounded-2xl shadow-xl p-8 mb-6">
-          <div className="flex flex-col md:flex-row gap-6">
+        <div className="bg-base-100 rounded-2xl shadow-xl p-4 mb-4">
+          <div className="flex flex-col md:flex-row gap-3">
             {/* Repository Selector */}
             <div className="flex-1">
-              <label className="label">
-                <span className="label-text font-semibold">Repository</span>
+              <label className="label py-1">
+                <span className="label-text font-semibold text-sm">Repository</span>
               </label>
               <div className="relative repo-dropdown">
                 <button
                   type="button"
                   onClick={() => setIsRepoDropdownOpen(!isRepoDropdownOpen)}
-                  className="relative flex items-center justify-between w-full h-12 px-4 border border-base-300 rounded-lg hover:border-base-content/20 transition-colors disabled:opacity-50 bg-transparent text-left"
+                  className="relative flex items-center justify-between w-full h-9 px-3 text-sm border border-base-300 rounded-lg hover:border-base-content/20 transition-colors disabled:opacity-50 bg-transparent text-left"
                   disabled={!hasGithubAuth || isLoadingRepos}
                 >
                   <span className="truncate">
@@ -316,16 +316,16 @@ export default function NewSession() {
 
             {/* Branch Selector */}
             <div className="flex-1">
-              <label className="label">
-                <span className="label-text font-semibold">Branch</span>
+              <label className="label py-1">
+                <span className="label-text font-semibold text-sm">Branch</span>
               </label>
-              <div className="relative flex items-center border border-base-300 rounded-lg h-12 pr-0 overflow-hidden hover:border-base-content/20 transition-colors">
+              <div className="relative flex items-center border border-base-300 rounded-lg h-9 pr-0 overflow-hidden hover:border-base-content/20 transition-colors">
                 <input
                   type="text"
                   value={branch}
                   onChange={(e) => setBranch(e.target.value)}
                   placeholder="main"
-                  className="flex-1 px-4 bg-transparent focus:outline-none disabled:opacity-50"
+                  className="flex-1 px-3 text-sm bg-transparent focus:outline-none disabled:opacity-50"
                   disabled={!selectedRepo}
                 />
                 <div className="relative branch-dropdown flex-shrink-0 border-l border-base-300">
@@ -333,7 +333,7 @@ export default function NewSession() {
                     type="button"
                     onClick={fetchBranches}
                     disabled={!selectedRepo || isLoadingBranches}
-                    className="h-12 w-12 flex items-center justify-center hover:bg-base-200 transition-colors disabled:opacity-50"
+                    className="h-9 w-9 flex items-center justify-center hover:bg-base-200 transition-colors disabled:opacity-50"
                     title="Browse branches"
                   >
                     {isLoadingBranches ? (
@@ -386,18 +386,18 @@ export default function NewSession() {
 
             {/* Auto-commit checkbox */}
             <div className="flex-shrink-0">
-              <label className="label">
-                <span className="label-text font-semibold">&nbsp;</span>
+              <label className="label py-1">
+                <span className="label-text font-semibold text-sm">&nbsp;</span>
               </label>
-              <div className="flex items-center h-12">
-                <label className="label cursor-pointer gap-2">
+              <div className="flex items-center h-9">
+                <label className="label cursor-pointer gap-2 py-0">
                   <input
                     type="checkbox"
                     checked={autoCommit}
                     onChange={(e) => setAutoCommit(e.target.checked)}
-                    className="checkbox checkbox-primary"
+                    className="checkbox checkbox-primary checkbox-sm"
                   />
-                  <span className="label-text font-semibold whitespace-nowrap">Auto-commit on Save</span>
+                  <span className="label-text font-semibold text-sm whitespace-nowrap">Auto-commit on Save</span>
                 </label>
               </div>
             </div>
@@ -405,19 +405,19 @@ export default function NewSession() {
         </div>
 
         {/* Activity Selection */}
-        <div className="bg-base-100 rounded-2xl shadow-xl p-8">
-          <h2 className="text-2xl font-bold text-center mb-6">What would you like to do?</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="bg-base-100 rounded-2xl shadow-xl p-4">
+          <h2 className="text-xl font-bold text-center mb-4">What would you like to do?</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {activities.map((activity) => (
               <button
                 key={activity.id}
                 onClick={() => handleActivityClick(activity.id)}
-                className="flex flex-col items-center justify-center p-6 bg-base-200 hover:bg-base-300 rounded-lg transition-all hover:scale-105 active:scale-95 border-2 border-transparent hover:border-primary"
+                className="flex flex-col items-center justify-center p-4 bg-base-200 hover:bg-base-300 rounded-lg transition-all hover:scale-105 active:scale-95 border-2 border-transparent hover:border-primary"
               >
-                <div className="text-primary mb-3">
+                <div className="text-primary mb-2">
                   {activity.icon}
                 </div>
-                <h3 className="text-base font-semibold text-center">{activity.title}</h3>
+                <h3 className="text-sm font-semibold text-center">{activity.title}</h3>
               </button>
             ))}
           </div>
