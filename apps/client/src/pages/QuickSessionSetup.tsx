@@ -47,7 +47,7 @@ const activityInfo: Record<ActivityType, ActivityInfo> = {
   },
   scene: {
     id: 'scene',
-    title: 'Scene Editor',
+    title: 'Scene and Object Editor',
     route: '/scene-editor',
     icon: (
       <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
