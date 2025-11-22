@@ -8,10 +8,10 @@ on:
 jobs:
   configure-dokploy:
     runs-on: self-hosted
-    # Skip deployment for automated version update commits on main branch only
+    # On main: only deploy version update commits. On other branches: deploy everything
     if: |
-      !(
-        github.ref == 'refs/heads/main' &&
+      github.ref != 'refs/heads/main' ||
+      (
         github.event.head_commit.author.name == 'github-actions[bot]' &&
         contains(github.event.head_commit.message, 'Update version numbers')
       )
