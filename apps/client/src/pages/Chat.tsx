@@ -255,10 +255,38 @@ export default function Chat() {
     }
   }, [currentSessionData]);
 
-  // Auto-connect to stream when navigating from Dashboard with stream params
+  // Handle pre-selected settings from NewSession hub
   useEffect(() => {
-    // Check if we came from Dashboard with stream params
     const state = location.state as any;
+
+    // Check for pre-selected settings from NewSession hub
+    if (state?.preSelectedSettings && !currentSessionId) {
+      const { repositoryUrl, branch: preSelectedBranch, autoCommit: preSelectedAutoCommit, locked } = state.preSelectedSettings;
+
+      console.log('[Chat] Loading pre-selected settings:', state.preSelectedSettings);
+
+      if (repositoryUrl) {
+        setSelectedRepo(repositoryUrl);
+      }
+
+      if (preSelectedBranch) {
+        setBranch(preSelectedBranch);
+      }
+
+      if (preSelectedAutoCommit !== undefined) {
+        setAutoCommit(preSelectedAutoCommit);
+      }
+
+      if (locked) {
+        setIsLocked(true);
+      }
+
+      // Clear the navigation state to prevent re-applying
+      navigate(location.pathname, { replace: true, state: {} });
+      return;
+    }
+
+    // Check if we came from Dashboard with stream params (old behavior for backward compatibility)
     if (state?.startStream && state?.streamParams && !streamUrl) {
       console.log('[Chat] Auto-starting stream from navigation state:', state.streamParams);
 
@@ -288,7 +316,7 @@ export default function Chat() {
       // Clear the navigation state to prevent re-triggering
       navigate(location.pathname, { replace: true, state: {} });
     }
-  }, [location.state, streamUrl, navigate, location.pathname]);
+  }, [location.state, streamUrl, navigate, location.pathname, currentSessionId]);
 
   // Reset title edit tracking when switching to a different session
   useEffect(() => {
@@ -710,115 +738,140 @@ export default function Chat() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">
-      {/* Header */}
-      <div className="bg-base-100 border-b border-base-300 p-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-2">
-            {editingTitle && session ? (
-              <div className="flex items-center space-x-2 flex-1">
-                <input
-                  type="text"
-                  value={editTitle}
-                  onChange={(e) => setEditTitle(e.target.value)}
-                  className="flex-1 input input-bordered"
-                  autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleSaveTitle();
-                    if (e.key === 'Escape') handleCancelEdit();
-                  }}
-                />
-                <button
-                  onClick={handleSaveTitle}
-                  className="btn btn-success btn-sm"
-                  disabled={updateMutation.isPending}
-                >
-                  Save
-                </button>
-                <button
-                  onClick={handleCancelEdit}
-                  className="btn btn-ghost btn-sm"
-                >
-                  Cancel
-                </button>
+      {/* Header - only show for existing sessions with messages */}
+      {messages.length > 0 && (
+        <div className="bg-base-100 border-b border-base-300 p-4">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-between mb-2">
+              {editingTitle && session ? (
+                <div className="flex items-center space-x-2 flex-1">
+                  <input
+                    type="text"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    className="flex-1 input input-bordered"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleSaveTitle();
+                      if (e.key === 'Escape') handleCancelEdit();
+                    }}
+                  />
+                  <button
+                    onClick={handleSaveTitle}
+                    className="btn btn-success btn-sm"
+                    disabled={updateMutation.isPending}
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={handleCancelEdit}
+                    className="btn btn-ghost btn-sm"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <h1 className="text-2xl font-bold text-base-content">
+                    {session ? session.userRequest : 'Chat Session'}
+                  </h1>
+                  {session && (
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={handleEditTitle}
+                        className="btn btn-ghost btn-sm btn-circle"
+                        title="Edit session title"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-5 w-5"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={handleDeleteSession}
+                        className="btn btn-ghost btn-sm btn-circle text-error"
+                        title="Delete session"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-5 w-5"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {isLocked && (
+              <div className="alert alert-info mt-4">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                <span className="text-sm">
+                  This session is locked to repository {selectedRepo}{branch ? ` on branch ${branch}` : ''}. Repository, branch, and auto-commit settings cannot be changed after the first request.
+                </span>
               </div>
-            ) : (
-              <>
-                <h1 className="text-2xl font-bold text-base-content">
-                  {session ? session.userRequest : 'Chat Session'}
-                </h1>
-                {session && (
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={handleEditTitle}
-                      className="btn btn-ghost btn-sm btn-circle"
-                      title="Edit session title"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={handleDeleteSession}
-                      className="btn btn-ghost btn-sm btn-circle text-error"
-                      title="Delete session"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                )}
-              </>
+            )}
+
+            {!user?.githubAccessToken && (
+              <div className="alert alert-warning mt-4">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <span className="text-sm">
+                  Connect GitHub in settings to work with repositories
+                </span>
+              </div>
+            )}
+
+            {!user?.claudeAuth && (
+              <div className="alert alert-error mt-4">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span className="text-sm">
+                  Add Claude credentials in settings to use the AI assistant
+                </span>
+              </div>
             )}
           </div>
-
-          {isLocked && (
-            <div className="alert alert-info mt-4">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-              <span className="text-sm">
-                This session is locked to repository {selectedRepo}{branch ? ` on branch ${branch}` : ''}. Repository, branch, and auto-commit settings cannot be changed after the first request.
-              </span>
-            </div>
-          )}
-
-          {!user?.githubAccessToken && (
-            <div className="alert alert-warning mt-4">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-              <span className="text-sm">
-                Connect GitHub in settings to work with repositories
-              </span>
-            </div>
-          )}
-
-          {!user?.claudeAuth && (
-            <div className="alert alert-error mt-4">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-              <span className="text-sm">
-                Add Claude credentials in settings to use the AI assistant
-              </span>
-            </div>
-          )}
         </div>
-      </div>
+      )}
 
       {/* Messages or Centered Input */}
       {messages.length === 0 ? (
         /* Centered input for new session */
-        <div className="flex-1 flex items-center justify-center p-6">
+        <div className="flex-1 flex flex-col items-center justify-center p-6">
+          {/* Auth warnings for centered view */}
+          {(!user?.githubAccessToken || !user?.claudeAuth) && (
+            <div className="mb-6 space-y-2 max-w-2xl w-full">
+              {!user?.githubAccessToken && (
+                <div className="alert alert-warning">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                  <span className="text-sm">
+                    Connect GitHub in settings to work with repositories
+                  </span>
+                </div>
+              )}
+
+              {!user?.claudeAuth && (
+                <div className="alert alert-error">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  <span className="text-sm">
+                    Add Claude credentials in settings to use the AI assistant
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
           <ChatInput
             key="centered-input"
             ref={chatInputRef}

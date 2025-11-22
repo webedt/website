@@ -404,7 +404,7 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
   }));
 
   return (
-    <form onSubmit={onSubmit} className={`max-w-4xl ${centered ? 'w-full -mt-12' : 'mx-auto w-full'}`}>
+    <form onSubmit={onSubmit} className={centered ? 'w-full max-w-3xl' : 'max-w-4xl mx-auto w-full'}>
       {/* Image previews */}
       {images.length > 0 && (
         <div className="mb-2 flex flex-wrap gap-2">
@@ -439,8 +439,8 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
           onChange={(e) => setInput(e.target.value)}
           onPaste={handlePaste}
           placeholder="Describe what you want to code... (paste images, use voice input, or attach files)"
-          rows={4}
-          className="textarea textarea-bordered w-full shadow-lg resize-none pr-36 text-base p-4 pb-16"
+          rows={centered ? 6 : 4}
+          className={`textarea textarea-bordered w-full shadow-lg resize-none pr-36 p-4 pb-16 ${centered ? 'text-lg' : 'text-base'}`}
           disabled={isExecuting || !user?.claudeAuth}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
