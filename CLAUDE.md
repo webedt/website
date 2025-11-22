@@ -292,68 +292,24 @@ See `GIT_COMMIT_MESSAGE_INSTRUCTIONS.md` for complete rules and examples.
 
 ## Version Management
 
-**MANDATORY REQUIREMENT:** Before creating ANY git commit, you MUST run the version generation script.
+Version numbers are **automatically managed** by GitHub Actions when pull requests are created or updated targeting the main branch.
 
-### Pre-Commit Workflow
+### Automated Workflow
 
-Every time you commit code, follow these steps in order:
+When you create or update a pull request to main:
+1. A GitHub Action automatically runs `pnpm version:generate`
+2. If version files need updating, they are committed to your PR branch
+3. No manual intervention required during development
 
-1. **Generate version** (REQUIRED):
-   ```bash
-   pnpm version:generate
-   ```
+### Manual Updates (Optional)
 
-2. **Stage version files**:
-   ```bash
-   git add package.json apps/client/src/version.ts
-   ```
-
-3. **Stage your changes**:
-   ```bash
-   git add <your-files>
-   ```
-
-4. **Commit**:
-   ```bash
-   git commit -m "your message"
-   ```
-
-### Why This Is Required
-
-The version number is calculated based on commits since the last git tag. If you commit WITHOUT running `pnpm version:generate` first:
-- ❌ The version will be incorrect (off by one)
-- ❌ package.json will show the wrong version
-- ❌ The UI will display an outdated version
-
-By running `pnpm version:generate` BEFORE committing, the version files reflect the NEXT commit number, which is correct.
-
-### Example
-
+During development on feature branches, you can optionally run:
 ```bash
-# Current state: 10 commits since v1.0.0
-pnpm version:show
-# Output: 1.0.10
-
-# CORRECT - Generate version BEFORE commit
-pnpm version:generate
-# Updates to 1.0.10 (will be correct after commit)
-git add package.json apps/client/src/version.ts
-git add src/myfile.ts
-git commit -m "Add new feature"
-# Now at 1.0.11 ✓
-
-# WRONG - Don't skip version generation
-git add src/myfile.ts
-git commit -m "Add new feature"
-# Version still shows 1.0.10, but should be 1.0.11 ❌
+pnpm version:show  # View current version
+pnpm version:generate  # Update version files
 ```
 
-### Quick Reference
-
-**Before every commit, run:**
-```bash
-pnpm version:generate && git add package.json apps/client/src/version.ts
-```
+However, this is **not required** - the automation handles it when preparing PRs for main.
 
 See `VERSIONING.md` for complete documentation on the versioning system.
 

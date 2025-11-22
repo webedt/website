@@ -1,0 +1,84 @@
+name: Update Version on PR
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
+
+jobs:
+  update-version:
+    runs-on: self-hosted
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate version
+        run: pnpm version:generate
+
+      - name: Check for version changes
+        id: check_changes
+        run: |
+          if git diff --quiet package.json apps/client/src/version.ts; then
+            echo "changes=false" >> $GITHUB_OUTPUT
+            echo "No version changes detected"
+          else
+            echo "changes=true" >> $GITHUB_OUTPUT
+            echo "Version changes detected:"
+            git diff package.json apps/client/src/version.ts
+          fi
+
+      - name: Commit version updates
+        if: steps.check_changes.outputs.changes == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add package.json apps/client/src/version.ts
+          git commit -m "$(cat <<'EOF'
+          Update version numbers
+
+          - Update package.json version
+          - Update client version.ts
+          EOF
+          )"
+
+      - name: Push changes
+        if: steps.check_changes.outputs.changes == 'true'
+        run: |
+          git push origin ${{ github.head_ref }}
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Version Update Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.check_changes.outputs.changes }}" = "true" ]; then
+            echo "✅ Version files updated and committed to PR" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Updated files:" >> $GITHUB_STEP_SUMMARY
+            echo "- package.json" >> $GITHUB_STEP_SUMMARY
+            echo "- apps/client/src/version.ts" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "ℹ️ Version files are already up to date" >> $GITHUB_STEP_SUMMARY
+          fi

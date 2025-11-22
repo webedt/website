@@ -98,13 +98,48 @@ git checkout main
 
 Each branch independently counts commits from its most recent ancestor tag.
 
+## Automated Version Management
+
+**Version numbers are automatically managed by GitHub Actions.**
+
+### How It Works
+
+When you create or update a pull request targeting the `main` branch:
+
+1. The `update-version-on-pr.yml` workflow automatically runs
+2. It executes `pnpm version:generate` to calculate the current version
+3. If `package.json` or `apps/client/src/version.ts` need updating, it commits them to your PR branch
+4. The PR shows the updated version files ready for review
+
+### Benefits
+
+- ✅ No manual version management required during development
+- ✅ Versions are always accurate before merging to main
+- ✅ Reduces merge conflicts and forgotten version updates
+- ✅ Clear audit trail in PR history
+
+### During Development
+
+You don't need to run `pnpm version:generate` during development. Just commit your changes normally:
+
+```bash
+# Work on your feature
+git add src/my-feature.ts
+git commit -m "Add new feature"
+
+# Create PR to main - GitHub Actions handles versioning
+gh pr create --base main
+```
+
+The automation ensures version files are updated before your PR is merged.
+
 ## Build Integration
 
-The version is automatically updated during development:
+The version is available at build time:
 
-1. **Manual update**: Run `pnpm version:generate`
-2. **Build time**: Add to your build script if needed
-3. **CI/CD**: Run in GitHub Actions before deployment
+1. **Development**: Version calculated from git history
+2. **PR automation**: GitHub Actions updates version files automatically
+3. **Build time**: Add to your build script if needed for additional workflows
 
 ### Add to Build (Optional)
 
