@@ -43,7 +43,7 @@ export default function Layout() {
     if (!VERSION_TIMESTAMP) return 'Version information';
 
     const date = new Date(VERSION_TIMESTAMP);
-    return date.toLocaleString('en-US', {
+    const formattedDate = date.toLocaleString('en-US', {
       timeZone: 'America/Chicago',
       month: 'short',
       day: 'numeric',
@@ -53,6 +53,14 @@ export default function Layout() {
       second: '2-digit',
       timeZoneName: 'short'
     });
+
+    // On production, show timestamp with SHA in tooltip
+    if (isProduction() && VERSION_SHA) {
+      const shortSha = VERSION_SHA.substring(0, 7);
+      return `${formattedDate} (${shortSha})`;
+    }
+
+    return formattedDate;
   };
 
   // Close user menu when clicking outside
