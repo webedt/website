@@ -50,7 +50,7 @@ export default function Layout() {
                   to="/chat"
                   className="inline-flex items-center px-1 pt-1 text-sm font-medium text-base-content/70 hover:text-primary"
                 >
-                  New Chat
+                  New Session
                 </Link>
                 <Link
                   to="/settings"
@@ -118,7 +118,7 @@ export default function Layout() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="block px-3 py-2 rounded-md text-base font-medium text-base-content/70 hover:bg-base-200"
               >
-                New Chat
+                New Session
               </Link>
               <Link
                 to="/settings"
