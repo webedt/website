@@ -385,10 +385,10 @@ export default function Chat() {
             }
           }
         }
-        // Handle result type (final response)
-        else if (msgData.type === 'result' && msgData.result) {
-          content = typeof msgData.result === 'string' ? msgData.result : JSON.stringify(msgData.result, null, 2);
-          eventLabel = '✅';
+        // Skip result type - content already displayed from assistant message
+        else if (msgData.type === 'result') {
+          console.log('[Chat] Skipping result message (already displayed from assistant message)');
+          return;
         }
         // Skip system init messages
         else if (msgData.type === 'system' && msgData.subtype === 'init') {
