@@ -277,20 +277,23 @@ export default function Settings() {
         {/* Image Resize Settings */}
         <div className="card bg-base-100 shadow">
           <div className="card-body">
-            <h2 className="card-title">Image Resize Settings</h2>
-            <div className="space-y-4">
-              <p className="text-sm text-base-content/70">
+            <h2 className="card-title mb-2">Image Resize Settings</h2>
+
+            <div className="space-y-6">
+              <p className="text-sm text-base-content/70 leading-relaxed">
                 Configure the maximum dimension for pasted and uploaded images. Images will be automatically resized to fit within this size while maintaining their aspect ratio.
               </p>
 
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Maximum Image Dimension</span>
-                </label>
+              <div className="divider my-4"></div>
+
+              <div className="form-control w-full">
+                <div className="mb-3">
+                  <span className="font-medium text-base text-base-content">Maximum Image Dimension</span>
+                </div>
                 <select
                   value={imageResizeDimension}
                   onChange={(e) => setImageResizeDimension(Number(e.target.value))}
-                  className="select select-bordered w-full max-w-xs"
+                  className="select select-bordered w-full max-w-md"
                 >
                   <option value={512}>512 x 512</option>
                   <option value={1024}>1024 x 1024 (default)</option>
@@ -298,20 +301,22 @@ export default function Settings() {
                   <option value={4096}>4096 x 4096</option>
                   <option value={8000}>8000 x 8000 (max)</option>
                 </select>
-                <label className="label">
-                  <span className="label-text-alt text-base-content/70">
+                <div className="mt-2">
+                  <span className="text-sm text-base-content/60">
                     Smaller sizes reduce upload time and bandwidth usage
                   </span>
-                </label>
+                </div>
               </div>
 
-              <button
-                onClick={() => updateImageResizeSetting.mutate(imageResizeDimension)}
-                disabled={updateImageResizeSetting.isPending || imageResizeDimension === user?.imageResizeMaxDimension}
-                className="btn btn-primary"
-              >
-                {updateImageResizeSetting.isPending ? 'Saving...' : 'Save Setting'}
-              </button>
+              <div className="flex justify-start pt-2">
+                <button
+                  onClick={() => updateImageResizeSetting.mutate(imageResizeDimension)}
+                  disabled={updateImageResizeSetting.isPending || imageResizeDimension === user?.imageResizeMaxDimension}
+                  className="btn btn-primary min-w-[140px]"
+                >
+                  {updateImageResizeSetting.isPending ? 'Saving...' : 'Save Setting'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
