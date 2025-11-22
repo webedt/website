@@ -230,22 +230,24 @@ export default function QuickSessionSetup() {
 
   return (
     <div className="min-h-screen bg-base-200 flex items-center justify-center px-4">
-      <div className="max-w-2xl w-full">
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4 text-primary">
-            {currentActivity.icon}
-          </div>
-          <h1 className="text-4xl font-bold text-base-content mb-2">
-            Start {currentActivity.title}
-          </h1>
-          <p className="text-base-content/70">Configure your workspace to begin.</p>
-        </div>
-
+      <div className="max-w-4xl w-full">
         <div className="bg-base-100 rounded-2xl shadow-xl p-8">
-          <div className="space-y-6">
+          {/* Title and Description */}
+          <div className="text-center mb-8">
+            <div className="flex justify-center mb-4 text-primary">
+              {currentActivity.icon}
+            </div>
+            <h1 className="text-4xl font-bold text-base-content mb-2">
+              Start {currentActivity.title}
+            </h1>
+            <p className="text-base-content/70">Configure your workspace to begin.</p>
+          </div>
+
+          {/* Single Row: Repository, Branch, and Auto-commit */}
+          <div className="grid grid-cols-[2fr_1.5fr_auto] gap-4 items-end mb-6">
             {/* Repository Selector */}
             <div>
-              <label className="label">
+              <label className="label pb-2">
                 <span className="label-text font-semibold">Repository</span>
               </label>
               <div className="relative repo-dropdown">
@@ -320,7 +322,7 @@ export default function QuickSessionSetup() {
 
             {/* Branch Selector */}
             <div>
-              <label className="label">
+              <label className="label pb-2">
                 <span className="label-text font-semibold">Branch</span>
               </label>
               <div className="relative flex items-center border border-base-300 rounded-lg h-12 pr-0 overflow-hidden hover:border-base-content/20 transition-colors">
@@ -389,33 +391,27 @@ export default function QuickSessionSetup() {
             </div>
 
             {/* Auto-commit checkbox */}
-            <div>
-              <label className="label cursor-pointer justify-start gap-3">
+            <div className="pb-[6px]">
+              <label className="label cursor-pointer justify-start gap-2 h-12">
                 <input
                   type="checkbox"
                   checked={autoCommit}
                   onChange={(e) => setAutoCommit(e.target.checked)}
                   className="checkbox checkbox-primary"
                 />
-                <span className="label-text font-semibold">Auto-commit on Save</span>
+                <span className="label-text font-semibold whitespace-nowrap">Auto-commit on Save</span>
               </label>
             </div>
+          </div>
 
-            {/* Action buttons */}
-            <div className="flex gap-3 pt-4">
-              <button
-                onClick={() => navigate(-1)}
-                className="btn btn-ghost flex-1"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleStart}
-                className="btn btn-primary flex-1"
-              >
-                Start Session
-              </button>
-            </div>
+          {/* Action button */}
+          <div className="flex justify-center pt-4">
+            <button
+              onClick={handleStart}
+              className="btn btn-primary px-12"
+            >
+              Start Session
+            </button>
           </div>
         </div>
       </div>
