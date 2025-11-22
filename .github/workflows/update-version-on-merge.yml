@@ -66,6 +66,14 @@ jobs:
         run: |
           git push origin main
 
+      - name: Trigger deployment
+        if: steps.check_changes.outputs.changes == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🚀 Triggering Dokploy deployment workflow..."
+          gh workflow run deploy-dokploy.yml --ref main
+
       - name: Summary
         if: always()
         run: |
@@ -77,6 +85,8 @@ jobs:
             echo "Updated files:" >> $GITHUB_STEP_SUMMARY
             echo "- package.json" >> $GITHUB_STEP_SUMMARY
             echo "- apps/client/src/version.ts" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "🚀 Deployment workflow triggered" >> $GITHUB_STEP_SUMMARY
           else
             echo "ℹ️ Version files are already up to date" >> $GITHUB_STEP_SUMMARY
           fi
