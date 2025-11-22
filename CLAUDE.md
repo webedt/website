@@ -265,9 +265,12 @@ Live Site: [https://github.etdofresh.com/webedt/website/feature-new-UI/](https:/
 
 ```
 Subject Line [Required]
+
 - Detail Line 1 [Optional]
 - Detail Line 2 [Optional]
 ```
+
+**Note:** A blank line MUST separate the subject from detail lines.
 
 ### Examples
 
@@ -336,12 +339,12 @@ pnpm version:generate
 # Updates to 1.0.10 (will be correct after commit)
 git add package.json apps/client/src/version.ts
 git add src/myfile.ts
-git commit -m "feat: add feature"
+git commit -m "Add new feature"
 # Now at 1.0.11 ✓
 
 # WRONG - Don't skip version generation
 git add src/myfile.ts
-git commit -m "feat: add feature"
+git commit -m "Add new feature"
 # Version still shows 1.0.10, but should be 1.0.11 ❌
 ```
 

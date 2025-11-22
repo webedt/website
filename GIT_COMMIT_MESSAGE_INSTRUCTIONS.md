@@ -4,10 +4,13 @@
 
 ```
 Subject Line [Required]
+
 - Detail Line 1 [Optional]
 - Detail Line 2 [Optional]
 - ...
 ```
+
+**Important:** There MUST be a blank line between the subject and the detail lines.
 
 ## Rules
 
@@ -40,6 +43,7 @@ Remove unused assets and clean up project structure
 
 ```
 Enhance ColyseusManager and GameRoom for improved room management and connection handling
+
 - Update ColyseusManager to utilize roomCode from Discord API or URL query parameters for dynamic room joining
 - Modify GameRoom to store and log roomCode in metadata for better matchmaking and debugging
 - Ensure fallback behavior for roomCode when not provided, enhancing user experience during connection attempts
@@ -47,11 +51,13 @@ Enhance ColyseusManager and GameRoom for improved room management and connection
 
 ```
 Add UICanvas prefab and metadata for UI layout management
+
 - Introduce UICanvas prefab to manage the user interface layout
 ```
 
 ```
 Refactor PlayerController and CharacterCreatorUI to streamline character appearance updates
+
 - Introduce UpdateColyseusCharacterAppearance method in PlayerController for better code organization
 - Update CharacterCreatorUI to call the new method after saving character options, ensuring consistent state updates across the application
 ```
