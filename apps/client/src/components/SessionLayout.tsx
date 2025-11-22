@@ -1,7 +1,8 @@
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuthStore } from '@/lib/store';
-import { authApi } from '@/lib/api';
+import { authApi, sessionsApi, githubApi } from '@/lib/api';
 import { useState, useRef, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import ThemeSelector from './ThemeSelector';
 import { VERSION } from '@/version';
 
@@ -19,15 +20,15 @@ interface SessionLayoutProps {
 }
 
 export default function SessionLayout({
-  selectedRepo = '',
-  branch = '',
-  autoCommit = true,
+  selectedRepo: selectedRepoProp,
+  branch: branchProp,
+  autoCommit: autoCommitProp,
   onRepoChange,
   onBranchChange,
   onAutoCommitChange,
-  repositories = [],
-  isLoadingRepos = false,
-  isLocked = false,
+  repositories: repositoriesProp,
+  isLoadingRepos: isLoadingReposProp,
+  isLocked: isLockedProp,
   children,
 }: SessionLayoutProps) {
   const { user, isAuthenticated, clearUser } = useAuthStore();
@@ -35,6 +36,28 @@ export default function SessionLayout({
   const { sessionId } = useParams();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Fetch session data when sessionId exists and no props provided
+  const { data: sessionData } = useQuery({
+    queryKey: ['session-for-layout', sessionId],
+    queryFn: () => sessionsApi.get(Number(sessionId)),
+    enabled: !!sessionId && !selectedRepoProp,
+  });
+
+  // Fetch repositories when needed
+  const { data: reposData, isLoading: isLoadingReposQuery } = useQuery({
+    queryKey: ['repos'],
+    queryFn: githubApi.getRepos,
+    enabled: !!user?.githubAccessToken && !!sessionId && !repositoriesProp,
+  });
+
+  // Use fetched data if props not provided
+  const selectedRepo = selectedRepoProp ?? sessionData?.data?.repositoryUrl ?? '';
+  const branch = branchProp ?? sessionData?.data?.branch ?? '';
+  const autoCommit = autoCommitProp ?? sessionData?.data?.autoCommit ?? true;
+  const repositories = repositoriesProp ?? reposData?.data ?? [];
+  const isLoadingRepos = isLoadingReposProp ?? isLoadingReposQuery;
+  const isLocked = isLockedProp ?? (!!sessionId && !!sessionData?.data);
 
   const handleLogout = async () => {
     try {
