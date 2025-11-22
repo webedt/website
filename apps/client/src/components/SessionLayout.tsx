@@ -309,7 +309,7 @@ export default function SessionLayout({
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-base-content/70">Repository:</span>
                     <span className="text-sm text-base-content">
-                      {repositories.find(repo => repo.cloneUrl === selectedRepo)?.fullName || selectedRepo}
+                      {repositories.find((repo: any) => repo.cloneUrl === selectedRepo)?.fullName || selectedRepo}
                     </span>
                   </div>
 
@@ -349,7 +349,7 @@ export default function SessionLayout({
                       className="select select-sm select-bordered"
                     >
                       <option value="">No repository</option>
-                      {repositories.map((repo) => (
+                      {repositories.map((repo: any) => (
                         <option key={repo.id} value={repo.cloneUrl}>
                           {repo.fullName}
                         </option>
