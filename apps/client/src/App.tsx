@@ -88,22 +88,6 @@ function App() {
               }
             />
             <Route
-              path="/session"
-              element={
-                <ProtectedRoute>
-                  <Chat />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/session/:sessionId"
-              element={
-                <ProtectedRoute>
-                  <Chat />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path="/settings"
               element={
                 <ProtectedRoute>
@@ -112,6 +96,24 @@ function App() {
               }
             />
           </Route>
+
+          {/* Session routes use SessionLayout (embedded in Chat component) */}
+          <Route
+            path="/session"
+            element={
+              <ProtectedRoute>
+                <Chat />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/session/:sessionId"
+            element={
+              <ProtectedRoute>
+                <Chat />
+              </ProtectedRoute>
+            }
+          />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

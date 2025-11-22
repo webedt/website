@@ -6,6 +6,7 @@ import { useEventSource } from '@/hooks/useEventSource';
 import { useAuthStore } from '@/lib/store';
 import ChatInput, { type ChatInputRef, type ImageAttachment } from '@/components/ChatInput';
 import { ImageViewer } from '@/components/ImageViewer';
+import SessionLayout from '@/components/SessionLayout';
 import type { Message, GitHubRepository, ChatSession } from '@webedt/shared';
 
 export default function Chat() {
@@ -746,7 +747,18 @@ export default function Chat() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)]">
+    <SessionLayout
+      selectedRepo={selectedRepo}
+      branch={branch}
+      autoCommit={autoCommit}
+      onRepoChange={setSelectedRepo}
+      onBranchChange={setBranch}
+      onAutoCommitChange={setAutoCommit}
+      repositories={repositories}
+      isLoadingRepos={isLoadingRepos}
+      isLocked={isLocked}
+    >
+      <div className="flex flex-col h-full">
       {/* Header - only show for existing sessions with messages */}
       {messages.length > 0 && (
         <div className="bg-base-100 border-b border-base-300 p-4">
@@ -1072,6 +1084,7 @@ export default function Chat() {
           onClose={() => setViewingImage(null)}
         />
       )}
-    </div>
+      </div>
+    </SessionLayout>
   );
 }
