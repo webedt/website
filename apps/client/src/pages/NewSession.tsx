@@ -214,7 +214,7 @@ export default function NewSession() {
   };
 
   return (
-    <div className="min-h-screen bg-base-200 flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen bg-base-200 flex items-start justify-center px-4 pt-16">
       <div className="max-w-5xl w-full">
         <div className="text-center mb-8">
           <h1 className="text-5xl font-bold text-base-content mb-4">Start a New Session</h1>
@@ -222,18 +222,17 @@ export default function NewSession() {
         </div>
 
         <div className="bg-base-100 rounded-2xl shadow-xl p-8 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div className="flex flex-col md:flex-row gap-6">
             {/* Repository Selector */}
-            <div>
+            <div className="flex-1">
               <label className="label">
                 <span className="label-text font-semibold">Repository</span>
-                <span className="label-text-alt text-base-content/50">Optional</span>
               </label>
               <div className="relative repo-dropdown">
                 <button
                   type="button"
                   onClick={() => setIsRepoDropdownOpen(!isRepoDropdownOpen)}
-                  className="btn btn-outline w-full justify-between normal-case"
+                  className="relative flex items-center justify-between w-full h-12 px-4 border border-base-300 rounded-lg hover:border-base-content/20 transition-colors disabled:opacity-50 bg-transparent text-left"
                   disabled={!hasGithubAuth || isLoadingRepos}
                 >
                   <span className="truncate">
@@ -300,25 +299,25 @@ export default function NewSession() {
             </div>
 
             {/* Branch Selector */}
-            <div>
+            <div className="flex-1">
               <label className="label">
                 <span className="label-text font-semibold">Branch</span>
               </label>
-              <div className="flex gap-2">
+              <div className="relative flex items-center border border-base-300 rounded-lg h-12 pr-0 overflow-hidden hover:border-base-content/20 transition-colors">
                 <input
                   type="text"
                   value={branch}
                   onChange={(e) => setBranch(e.target.value)}
                   placeholder="main"
-                  className="input input-bordered flex-1"
+                  className="flex-1 px-4 bg-transparent focus:outline-none disabled:opacity-50"
                   disabled={!selectedRepo}
                 />
-                <div className="relative branch-dropdown">
+                <div className="relative branch-dropdown flex-shrink-0 border-l border-base-300">
                   <button
                     type="button"
                     onClick={fetchBranches}
                     disabled={!selectedRepo || isLoadingBranches}
-                    className="btn btn-square btn-outline"
+                    className="h-12 w-12 flex items-center justify-center hover:bg-base-200 transition-colors disabled:opacity-50"
                     title="Browse branches"
                   >
                     {isLoadingBranches ? (
@@ -368,19 +367,24 @@ export default function NewSession() {
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Auto-commit checkbox */}
-          <div className="flex items-center justify-end">
-            <label className="label cursor-pointer gap-2">
-              <input
-                type="checkbox"
-                checked={autoCommit}
-                onChange={(e) => setAutoCommit(e.target.checked)}
-                className="checkbox checkbox-primary"
-              />
-              <span className="label-text font-semibold">Auto-commit on Save</span>
-            </label>
+            {/* Auto-commit checkbox */}
+            <div className="flex-shrink-0">
+              <label className="label">
+                <span className="label-text font-semibold">&nbsp;</span>
+              </label>
+              <div className="flex items-center h-12">
+                <label className="label cursor-pointer gap-2">
+                  <input
+                    type="checkbox"
+                    checked={autoCommit}
+                    onChange={(e) => setAutoCommit(e.target.checked)}
+                    className="checkbox checkbox-primary"
+                  />
+                  <span className="label-text font-semibold whitespace-nowrap">Auto-commit on Save</span>
+                </label>
+              </div>
+            </div>
           </div>
         </div>
 
