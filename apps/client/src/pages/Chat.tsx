@@ -388,7 +388,7 @@ export default function Chat() {
         setAiWorkerSessionId(data.sessionId);
       }
 
-      // Skip system events
+      // Skip system events (but NOT commit_progress or github_pull_progress)
       if (eventType === 'connected' || eventType === 'completed') {
         return;
       }
@@ -404,8 +404,18 @@ export default function Chat() {
         return;
       }
 
+      // Handle git commit and pull progress events
+      if (eventType === 'commit_progress') {
+        content = typeof data === 'string' ? data : (data.message || JSON.stringify(data));
+        eventLabel = '📤';
+        messageType = 'system';
+      } else if (eventType === 'github_pull_progress') {
+        content = typeof data === 'string' ? data : (data.message || JSON.stringify(data));
+        eventLabel = '⬇️';
+        messageType = 'system';
+      }
       // Extract content from different event types (matching server-side logic)
-      if (data.type === 'message' && data.message) {
+      else if (data.type === 'message' && data.message) {
         content = data.message;
         eventLabel = '💬';
       } else if (data.type === 'session_name' && data.sessionName) {
@@ -1021,9 +1031,25 @@ export default function Chat() {
               {isConnected && isExecuting && (
                 <div className="flex justify-start">
                   <div className="bg-base-100 border border-base-300 rounded-lg px-4 py-2">
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-3">
                       <span className="loading loading-spinner loading-sm text-primary"></span>
-                      <span className="text-sm text-base-content/70">Processing...</span>
+                      <div className="flex flex-col">
+                        <span className="text-sm text-base-content/70">Processing...</span>
+                        {selectedRepo && (
+                          <div className="flex items-center gap-2 mt-1">
+                            {branch && (
+                              <span className="text-xs text-base-content/50">
+                                📂 Branch: <span className="font-medium">{branch}</span>
+                              </span>
+                            )}
+                            {autoCommit && (
+                              <span className="text-xs text-success">
+                                ✓ Auto-commit enabled
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
