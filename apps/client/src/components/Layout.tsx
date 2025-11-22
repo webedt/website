@@ -90,7 +90,7 @@ export default function Layout() {
                 )}
 
                 <Link
-                  to="/new-session"
+                  to="/quick-setup/chat"
                   className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded transition-colors text-base-content/70 hover:bg-base-200"
                 >
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">

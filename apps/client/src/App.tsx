@@ -10,6 +10,7 @@ import Register from '@/pages/Register';
 import Dashboard from '@/pages/Dashboard';
 import Chat from '@/pages/Chat';
 import NewSession from '@/pages/NewSession';
+import QuickChatSetup from '@/pages/QuickChatSetup';
 import QuickSessionSetup from '@/pages/QuickSessionSetup';
 import Settings from '@/pages/Settings';
 import Code from '@/pages/Code';
@@ -90,6 +91,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <NewSession />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/quick-setup/chat"
+              element={
+                <ProtectedRoute>
+                  <QuickChatSetup />
                 </ProtectedRoute>
               }
             />
