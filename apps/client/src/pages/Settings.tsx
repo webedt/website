@@ -287,13 +287,13 @@ export default function Settings() {
               <div className="divider my-4"></div>
 
               <div className="form-control w-full">
-                <label className="label pb-3">
+                <label className="label pb-2">
                   <span className="label-text font-medium text-base">Maximum Image Dimension</span>
                 </label>
                 <select
                   value={imageResizeDimension}
                   onChange={(e) => setImageResizeDimension(Number(e.target.value))}
-                  className="select select-bordered w-full max-w-md"
+                  className="select select-bordered w-full max-w-md mt-2"
                 >
                   <option value={512}>512 x 512</option>
                   <option value={1024}>1024 x 1024 (default)</option>
