@@ -325,17 +325,11 @@ export default function QuickChatSetup() {
             </div>
           </div>
 
-          {/* Action buttons */}
-          <div className="flex gap-3 pt-4">
-            <button
-              onClick={() => navigate(-1)}
-              className="btn btn-ghost flex-1"
-            >
-              Cancel
-            </button>
+          {/* Action button */}
+          <div className="flex justify-center pt-4">
             <button
               onClick={handleStart}
-              className="btn btn-primary flex-1"
+              className="btn btn-primary px-12"
             >
               Start Chat
             </button>
