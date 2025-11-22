@@ -2,6 +2,20 @@ import { useParams } from 'react-router-dom';
 import { useState } from 'react';
 import SessionLayout from '@/components/SessionLayout';
 
+type FileNode = {
+  name: string;
+  type: 'file';
+  icon: string;
+};
+
+type FolderNode = {
+  name: string;
+  type: 'folder';
+  children: TreeNode[];
+};
+
+type TreeNode = FileNode | FolderNode;
+
 export default function Code() {
   const { sessionId } = useParams();
   const [selectedFile, setSelectedFile] = useState('Button.jsx');
@@ -19,27 +33,27 @@ export default function Code() {
     });
   };
 
-  const fileTree = {
+  const fileTree: FolderNode = {
     name: 'src',
-    type: 'folder' as const,
+    type: 'folder',
     children: [
       {
         name: 'components',
-        type: 'folder' as const,
+        type: 'folder',
         children: [
-          { name: 'Button.jsx', type: 'file' as const, icon: '🔵' },
-          { name: 'Card.jsx', type: 'file' as const, icon: '🔵' }
+          { name: 'Button.jsx', type: 'file', icon: '🔵' },
+          { name: 'Card.jsx', type: 'file', icon: '🔵' }
         ]
       },
       {
         name: 'styles',
-        type: 'folder' as const,
+        type: 'folder',
         children: []
       },
-      { name: 'App.js', type: 'file' as const, icon: 'JS' },
-      { name: 'index.css', type: 'file' as const, icon: 'CSS' },
-      { name: 'package.json', type: 'file' as const, icon: '📦' },
-      { name: 'README.md', type: 'file' as const, icon: '📄' }
+      { name: 'App.js', type: 'file', icon: 'JS' },
+      { name: 'index.css', type: 'file', icon: 'CSS' },
+      { name: 'package.json', type: 'file', icon: '📦' },
+      { name: 'README.md', type: 'file', icon: '📄' }
     ]
   };
 
@@ -62,7 +76,7 @@ const Button = ({ children, onClick, type = 'button' }) => {
 
 export default Button;`;
 
-  const renderFileTree = (node: typeof fileTree, level = 0) => {
+  const renderFileTree = (node: TreeNode, level = 0): JSX.Element | JSX.Element[] => {
     const paddingLeft = level * 16 + 8;
 
     if (node.type === 'file') {
