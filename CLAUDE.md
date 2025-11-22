@@ -249,6 +249,73 @@ Live Site: [https://github.etdofresh.com/webedt/website/feature-new-UI/](https:/
 - Do NOT skip this step - users rely on these links for quick access
 - If logs are relevant, also include: `Deployment Logs: [https://logs.etdofresh.com/{app-name}/](https://logs.etdofresh.com/{app-name}/)`
 
+## Version Management
+
+**MANDATORY REQUIREMENT:** Before creating ANY git commit, you MUST run the version generation script.
+
+### Pre-Commit Workflow
+
+Every time you commit code, follow these steps in order:
+
+1. **Generate version** (REQUIRED):
+   ```bash
+   pnpm version:generate
+   ```
+
+2. **Stage version files**:
+   ```bash
+   git add package.json apps/client/src/version.ts
+   ```
+
+3. **Stage your changes**:
+   ```bash
+   git add <your-files>
+   ```
+
+4. **Commit**:
+   ```bash
+   git commit -m "your message"
+   ```
+
+### Why This Is Required
+
+The version number is calculated based on commits since the last git tag. If you commit WITHOUT running `pnpm version:generate` first:
+- ❌ The version will be incorrect (off by one)
+- ❌ package.json will show the wrong version
+- ❌ The UI will display an outdated version
+
+By running `pnpm version:generate` BEFORE committing, the version files reflect the NEXT commit number, which is correct.
+
+### Example
+
+```bash
+# Current state: 10 commits since v1.0.0
+pnpm version:show
+# Output: 1.0.10
+
+# CORRECT - Generate version BEFORE commit
+pnpm version:generate
+# Updates to 1.0.10 (will be correct after commit)
+git add package.json apps/client/src/version.ts
+git add src/myfile.ts
+git commit -m "feat: add feature"
+# Now at 1.0.11 ✓
+
+# WRONG - Don't skip version generation
+git add src/myfile.ts
+git commit -m "feat: add feature"
+# Version still shows 1.0.10, but should be 1.0.11 ❌
+```
+
+### Quick Reference
+
+**Before every commit, run:**
+```bash
+pnpm version:generate && git add package.json apps/client/src/version.ts
+```
+
+See `VERSIONING.md` for complete documentation on the versioning system.
+
 ## Project Overview
 
 (Add project-specific information here as needed)
