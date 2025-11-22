@@ -35,7 +35,7 @@ export default function Layout() {
       return `v${VERSION}`;
     }
     // Show short SHA (first 7 characters) on non-production
-    return VERSION_SHA ? VERSION_SHA.substring(0, 7) : `v${VERSION}`;
+    return VERSION_SHA ? `previous short sha: ${VERSION_SHA.substring(0, 7)}` : `v${VERSION}`;
   };
 
   // Format timestamp to Central Time
