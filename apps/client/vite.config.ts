@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 
 export default defineConfig({
-  base: '/', // Use absolute paths from root (Strip Path removes the prefix before forwarding)
+  base: './', // REQUIRED: Use relative paths for assets
   plugins: [react()],
   resolve: {
     alias: {
