@@ -1,6 +1,9 @@
 # Multi-stage build for WebEDT monorepo
 FROM node:20-alpine AS base
 
+# Install git (needed for version generation)
+RUN apk add --no-cache git
+
 # Install pnpm
 RUN npm install -g pnpm
 
@@ -14,6 +17,12 @@ COPY tsconfig.base.json ./
 COPY packages ./packages
 COPY apps ./apps
 
+# Copy scripts directory for version generation
+COPY scripts ./scripts
+
+# Copy .git directory for version generation
+COPY .git ./.git
+
 # Install all dependencies
 RUN pnpm install --frozen-lockfile
 
@@ -21,6 +30,9 @@ RUN pnpm install --frozen-lockfile
 FROM base AS build
 
 WORKDIR /app
+
+# Generate version info from git before building
+RUN node scripts/generate-version.js --update
 
 # Build client (React/Vite app)
 RUN pnpm --filter @webedt/client build

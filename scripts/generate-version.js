@@ -97,6 +97,18 @@ function getVersion() {
     versionInfo.timestamp = null;
   }
 
+  // Get the full commit SHA
+  try {
+    const sha = execSync('git rev-parse HEAD 2>/dev/null', {
+      encoding: 'utf8',
+      cwd: path.join(__dirname, '..')
+    }).trim();
+
+    versionInfo.sha = sha || null;
+  } catch (error) {
+    versionInfo.sha = null;
+  }
+
   return versionInfo;
 }
 
@@ -107,12 +119,13 @@ function updatePackageJson(version) {
   fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2) + '\n');
 }
 
-function updateVersionTs(version, timestamp) {
+function updateVersionTs(version, timestamp, sha) {
   const versionPath = path.join(__dirname, '..', 'apps', 'client', 'src', 'version.ts');
   const content = `// Auto-generated from git tags and commits
 // Run 'pnpm version:generate' to update
 export const VERSION = '${version}';
 export const VERSION_TIMESTAMP = ${timestamp ? `'${timestamp}'` : 'null'};
+export const VERSION_SHA = ${sha ? `'${sha}'` : 'null'};
 `;
   fs.writeFileSync(versionPath, content);
 }
@@ -127,7 +140,7 @@ if (require.main === module) {
     console.log(JSON.stringify(versionInfo, null, 2));
   } else if (mode === '--update') {
     updatePackageJson(versionInfo.version);
-    updateVersionTs(versionInfo.version, versionInfo.timestamp);
+    updateVersionTs(versionInfo.version, versionInfo.timestamp, versionInfo.sha);
     console.log(`✓ Updated version to ${versionInfo.version}`);
     if (versionInfo.tag) {
       console.log(`  Based on tag: ${versionInfo.tag} + ${versionInfo.commitsSince} commits`);
@@ -136,6 +149,9 @@ if (require.main === module) {
     }
     if (versionInfo.timestamp) {
       console.log(`  Commit date: ${versionInfo.timestamp}`);
+    }
+    if (versionInfo.sha) {
+      console.log(`  Commit SHA: ${versionInfo.sha}`);
     }
   } else {
     console.log(versionInfo.version);

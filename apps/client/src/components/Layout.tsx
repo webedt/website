@@ -4,7 +4,7 @@ import { authApi } from '@/lib/api';
 import { useState, useRef, useEffect } from 'react';
 import ThemeSelector from './ThemeSelector';
 import MobileMenu from './MobileMenu';
-import { VERSION, VERSION_TIMESTAMP } from '@/version';
+import { VERSION, VERSION_TIMESTAMP, VERSION_SHA } from '@/version';
 
 export default function Layout() {
   const { user, isAuthenticated, clearUser } = useAuthStore();
@@ -24,12 +24,26 @@ export default function Layout() {
     }
   };
 
+  // Check if we're on the production domain
+  const isProduction = () => {
+    return window.location.hostname === 'webedt.etdofresh.com';
+  };
+
+  // Get the display text (version or commit SHA)
+  const getVersionDisplay = () => {
+    if (isProduction()) {
+      return `v${VERSION}`;
+    }
+    // Show short SHA (first 7 characters) on non-production
+    return VERSION_SHA ? `previous short sha: ${VERSION_SHA.substring(0, 7)}` : `v${VERSION}`;
+  };
+
   // Format timestamp to Central Time
   const getVersionTooltip = () => {
     if (!VERSION_TIMESTAMP) return 'Version information';
 
     const date = new Date(VERSION_TIMESTAMP);
-    return date.toLocaleString('en-US', {
+    const formattedDate = date.toLocaleString('en-US', {
       timeZone: 'America/Chicago',
       month: 'short',
       day: 'numeric',
@@ -39,6 +53,14 @@ export default function Layout() {
       second: '2-digit',
       timeZoneName: 'short'
     });
+
+    // On production, show timestamp with SHA in tooltip
+    if (isProduction() && VERSION_SHA) {
+      const shortSha = VERSION_SHA.substring(0, 7);
+      return `${formattedDate} (${shortSha})`;
+    }
+
+    return formattedDate;
   };
 
   // Close user menu when clicking outside
@@ -140,7 +162,7 @@ export default function Layout() {
                   className="text-[9px] text-base-content/40 leading-tight cursor-help"
                   title={getVersionTooltip()}
                 >
-                  v{VERSION}
+                  {getVersionDisplay()}
                 </span>
               </Link>
             </div>
@@ -157,7 +179,7 @@ export default function Layout() {
                   className="text-[9px] text-base-content/40 leading-tight cursor-help"
                   title={getVersionTooltip()}
                 >
-                  v{VERSION}
+                  {getVersionDisplay()}
                 </span>
               </Link>
 
