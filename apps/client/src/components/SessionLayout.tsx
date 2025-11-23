@@ -500,20 +500,16 @@ export default function SessionLayout({
                   </div>
 
                   {/* Read-only base branch when locked */}
-                  {baseBranch && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-base-content/70">Parent Branch:</span>
-                      <span className="text-sm text-base-content">{baseBranch}</span>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-base-content/70">Parent Branch:</span>
+                    <span className="text-sm text-base-content">{baseBranch}</span>
+                  </div>
 
                   {/* Read-only branch when locked */}
-                  {branch && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-base-content/70">Branch:</span>
-                      <span className="text-sm text-base-content">{branch}</span>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-base-content/70">Branch:</span>
+                    <span className="text-sm text-base-content">{branch || '(auto-generated)'}</span>
+                  </div>
 
                   {/* Read-only auto-commit status when locked */}
                   <div className="flex items-center gap-2">
