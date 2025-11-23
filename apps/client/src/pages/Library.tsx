@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-interface LibraryItem {
+interface ShopItem {
   id: number;
   title: string;
   description: string;
@@ -11,7 +11,7 @@ interface LibraryItem {
 }
 
 // Subset of store items that user has "purchased"
-const libraryItems: LibraryItem[] = [
+const libraryItems: ShopItem[] = [
   {
     id: 1,
     title: 'Code Editor Pro',
@@ -86,7 +86,7 @@ export default function Library() {
               {/* Thumbnail - Clickable to Open */}
               <figure
                 className="relative h-48 overflow-hidden cursor-pointer group"
-                onClick={() => navigate(`/item/${item.id}`)}
+                onClick={() => navigate(`/library/${item.id}`)}
               >
                 <img
                   src={item.thumbnail}
@@ -135,7 +135,7 @@ export default function Library() {
                 <div className="flex gap-2">
                   <button
                     className="btn btn-primary btn-sm flex-1"
-                    onClick={() => navigate(`/item/${item.id}`)}
+                    onClick={() => navigate(`/library/${item.id}`)}
                   >
                     Open
                   </button>
