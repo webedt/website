@@ -1,5 +1,9 @@
 # WebEDT - AI Coding Worker Website
 
+> **⚠️ NOTICE: This repository has moved to [https://github.com/webedt/monorepo](https://github.com/webedt/monorepo)**
+>
+> This standalone repository is no longer actively maintained. Please use the monorepo for the latest updates and development.
+
 A full-stack TypeScript application that provides a web interface for the [ai-coding-worker](https://github.com/webedt/ai-coding-worker) service. Features include user authentication, GitHub OAuth integration, and a real-time chat interface for AI-assisted coding tasks.
 
 ## Features
