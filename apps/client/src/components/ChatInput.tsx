@@ -21,8 +21,6 @@ interface ChatInputProps {
   setSelectedRepo: (value: string) => void;
   baseBranch?: string;
   setBaseBranch?: (value: string) => void;
-  branch: string;
-  setBranch: (value: string) => void;
   repositories: GitHubRepository[];
   isLoadingRepos: boolean;
   isLocked: boolean;
@@ -46,8 +44,6 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
   setSelectedRepo,
   baseBranch = 'main',
   setBaseBranch,
-  branch,
-  setBranch,
   repositories,
   isLoadingRepos,
   isLocked,
@@ -500,11 +496,6 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
                           {baseBranch}
                         </span>
                       )}
-                      {branch && (
-                        <span className="badge badge-ghost text-xs">
-                          → {branch}
-                        </span>
-                      )}
                     </>
                   ) : (
                     /* Show as editable controls when not executing and not locked */
@@ -654,20 +645,6 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
                                 </div>
                               )}
                             </div>
-                          </div>
-
-                          {/* Working Branch (Input only) */}
-                          <div className="flex items-center gap-1">
-                            <span className="text-[10px] text-base-content/50 font-medium uppercase">Working</span>
-                            <input
-                              type="text"
-                              value={branch}
-                              onChange={(e) => setBranch(e.target.value)}
-                              placeholder="(auto)"
-                              className="input input-bordered input-xs w-24"
-                              disabled={isExecuting || isLocked}
-                              title="Working Branch (optional)"
-                            />
                           </div>
                         </>
                       )}
