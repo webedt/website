@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface ShopItem {
   id: number;
@@ -69,6 +70,7 @@ const shopItems: ShopItem[] = [
 
 export default function Dashboard() {
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-base-200">
@@ -106,7 +108,7 @@ export default function Dashboard() {
               {/* Thumbnail - Clickable to Open */}
               <figure
                 className="relative h-48 overflow-hidden cursor-pointer group"
-                onClick={() => console.log('Open:', item.title)}
+                onClick={() => navigate(`/item/${item.id}`)}
               >
                 <img
                   src={item.thumbnail}
