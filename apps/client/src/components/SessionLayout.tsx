@@ -408,13 +408,31 @@ export default function SessionLayout({
                       📧 {user?.email}
                     </div>
 
-                    {/* Dashboard link */}
+                    {/* Store link */}
                     <Link
                       to="/"
                       onClick={() => setUserMenuOpen(false)}
                       className="block px-4 py-2 text-sm text-base-content hover:bg-base-200 transition-colors"
                     >
-                      🏠 Dashboard
+                      🏪 Store
+                    </Link>
+
+                    {/* Library link */}
+                    <Link
+                      to="/library"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="block px-4 py-2 text-sm text-base-content hover:bg-base-200 transition-colors"
+                    >
+                      📚 Library
+                    </Link>
+
+                    {/* My Sessions link */}
+                    <Link
+                      to="/sessions"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="block px-4 py-2 text-sm text-base-content hover:bg-base-200 transition-colors"
+                    >
+                      📂 My Sessions
                     </Link>
 
                     {/* New Session link */}
