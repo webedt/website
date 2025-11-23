@@ -745,6 +745,10 @@ export default function Chat() {
       }
     }
 
+    // Debug: Log the exact parameters being sent
+    console.log('[Chat] Final request parameters:', JSON.stringify(requestParams, null, 2));
+    console.log('[Chat] Parameters being sent:', Object.keys(requestParams));
+
     // Use POST for requests with images to avoid URL length limits
     if (images.length > 0) {
       // Use POST for large requests with images

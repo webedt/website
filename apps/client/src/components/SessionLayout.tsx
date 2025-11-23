@@ -547,9 +547,9 @@ export default function SessionLayout({
                 <div className="flex items-center gap-1.5">
                   {isLocked ? (
                     <>
-                      {/* Red dot when session is active but missing repository (error state) */}
-                      <div className="w-2 h-2 rounded-full bg-error"></div>
-                      <span className="text-xs font-medium text-base-content/50">No repository</span>
+                      {/* Grey dot when session is active but missing repository (offline/local state) */}
+                      <div className="w-2 h-2 rounded-full bg-base-content/30"></div>
+                      <span className="text-xs font-medium text-base-content/50">Offline</span>
                     </>
                   ) : (
                     <>
