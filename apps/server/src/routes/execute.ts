@@ -53,6 +53,20 @@ const executeHandler = async (req: any, res: any) => {
     const { userRequest, repositoryUrl, branch, autoCommit, chatSessionId } = params;
     resumeSessionId = params.resumeSessionId;
 
+    // Debug: Log incoming parameters
+    console.log('[Execute] ========== INCOMING REQUEST PARAMETERS ==========');
+    console.log('[Execute] Request method:', req.method);
+    console.log('[Execute] All params:', JSON.stringify(params, null, 2));
+    console.log('[Execute] Extracted values:', {
+      userRequest: typeof userRequest === 'string' ? userRequest.substring(0, 50) : userRequest,
+      repositoryUrl,
+      branch,
+      autoCommit,
+      chatSessionId,
+      resumeSessionId,
+    });
+    console.log('[Execute] ========================================================');
+
     if (!userRequest && !resumeSessionId) {
       res.status(400).json({ success: false, error: 'userRequest or resumeSessionId is required' });
       return;
@@ -337,12 +351,18 @@ const executeHandler = async (req: any, res: any) => {
     }
 
     if (repositoryUrl && authReq.user.githubAccessToken) {
+      // New session - use parameters from request
       executePayload.github = {
         repoUrl: repositoryUrl as string,
         branch: (branch as string) || undefined,
         accessToken: authReq.user.githubAccessToken,
       };
       executePayload.autoCommit = autoCommitBool;
+    } else if (resumeSessionId && chatSession.repositoryUrl) {
+      // Resuming session - use settings from database
+      // Note: We do not send github info (repoUrl, token) when resuming because
+      // the worker already has the repository state and sending it causes an error.
+      executePayload.autoCommit = chatSession.autoCommit;
     }
 
     // Log outbound request to AI worker
@@ -356,7 +376,8 @@ const executeHandler = async (req: any, res: any) => {
     console.log(`[Execute] User Request: ${truncateContent(executePayload.userRequest)}`);
     console.log(`[Execute] Repository: ${executePayload.github?.repoUrl || 'N/A'}`);
     console.log(`[Execute] Branch: ${executePayload.github?.branch || 'N/A'}`);
-    console.log(`[Execute] Auto Commit: ${executePayload.autoCommit || false}`);
+    console.log(`[Execute] Auto Commit: ${executePayload.autoCommit ?? 'N/A'}`);
+    console.log(`[Execute] Auto Commit Source: ${repositoryUrl ? 'request parameter' : resumeSessionId && chatSession.repositoryUrl ? 'database (resumed session)' : 'none'}`);
     console.log(`[Execute] Full Payload (sanitized): ${JSON.stringify(sanitizedPayload, null, 2)}`);
     console.log(`[Execute] ==================================================================`);
 
