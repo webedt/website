@@ -22,7 +22,7 @@ https://github.etdofresh.com/{owner}/{repo}/{branch}/
 **Examples:**
 ```
 https://github.etdofresh.com/webedt/website/main/
-https://github.etdofresh.com/webedt/website/gemini-new-feature-01AdzpK5b5h4BkyDcMWtoLGV/
+https://github.etdofresh.com/webedt/website/claude-new-feature-01AdzpK5b5h4BkyDcMWtoLGV/
 https://github.etdofresh.com/webedt/website/develop/
 ```
 
@@ -30,7 +30,7 @@ https://github.etdofresh.com/webedt/website/develop/
 - Format: `https://github.etdofresh.com/{owner}/{repo}/{branch}/`
 - Owner and repo are lowercased
 - Branch name preserves original case (slashes replaced with dashes)
-- Example: Branch `gemini/test-feature` becomes `/webedt/website/gemini-test-feature/`
+- Example: Branch `claude/test-feature` becomes `/webedt/website/claude-test-feature/`
 - The path prefix is stripped by Dokploy before forwarding requests to your app
 
 ### Critical Path Requirements for Strip Path
@@ -85,7 +85,7 @@ For **root-based deployments** (`webedt.etdofresh.com`):
 
 **Why This Approach:**
 
-The `<base>` tag affects the browser where to resolve all relative URLs from, regardless of the current page URL. This solves the deep link problem:
+The `<base>` tag tells the browser where to resolve all relative URLs from, regardless of the current page URL. This solves the deep link problem:
 - Without `<base>`: `/quick-setup/code` + `./assets/app.js` → `/quick-setup/code/assets/app.js` ❌
 - With `<base href="/">`: `/quick-setup/code` + `./assets/app.js` → `/assets/app.js` ✓
 - With `<base href="/owner/repo/branch/">`: any URL + `./assets/app.js` → `/owner/repo/branch/assets/app.js` ✓
@@ -244,13 +244,13 @@ https://github.etdofresh.com/{owner}/{repo}/{branch}/
 1. Owner and repo are converted to lowercase
 2. Branch name preserves original case
 3. Slashes in branch names are replaced with dashes
-4. Example: `gemini/ideal-user-flow-01Ca8egaVDRvUdzutNsFZeAJ` → `gemini-ideal-user-flow-01Ca8egaVDRvUdzutNsFZeAJ`
+4. Example: `claude/ideal-user-flow-01Ca8egaVDRvUdzutNsFZeAJ` → `claude-ideal-user-flow-01Ca8egaVDRvUdzutNsFZeAJ`
 
 **Construction Steps:**
 1. Lowercase the owner: `webedt` → `webedt`
 2. Lowercase the repo: `website` → `website`
-3. Replace slashes in branch with dashes (preserve case): `gemini/ideal-user-flow-01Ca8egaVDRvUdzutNsFZeAJ` → `gemini-ideal-user-flow-01Ca8egaVDRvUdzutNsFZeAJ`
-4. Construct URL: `https://github.etdofresh.com/webedt/website/gemini-ideal-user-flow-01Ca8egaVDRvUdzutNsFZeAJ/`
+3. Replace slashes in branch with dashes (preserve case): `claude/ideal-user-flow-01Ca8egaVDRvUdzutNsFZeAJ` → `claude-ideal-user-flow-01Ca8egaVDRvUdzutNsFZeAJ`
+4. Construct URL: `https://github.etdofresh.com/webedt/website/claude-ideal-user-flow-01Ca8egaVDRvUdzutNsFZeAJ/`
 
 **Examples:**
 
@@ -263,11 +263,11 @@ Live Site: [https://github.etdofresh.com/webedt/website/main/](https://github.et
 ```
 
 ```
-Branch: gemini/ideal-user-flow-01Ca8egaVDRvUdzutNsFZeAJ
+Branch: claude/ideal-user-flow-01Ca8egaVDRvUdzutNsFZeAJ
 **Links:**
 
-GitHub Branch: [https://github.com/webedt/website/tree/gemini/ideal-user-flow-01Ca8egaVDRvUdzutNsFZeAJ](https://github.com/webedt/website/tree/gemini/ideal-user-flow-01Ca8egaVDRvUdzutNsFZeAJ)
-Live Site: [https://github.etdofresh.com/webedt/website/gemini-ideal-user-flow-01Ca8egaVDRvUdzutNsFZeAJ/](https://github.etdofresh.com/webedt/website/gemini-ideal-user-flow-01Ca8egaVDRvUdzutNsFZeAJ/)
+GitHub Branch: [https://github.com/webedt/website/tree/claude/ideal-user-flow-01Ca8egaVDRvUdzutNsFZeAJ](https://github.com/webedt/website/tree/claude/ideal-user-flow-01Ca8egaVDRvUdzutNsFZeAJ)
+Live Site: [https://github.etdofresh.com/webedt/website/claude-ideal-user-flow-01Ca8egaVDRvUdzutNsFZeAJ/](https://github.etdofresh.com/webedt/website/claude-ideal-user-flow-01Ca8egaVDRvUdzutNsFZeAJ/)
 ```
 
 ```
