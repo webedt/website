@@ -22,6 +22,7 @@ import Sound from '@/pages/Sound';
 import SceneEditor from '@/pages/SceneEditor';
 import Preview from '@/pages/Preview';
 import ItemPage from '@/pages/ItemPage';
+import LibraryItemPage from '@/pages/LibraryItemPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -95,6 +96,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Library />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/library/:id"
+              element={
+                <ProtectedRoute>
+                  <LibraryItemPage />
                 </ProtectedRoute>
               }
             />

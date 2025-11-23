@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface LibraryItem {
   id: number;
@@ -69,6 +70,7 @@ const libraryItems: LibraryItem[] = [
 
 export default function Library() {
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-base-200">
@@ -106,7 +108,7 @@ export default function Library() {
               {/* Thumbnail - Clickable to Open */}
               <figure
                 className="relative h-48 overflow-hidden cursor-pointer group"
-                onClick={() => console.log('Open:', item.title)}
+                onClick={() => navigate(`/library/${item.id}`)}
               >
                 <img
                   src={item.thumbnail}
@@ -149,7 +151,7 @@ export default function Library() {
                     {/* Preview Icon */}
                     <button
                       className="btn btn-ghost btn-sm btn-circle"
-                      onClick={() => console.log('Preview:', item.title)}
+                      onClick={() => navigate(`/library/${item.id}`)}
                       title="Preview"
                     >
                       <svg
@@ -168,7 +170,7 @@ export default function Library() {
                     {/* Download/Open Icon */}
                     <button
                       className="btn btn-ghost btn-sm btn-circle"
-                      onClick={() => console.log('Open:', item.title)}
+                      onClick={() => navigate(`/library/${item.id}`)}
                       title="Open"
                     >
                       <svg
