@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useViewMode } from '@/hooks/useViewMode';
+import ViewToggle from '@/components/ViewToggle';
 
 interface BlogPost {
   id: number;
@@ -88,6 +90,194 @@ const announcements: Announcement[] = [
 
 export default function Community() {
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [viewMode, setViewMode] = useViewMode('community-view');
+
+
+  // Grid/Card view renderer for blog posts
+  const renderCard = (post: BlogPost) => (
+    <div key={post.id} className="card bg-base-100 shadow-xl">
+      <div className="card-body">
+        {/* Category Badge */}
+        <div className="flex items-start justify-between">
+          <span className="badge badge-primary">{post.category}</span>
+          <span className="text-sm text-base-content/50">
+            {new Date(post.date).toLocaleDateString()}
+          </span>
+        </div>
+
+        {/* Title */}
+        <h2 className="card-title text-xl mt-2">{post.title}</h2>
+
+        {/* Content Preview */}
+        <p className="text-base-content/70 line-clamp-3">{post.content}</p>
+
+        {/* Author and Stats */}
+        <div className="flex items-center justify-between mt-4 pt-4 border-t border-base-300">
+          <div className="flex items-center gap-2">
+            <div className="avatar placeholder">
+              <div className="bg-primary text-primary-content rounded-full w-8">
+                <span className="text-xs">{post.author[0]}</span>
+              </div>
+            </div>
+            <span className="text-sm font-medium">{post.author}</span>
+          </div>
+
+          <div className="flex gap-4">
+            {/* Likes */}
+            <button className="flex items-center gap-1 hover:text-primary transition-colors">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
+              </svg>
+              <span className="text-sm">{post.likes}</span>
+            </button>
+
+            {/* Comments */}
+            <button className="flex items-center gap-1 hover:text-primary transition-colors">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+              <span className="text-sm">{post.comments}</span>
+            </button>
+
+            {/* Share */}
+            <button className="hover:text-primary transition-colors">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <circle cx="18" cy="5" r="3" />
+                <circle cx="6" cy="12" r="3" />
+                <circle cx="18" cy="19" r="3" />
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Detailed line view renderer for blog posts
+  const renderDetailedRow = (post: BlogPost) => (
+    <div
+      key={post.id}
+      className="p-4 bg-base-100 rounded-lg shadow hover:shadow-lg transition-shadow"
+    >
+      <div className="flex items-start justify-between mb-2">
+        <span className="badge badge-primary badge-sm">{post.category}</span>
+        <span className="text-xs text-base-content/50">
+          {new Date(post.date).toLocaleDateString()}
+        </span>
+      </div>
+
+      <h3 className="text-lg font-semibold text-base-content mb-2">{post.title}</h3>
+      <p className="text-sm text-base-content/70 mb-3">{post.content}</p>
+
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="avatar placeholder">
+            <div className="bg-primary text-primary-content rounded-full w-6">
+              <span className="text-xs">{post.author[0]}</span>
+            </div>
+          </div>
+          <span className="text-xs font-medium">{post.author}</span>
+        </div>
+
+        <div className="flex gap-3">
+          <button className="flex items-center gap-1 text-xs hover:text-primary transition-colors">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
+            </svg>
+            <span>{post.likes}</span>
+          </button>
+          <button className="flex items-center gap-1 text-xs hover:text-primary transition-colors">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            <span>{post.comments}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Minimal line view renderer for blog posts
+  const renderMinimalRow = (post: BlogPost) => (
+    <div
+      key={post.id}
+      className="flex items-center gap-3 p-2 bg-base-100 rounded hover:bg-base-200 transition-colors"
+    >
+      <span className="badge badge-primary badge-xs">{post.category}</span>
+
+      <div className="flex-1 min-w-0">
+        <h3 className="text-sm font-medium text-base-content truncate">{post.title}</h3>
+      </div>
+
+      <div className="text-xs text-base-content/60 hidden sm:block">{post.author}</div>
+
+      <div className="flex items-center gap-2 text-xs">
+        <span className="flex items-center gap-1">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-3 w-3"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
+          </svg>
+          {post.likes}
+        </span>
+        <span className="flex items-center gap-1">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-3 w-3"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+          {post.comments}
+        </span>
+      </div>
+    </div>
+  );
 
   const getAnnouncementBadge = (type: string) => {
     switch (type) {
@@ -116,103 +306,41 @@ export default function Community() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content - Blog Posts */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Category Filters */}
-            <div className="flex gap-2 mb-6">
-              {['All', 'Announcements', 'Updates', 'Events', 'Spotlight'].map((category) => (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`btn btn-sm ${
-                    selectedCategory === category ? 'btn-primary' : 'btn-ghost'
-                  }`}
-                >
-                  {category}
-                </button>
-              ))}
+            {/* Category Filters and View Toggle */}
+            <div className="flex flex-wrap gap-4 items-center justify-between mb-6">
+              <div className="flex gap-2">
+                {['All', 'Announcements', 'Updates', 'Events', 'Spotlight'].map((category) => (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className={`btn btn-sm ${
+                      selectedCategory === category ? 'btn-primary' : 'btn-ghost'
+                    }`}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+
+              <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
             </div>
 
-            {/* Blog Posts */}
-            {blogPosts.map((post) => (
-              <div key={post.id} className="card bg-base-100 shadow-xl">
-                <div className="card-body">
-                  {/* Category Badge */}
-                  <div className="flex items-start justify-between">
-                    <span className="badge badge-primary">{post.category}</span>
-                    <span className="text-sm text-base-content/50">
-                      {new Date(post.date).toLocaleDateString()}
-                    </span>
-                  </div>
-
-                  {/* Title */}
-                  <h2 className="card-title text-2xl mt-2">{post.title}</h2>
-
-                  {/* Content */}
-                  <p className="text-base-content/70 leading-relaxed">{post.content}</p>
-
-                  {/* Author and Stats */}
-                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-base-300">
-                    <div className="flex items-center gap-2">
-                      <div className="avatar placeholder">
-                        <div className="bg-primary text-primary-content rounded-full w-8">
-                          <span className="text-xs">{post.author[0]}</span>
-                        </div>
-                      </div>
-                      <span className="text-sm font-medium">{post.author}</span>
-                    </div>
-
-                    <div className="flex gap-4">
-                      {/* Likes */}
-                      <button className="flex items-center gap-1 hover:text-primary transition-colors">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-5 w-5"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
-                        </svg>
-                        <span className="text-sm">{post.likes}</span>
-                      </button>
-
-                      {/* Comments */}
-                      <button className="flex items-center gap-1 hover:text-primary transition-colors">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-5 w-5"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                        </svg>
-                        <span className="text-sm">{post.comments}</span>
-                      </button>
-
-                      {/* Share */}
-                      <button className="hover:text-primary transition-colors">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-5 w-5"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <circle cx="18" cy="5" r="3" />
-                          <circle cx="6" cy="12" r="3" />
-                          <circle cx="18" cy="19" r="3" />
-                          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-                          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                </div>
+            {/* Blog Posts - Dynamic View */}
+            {viewMode === 'grid' && (
+              <div className="space-y-6">
+                {blogPosts.map((post) => renderCard(post))}
               </div>
-            ))}
+            )}
+            {viewMode === 'detailed' && (
+              <div className="space-y-3">
+                {blogPosts.map((post) => renderDetailedRow(post))}
+              </div>
+            )}
+            {viewMode === 'minimal' && (
+              <div className="space-y-1">
+                {blogPosts.map((post) => renderMinimalRow(post))}
+              </div>
+            )}
 
             {/* Placeholder for Chat/Discord Area */}
             <div className="card bg-base-100 shadow-xl">
