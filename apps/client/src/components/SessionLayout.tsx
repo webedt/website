@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import ThemeSelector from './ThemeSelector';
 import MobileMenu from './MobileMenu';
-import { VERSION, VERSION_TIMESTAMP } from '@/version';
+import { VERSION, VERSION_TIMESTAMP, VERSION_SHA } from '@/version';
 import type { GitHubRepository } from '@webedt/shared';
 
 interface SessionLayoutProps {
@@ -79,12 +79,12 @@ export default function SessionLayout({
     }
   };
 
-  // Format timestamp to Central Time
+  // Format timestamp to Central Time with short SHA
   const getVersionTooltip = () => {
     if (!VERSION_TIMESTAMP) return 'Version information';
 
     const date = new Date(VERSION_TIMESTAMP);
-    return date.toLocaleString('en-US', {
+    const formattedDate = date.toLocaleString('en-US', {
       timeZone: 'America/Chicago',
       month: 'short',
       day: 'numeric',
@@ -94,6 +94,9 @@ export default function SessionLayout({
       second: '2-digit',
       timeZoneName: 'short'
     });
+
+    const shortSha = VERSION_SHA ? VERSION_SHA.substring(0, 7) : 'unknown';
+    return `${formattedDate}\n${shortSha}`;
   };
 
   // Close user menu when clicking outside
