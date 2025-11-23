@@ -24,11 +24,6 @@ export default function Layout() {
     }
   };
 
-  // Check if we're on the production domain
-  const isProduction = () => {
-    return window.location.hostname === 'webedt.etdofresh.com';
-  };
-
   // Always show version number
   const getVersionDisplay = () => {
     return `v${VERSION}`;
