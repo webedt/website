@@ -358,13 +358,10 @@ const executeHandler = async (req: any, res: any) => {
         accessToken: authReq.user.githubAccessToken,
       };
       executePayload.autoCommit = autoCommitBool;
-    } else if (resumeSessionId && chatSession.repositoryUrl && authReq.user.githubAccessToken) {
+    } else if (resumeSessionId && chatSession.repositoryUrl) {
       // Resuming session - use settings from database
-      executePayload.github = {
-        repoUrl: chatSession.repositoryUrl,
-        branch: chatSession.branch || undefined,
-        accessToken: authReq.user.githubAccessToken,
-      };
+      // Note: We do not send github info (repoUrl, token) when resuming because
+      // the worker already has the repository state and sending it causes an error.
       executePayload.autoCommit = chatSession.autoCommit;
     }
 
