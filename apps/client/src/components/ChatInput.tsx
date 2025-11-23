@@ -21,8 +21,6 @@ interface ChatInputProps {
   setSelectedRepo: (value: string) => void;
   branch: string;
   setBranch: (value: string) => void;
-  autoCommit: boolean;
-  setAutoCommit: (value: boolean) => void;
   repositories: GitHubRepository[];
   isLoadingRepos: boolean;
   isLocked: boolean;
@@ -46,8 +44,6 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
   setSelectedRepo,
   branch,
   setBranch,
-  autoCommit,
-  setAutoCommit,
   repositories,
   isLoadingRepos,
   isLocked,
@@ -500,9 +496,6 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
                           {branch}
                         </span>
                       )}
-                      <span className="text-xs text-base-content/70">
-                        {autoCommit ? '✓ Auto-commit/push' : '✗ Auto-commit/push'}
-                      </span>
                     </>
                   ) : (
                     /* Show as editable controls when not executing and not locked */
@@ -651,17 +644,6 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
                           </div>
                         </div>
                       )}
-
-                      <label className="flex items-center space-x-1">
-                        <input
-                          type="checkbox"
-                          checked={autoCommit}
-                          onChange={(e) => setAutoCommit(e.target.checked)}
-                          className="checkbox checkbox-xs"
-                          disabled={isExecuting || isLocked}
-                        />
-                        <span className="text-xs text-base-content/70">Auto-commit/push</span>
-                      </label>
                     </>
                   )}
                 </>

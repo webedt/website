@@ -50,8 +50,11 @@ const executeHandler = async (req: any, res: any) => {
   try {
     // Support both GET (query) and POST (body) parameters
     const params = req.method === 'POST' ? req.body : req.query;
-    const { userRequest, repositoryUrl, branch, autoCommit, chatSessionId } = params;
+    const { userRequest, repositoryUrl, branch, chatSessionId } = params;
     resumeSessionId = params.resumeSessionId;
+
+    // Auto-commit is now always enabled
+    const autoCommit = true;
 
     // Debug: Log incoming parameters
     console.log('[Execute] ========== INCOMING REQUEST PARAMETERS ==========');
@@ -89,9 +92,6 @@ const executeHandler = async (req: any, res: any) => {
       });
       return;
     }
-
-    // Parse autoCommit from string to boolean
-    const autoCommitBool = autoCommit === 'true';
 
     // Check if we're continuing an existing session or creating a new one
     if (chatSessionId) {
@@ -157,7 +157,7 @@ const executeHandler = async (req: any, res: any) => {
           status: 'pending',
           repositoryUrl: (repositoryUrl as string) || null,
           branch: (branch as string) || null,
-          autoCommit: autoCommitBool,
+          autoCommit: true, // Auto-commit is now always enabled
           locked: false, // Will be locked after first message
         })
         .returning())[0];
@@ -357,12 +357,12 @@ const executeHandler = async (req: any, res: any) => {
         branch: (branch as string) || undefined,
         accessToken: authReq.user.githubAccessToken,
       };
-      executePayload.autoCommit = autoCommitBool;
+      executePayload.autoCommit = true; // Auto-commit is now always enabled
     } else if (resumeSessionId && chatSession.repositoryUrl) {
       // Resuming session - use settings from database
       // Note: We do not send github info (repoUrl, token) when resuming because
       // the worker already has the repository state and sending it causes an error.
-      executePayload.autoCommit = chatSession.autoCommit;
+      executePayload.autoCommit = true; // Auto-commit is now always enabled
     }
 
     // Log outbound request to AI worker

@@ -36,7 +36,6 @@ export const chatSessions = sqliteTable('chat_sessions', {
   status: text('status').notNull().default('pending'),
   repositoryUrl: text('repository_url'),
   branch: text('branch'),
-  autoCommit: integer('auto_commit', { mode: 'boolean' }).notNull().default(false),
   locked: integer('locked', { mode: 'boolean' }).notNull().default(false),
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
   completedAt: integer('completed_at', { mode: 'timestamp' }),

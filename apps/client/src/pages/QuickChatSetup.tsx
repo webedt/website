@@ -12,7 +12,6 @@ export default function QuickChatSetup() {
   // Repository and branch state
   const [selectedRepo, setSelectedRepo] = useState('');
   const [branch, setBranch] = useState('main');
-  const [autoCommit, setAutoCommit] = useState(true);
 
   // Repository search state
   const [repoSearchQuery, setRepoSearchQuery] = useState('');
@@ -140,7 +139,6 @@ export default function QuickChatSetup() {
         preSelectedSettings: {
           repositoryUrl: selectedRepo || undefined,
           branch: branch || undefined,
-          autoCommit: autoCommit,
           locked: true, // Lock these settings
         }
       }
@@ -164,8 +162,8 @@ export default function QuickChatSetup() {
             <p className="text-base-content/70">Configure your workspace to begin.</p>
           </div>
 
-          {/* Single Row: Repository, Branch, and Auto-commit */}
-          <div className="grid grid-cols-[2fr_1.5fr_auto] gap-4 items-end mb-6">
+          {/* Single Row: Repository and Branch */}
+          <div className="grid grid-cols-2 gap-4 mb-6">
             {/* Repository Selector */}
             <div>
               <label className="label pb-2">
@@ -309,19 +307,6 @@ export default function QuickChatSetup() {
                   )}
                 </div>
               </div>
-            </div>
-
-            {/* Auto-commit checkbox */}
-            <div className="pb-[6px]">
-              <label className="label cursor-pointer justify-start gap-2 h-12">
-                <input
-                  type="checkbox"
-                  checked={autoCommit}
-                  onChange={(e) => setAutoCommit(e.target.checked)}
-                  className="checkbox checkbox-primary"
-                />
-                <span className="label-text font-semibold whitespace-nowrap">Auto-commit on Save</span>
-              </label>
             </div>
           </div>
 
