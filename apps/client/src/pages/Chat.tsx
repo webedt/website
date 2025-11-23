@@ -793,7 +793,7 @@ export default function Chat() {
       }
 
       if (lastRequest.baseBranch) {
-        params.append('baseBranch', lastRequest.baseBranch);
+        requestParams.baseBranch = lastRequest.baseBranch;
       }
 
       if (lastRequest.branch) {
