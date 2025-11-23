@@ -35,6 +35,7 @@ export const chatSessions = sqliteTable('chat_sessions', {
   userRequest: text('user_request').notNull(),
   status: text('status').notNull().default('pending'),
   repositoryUrl: text('repository_url'),
+  baseBranch: text('base_branch'),
   branch: text('branch'),
   autoCommit: integer('auto_commit', { mode: 'boolean' }).notNull().default(false),
   locked: integer('locked', { mode: 'boolean' }).notNull().default(false),

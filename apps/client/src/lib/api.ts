@@ -139,6 +139,7 @@ export const sessionsApi = {
 export function createExecuteEventSource(data: {
   userRequest: string;
   repositoryUrl?: string;
+  baseBranch?: string;
   branch?: string;
   autoCommit?: boolean;
   resumeSessionId?: string;

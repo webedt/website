@@ -19,6 +19,7 @@ export default function Chat() {
   const [input, setInput] = useState('');
   const [images, setImages] = useState<ImageAttachment[]>([]);
   const [selectedRepo, setSelectedRepo] = useState('');
+  const [baseBranch, setBaseBranch] = useState('main');
   const [branch, setBranch] = useState('');
   const [autoCommit, setAutoCommit] = useState(true);
   const [isExecuting, setIsExecuting] = useState(false);
@@ -44,6 +45,7 @@ export default function Chat() {
   const [lastRequest, setLastRequest] = useState<{
     input: string;
     selectedRepo: string;
+    baseBranch: string;
     branch: string;
     autoCommit: boolean;
   } | null>(null);
@@ -203,6 +205,9 @@ export default function Chat() {
       if (currentSessionData.data.repositoryUrl) {
         setSelectedRepo(currentSessionData.data.repositoryUrl);
       }
+      if (currentSessionData.data.baseBranch) {
+        setBaseBranch(currentSessionData.data.baseBranch);
+      }
       if (currentSessionData.data.branch) {
         setBranch(currentSessionData.data.branch);
       }
@@ -306,12 +311,16 @@ export default function Chat() {
 
     // Check for pre-selected settings from NewSession hub
     if (state?.preSelectedSettings && !currentSessionId) {
-      const { repositoryUrl, branch: preSelectedBranch, autoCommit: preSelectedAutoCommit, locked } = state.preSelectedSettings;
+      const { repositoryUrl, baseBranch: preSelectedBaseBranch, branch: preSelectedBranch, autoCommit: preSelectedAutoCommit, locked } = state.preSelectedSettings;
 
       console.log('[Chat] Loading pre-selected settings:', state.preSelectedSettings);
 
       if (repositoryUrl) {
         setSelectedRepo(repositoryUrl);
+      }
+
+      if (preSelectedBaseBranch) {
+        setBaseBranch(preSelectedBaseBranch);
       }
 
       if (preSelectedBranch) {
@@ -642,6 +651,7 @@ export default function Chat() {
     setLastRequest({
       input: input.trim(),
       selectedRepo,
+      baseBranch,
       branch,
       autoCommit,
     });
@@ -720,6 +730,10 @@ export default function Chat() {
         requestParams.repositoryUrl = selectedRepo;
       }
 
+      if (baseBranch) {
+        requestParams.baseBranch = baseBranch;
+      }
+
       if (branch) {
         requestParams.branch = branch;
       }
@@ -778,6 +792,10 @@ export default function Chat() {
         requestParams.repositoryUrl = lastRequest.selectedRepo;
       }
 
+      if (lastRequest.baseBranch) {
+        params.append('baseBranch', lastRequest.baseBranch);
+      }
+
       if (lastRequest.branch) {
         requestParams.branch = lastRequest.branch;
       }
@@ -794,7 +812,19 @@ export default function Chat() {
   };
 
   return (
-    <SessionLayout>
+    <SessionLayout
+      selectedRepo={selectedRepo}
+      baseBranch={baseBranch}
+      branch={branch}
+      autoCommit={autoCommit}
+      onRepoChange={setSelectedRepo}
+      onBaseBranchChange={setBaseBranch}
+      onBranchChange={setBranch}
+      onAutoCommitChange={setAutoCommit}
+      repositories={repositories}
+      isLoadingRepos={isLoadingRepos}
+      isLocked={isLocked}
+    >
       <div className="flex flex-col h-full">
       {/* Header - only show for existing sessions with messages */}
       {messages.length > 0 && (
@@ -932,6 +962,8 @@ export default function Chat() {
             isExecuting={isExecuting}
             selectedRepo={selectedRepo}
             setSelectedRepo={setSelectedRepo}
+            baseBranch={baseBranch}
+            setBaseBranch={setBaseBranch}
             branch={branch}
             setBranch={setBranch}
             autoCommit={autoCommit}
@@ -1040,9 +1072,14 @@ export default function Chat() {
                         <span className="text-sm text-base-content/70">Processing...</span>
                         {selectedRepo && (
                           <div className="flex items-center gap-2 mt-1">
+                            {baseBranch && (
+                              <span className="text-xs text-base-content/50">
+                                📂 Parent: <span className="font-medium">{baseBranch}</span>
+                              </span>
+                            )}
                             {branch && (
                               <span className="text-xs text-base-content/50">
-                                📂 Branch: <span className="font-medium">{branch}</span>
+                                → <span className="font-medium">{branch}</span>
                               </span>
                             )}
                             {autoCommit && (
@@ -1075,6 +1112,8 @@ export default function Chat() {
               isExecuting={isExecuting}
               selectedRepo={selectedRepo}
               setSelectedRepo={setSelectedRepo}
+              baseBranch={baseBranch}
+              setBaseBranch={setBaseBranch}
               branch={branch}
               setBranch={setBranch}
               autoCommit={autoCommit}

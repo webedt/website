@@ -19,6 +19,8 @@ interface ChatInputProps {
   isExecuting: boolean;
   selectedRepo: string;
   setSelectedRepo: (value: string) => void;
+  baseBranch?: string;
+  setBaseBranch?: (value: string) => void;
   branch: string;
   setBranch: (value: string) => void;
   autoCommit: boolean;
@@ -44,6 +46,8 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
   isExecuting,
   selectedRepo,
   setSelectedRepo,
+  baseBranch = 'main',
+  setBaseBranch,
   branch,
   setBranch,
   autoCommit,
@@ -495,9 +499,14 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
                             'No repository'
                           : 'No repository'}
                       </span>
+                      {baseBranch && (
+                        <span className="badge badge-ghost text-xs">
+                          {baseBranch}
+                        </span>
+                      )}
                       {branch && (
                         <span className="badge badge-ghost text-xs">
-                          {branch}
+                          → {branch}
                         </span>
                       )}
                       <span className="text-xs text-base-content/70">
@@ -580,76 +589,94 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
                         )}
                       </div>
 
-                      {/* Only show branch input when repository is selected */}
+                      {/* Only show branch inputs when repository is selected */}
                       {selectedRepo && (
-                        <div className="flex items-center gap-1">
-                          <input
-                            type="text"
-                            value={branch}
-                            onChange={(e) => setBranch(e.target.value)}
-                            placeholder="main"
-                            className="input input-bordered input-xs w-24"
-                            disabled={isExecuting || isLocked}
-                          />
-                          {/* Branch selector button */}
-                          <div className="relative branch-dropdown">
-                            <button
-                              type="button"
-                              onClick={fetchBranches}
-                              disabled={isExecuting || isLocked || isLoadingBranches}
-                              className="btn btn-xs btn-circle btn-ghost"
-                              title="Browse branches"
-                            >
-                              {isLoadingBranches ? (
-                                <span className="loading loading-spinner loading-xs"></span>
-                              ) : (
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                </svg>
+                        <>
+                          {/* Base Branch (Parent) */}
+                          <div className="flex items-center gap-1">
+                            <span className="text-[10px] text-base-content/50 font-medium uppercase">Parent</span>
+                            <input
+                              type="text"
+                              value={baseBranch}
+                              onChange={(e) => setBaseBranch?.(e.target.value)}
+                              placeholder="main"
+                              className="input input-bordered input-xs w-24"
+                              disabled={isExecuting || isLocked}
+                            />
+                            {/* Branch selector button */}
+                            <div className="relative branch-dropdown">
+                              <button
+                                type="button"
+                                onClick={fetchBranches}
+                                disabled={isExecuting || isLocked || isLoadingBranches}
+                                className="btn btn-xs btn-circle btn-ghost"
+                                title="Browse branches"
+                              >
+                                {isLoadingBranches ? (
+                                  <span className="loading loading-spinner loading-xs"></span>
+                                ) : (
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                  </svg>
+                                )}
+                              </button>
+                              {isBranchDropdownOpen && (
+                                <div className="absolute bottom-full left-0 mb-2 w-64 max-h-80 bg-base-100 rounded-lg shadow-xl border border-base-300 overflow-hidden z-50">
+                                  {/* Search input */}
+                                  <div className="p-2 sticky top-0 bg-base-100 border-b border-base-300">
+                                    <input
+                                      type="text"
+                                      placeholder="Search branches..."
+                                      value={branchSearchQuery}
+                                      onChange={(e) => setBranchSearchQuery(e.target.value)}
+                                      className="input input-bordered input-xs w-full"
+                                      autoFocus
+                                    />
+                                  </div>
+                                  {/* Branch list */}
+                                  <div className="overflow-y-auto max-h-64">
+                                    {filteredBranches.length > 0 ? (
+                                      filteredBranches.map((branchName) => (
+                                        <button
+                                          key={branchName}
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            setBaseBranch?.(branchName);
+                                            setIsBranchDropdownOpen(false);
+                                            setBranchSearchQuery('');
+                                          }}
+                                          className={`w-full text-left px-4 py-2 text-sm hover:bg-base-200 ${baseBranch === branchName ? 'bg-primary/10 font-semibold' : ''}`}
+                                        >
+                                          {branchName}
+                                        </button>
+                                      ))
+                                    ) : (
+                                      <div className="p-4 text-xs text-base-content/50 text-center">
+                                        No branches found
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
                               )}
-                            </button>
-                            {isBranchDropdownOpen && (
-                              <div className="absolute bottom-full left-0 mb-2 w-64 max-h-80 bg-base-100 rounded-lg shadow-xl border border-base-300 overflow-hidden z-50">
-                                {/* Search input */}
-                                <div className="p-2 sticky top-0 bg-base-100 border-b border-base-300">
-                                  <input
-                                    type="text"
-                                    placeholder="Search branches..."
-                                    value={branchSearchQuery}
-                                    onChange={(e) => setBranchSearchQuery(e.target.value)}
-                                    className="input input-bordered input-xs w-full"
-                                    autoFocus
-                                  />
-                                </div>
-                                {/* Branch list */}
-                                <div className="overflow-y-auto max-h-64">
-                                  {filteredBranches.length > 0 ? (
-                                    filteredBranches.map((branchName) => (
-                                      <button
-                                        key={branchName}
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                          setBranch(branchName);
-                                          setIsBranchDropdownOpen(false);
-                                          setBranchSearchQuery('');
-                                        }}
-                                        className={`w-full text-left px-4 py-2 text-sm hover:bg-base-200 ${branch === branchName ? 'bg-primary/10 font-semibold' : ''}`}
-                                      >
-                                        {branchName}
-                                      </button>
-                                    ))
-                                  ) : (
-                                    <div className="p-4 text-xs text-base-content/50 text-center">
-                                      No branches found
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            )}
+                            </div>
                           </div>
-                        </div>
+
+                          {/* Working Branch (Input only) */}
+                          <div className="flex items-center gap-1">
+                            <span className="text-[10px] text-base-content/50 font-medium uppercase">Working</span>
+                            <input
+                              type="text"
+                              value={branch}
+                              onChange={(e) => setBranch(e.target.value)}
+                              placeholder="(auto)"
+                              className="input input-bordered input-xs w-24"
+                              disabled={isExecuting || isLocked}
+                              title="Working Branch (optional)"
+                            />
+                          </div>
+                        </>
                       )}
 
                       <label className="flex items-center space-x-1">

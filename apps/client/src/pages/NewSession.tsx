@@ -76,7 +76,8 @@ export default function NewSession() {
 
   // Repository and branch state
   const [selectedRepo, setSelectedRepo] = useState('');
-  const [branch, setBranch] = useState('main');
+  const [baseBranch, setBaseBranch] = useState('main');
+  const [branch, setBranch] = useState(''); // Working branch (optional)
   const [autoCommit, setAutoCommit] = useState(true);
 
   // Repository search state
@@ -310,16 +311,16 @@ export default function NewSession() {
               </div>
             </div>
 
-            {/* Branch Selector */}
+            {/* Base Branch Selector */}
             <div className="flex-1">
               <label className="label py-1">
-                <span className="label-text font-semibold text-sm">Branch</span>
+                <span className="label-text font-semibold text-sm">Parent Branch</span>
               </label>
               <div className="relative flex items-center border border-base-300 rounded-lg h-9 pr-0 overflow-hidden hover:border-base-content/20 transition-colors">
                 <input
                   type="text"
-                  value={branch}
-                  onChange={(e) => setBranch(e.target.value)}
+                  value={baseBranch}
+                  onChange={(e) => setBaseBranch(e.target.value)}
                   placeholder="main"
                   className="flex-1 px-3 text-sm bg-transparent focus:outline-none disabled:opacity-50"
                   disabled={!selectedRepo}
@@ -359,11 +360,11 @@ export default function NewSession() {
                               key={branchName}
                               type="button"
                               onClick={() => {
-                                setBranch(branchName);
+                                setBaseBranch(branchName);
                                 setIsBranchDropdownOpen(false);
                                 setBranchSearchQuery('');
                               }}
-                              className={`w-full text-left px-4 py-2 text-sm hover:bg-base-200 ${branch === branchName ? 'bg-primary/10 font-semibold' : ''}`}
+                              className={`w-full text-left px-4 py-2 text-sm hover:bg-base-200 ${baseBranch === branchName ? 'bg-primary/10 font-semibold' : ''}`}
                             >
                               {branchName}
                             </button>
@@ -377,6 +378,23 @@ export default function NewSession() {
                     </div>
                   )}
                 </div>
+              </div>
+            </div>
+
+            {/* Working Branch Input */}
+            <div className="flex-1">
+              <label className="label py-1">
+                <span className="label-text font-semibold text-sm">Working Branch</span>
+              </label>
+              <div className="relative flex items-center border border-base-300 rounded-lg h-9 overflow-hidden hover:border-base-content/20 transition-colors">
+                <input
+                  type="text"
+                  value={branch}
+                  onChange={(e) => setBranch(e.target.value)}
+                  placeholder="(auto-generated)"
+                  className="flex-1 px-3 text-sm bg-transparent focus:outline-none disabled:opacity-50"
+                  disabled={!selectedRepo}
+                />
               </div>
             </div>
 
