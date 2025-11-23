@@ -305,7 +305,7 @@ export default function Chat() {
 
     // Check for pre-selected settings from NewSession hub
     if (state?.preSelectedSettings && !currentSessionId) {
-      const { repositoryUrl, baseBranch: preSelectedBaseBranch, branch: preSelectedBranch, autoCommit: preSelectedAutoCommit, locked } = state.preSelectedSettings;
+      const { repositoryUrl, baseBranch: preSelectedBaseBranch, branch: preSelectedBranch, locked } = state.preSelectedSettings;
 
       console.log('[Chat] Loading pre-selected settings:', state.preSelectedSettings);
 
@@ -523,7 +523,7 @@ export default function Chat() {
         console.log('[Chat] Execution completed, setting currentSessionId:', data.chatSessionId);
         setCurrentSessionId(data.chatSessionId);
         // Lock the fields after first submission completes
-        // This prevents users from changing repo/branch/autoCommit after a session has started
+        // This prevents users from changing repo/branch after a session has started
         if (!isLocked && selectedRepo) {
           console.log('[Chat] Locking fields after first submission');
           setIsLocked(true);
@@ -803,11 +803,9 @@ export default function Chat() {
       selectedRepo={selectedRepo}
       baseBranch={baseBranch}
       branch={branch}
-      autoCommit={autoCommit}
       onRepoChange={setSelectedRepo}
       onBaseBranchChange={setBaseBranch}
       onBranchChange={setBranch}
-      onAutoCommitChange={setAutoCommit}
       repositories={repositories}
       isLoadingRepos={isLoadingRepos}
       isLocked={isLocked}
