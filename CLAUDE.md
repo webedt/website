@@ -328,24 +328,32 @@ See `GIT_COMMIT_MESSAGE_INSTRUCTIONS.md` for complete rules and examples.
 
 ## Version Management
 
-Version numbers are **automatically managed** by GitHub Actions when pull requests are merged into the main branch.
+Version numbers are **automatically calculated** during Docker builds based on git tags and commit count.
 
-### Automated Workflow
+### Build-Time Version Calculation
 
-When you merge a pull request into main:
-1. A GitHub Action automatically runs `pnpm version:generate`
-2. If version files need updating, they are committed directly to main
-3. No manual intervention required during development or PR review
+When a Docker image is built:
+1. The Dockerfile runs `node scripts/generate-version.js --update`
+2. Version is calculated from git tags and commit count
+3. `package.json` and `apps/client/src/version.ts` are generated with the correct version
+4. No commits needed - versions are generated, not committed
 
-### Manual Updates (Optional)
+### Benefits
 
-During development on feature branches, you can optionally run:
+- ✅ No extra commits on main for version updates
+- ✅ Version is always accurate for the exact commit being built
+- ✅ Works automatically for all branches and deployments
+
+### Development Commands (Optional)
+
+During development, you can preview the version:
 ```bash
 pnpm version:show  # View current version
-pnpm version:generate  # Update version files
+pnpm version:info  # View detailed version info
+pnpm version:generate  # Update local version files (optional, not committed)
 ```
 
-However, this is **not required** - the automation handles it automatically after merging to main.
+Version files don't need to be committed since Docker builds regenerate them automatically.
 
 See `VERSIONING.md` for complete documentation on the versioning system.
 
