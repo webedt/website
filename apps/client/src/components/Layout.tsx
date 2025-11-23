@@ -6,6 +6,13 @@ import ThemeSelector from './ThemeSelector';
 import MobileMenu from './MobileMenu';
 import { VERSION, VERSION_TIMESTAMP, VERSION_SHA } from '@/version';
 
+interface NavItem {
+  to: string;
+  label: string;
+  icon: JSX.Element;
+  disabled?: boolean;
+}
+
 export default function Layout() {
   const { user, isAuthenticated, clearUser } = useAuthStore();
   const navigate = useNavigate();
@@ -79,7 +86,7 @@ export default function Layout() {
                        location.pathname.startsWith('/quick-setup/');
 
   // Store mode navigation items
-  const storeNavItems = [
+  const storeNavItems: NavItem[] = [
     {
       to: '/',
       label: 'Store',
@@ -103,7 +110,7 @@ export default function Layout() {
   ];
 
   // Editor mode navigation items
-  const editorNavItems = [
+  const editorNavItems: NavItem[] = [
     {
       to: '/new-session',
       label: 'New',
