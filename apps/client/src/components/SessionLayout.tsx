@@ -79,7 +79,7 @@ export default function SessionLayout({
     }
   };
 
-  // Format timestamp to Central Time with short SHA
+  // Format tooltip with short SHA and datetime
   const getVersionTooltip = () => {
     if (!VERSION_TIMESTAMP) return 'Version information';
 
@@ -96,7 +96,7 @@ export default function SessionLayout({
     });
 
     const shortSha = VERSION_SHA ? VERSION_SHA.substring(0, 7) : 'unknown';
-    return `${formattedDate}\n${shortSha}`;
+    return `${shortSha} [${formattedDate}]`;
   };
 
   // Close user menu when clicking outside
