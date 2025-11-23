@@ -21,7 +21,6 @@ export default function Chat() {
   const [selectedRepo, setSelectedRepo] = useState('');
   const [baseBranch, setBaseBranch] = useState('main');
   const [branch, setBranch] = useState('');
-  const [autoCommit, setAutoCommit] = useState(true);
   const [isExecuting, setIsExecuting] = useState(false);
   const [streamUrl, setStreamUrl] = useState<string | null>(null);
   const [streamMethod, setStreamMethod] = useState<'GET' | 'POST'>('GET');
@@ -47,7 +46,6 @@ export default function Chat() {
     selectedRepo: string;
     baseBranch: string;
     branch: string;
-    autoCommit: boolean;
   } | null>(null);
   const [viewingImage, setViewingImage] = useState<{
     data: string;
@@ -211,9 +209,6 @@ export default function Chat() {
       if (currentSessionData.data.branch) {
         setBranch(currentSessionData.data.branch);
       }
-      if (currentSessionData.data.autoCommit !== undefined) {
-        setAutoCommit(currentSessionData.data.autoCommit);
-      }
     }
   }, [currentSessionData]);
 
@@ -267,7 +262,6 @@ export default function Chat() {
       setImages([]);
       setSelectedRepo('');
       setBranch('');
-      setAutoCommit(true);
       setIsExecuting(false);
       setStreamUrl(null);
       setEditingTitle(false);
@@ -325,10 +319,6 @@ export default function Chat() {
 
       if (preSelectedBranch) {
         setBranch(preSelectedBranch);
-      }
-
-      if (preSelectedAutoCommit !== undefined) {
-        setAutoCommit(preSelectedAutoCommit);
       }
 
       if (locked) {
@@ -653,7 +643,6 @@ export default function Chat() {
       selectedRepo,
       baseBranch,
       branch,
-      autoCommit,
     });
 
     // Add user message
@@ -738,9 +727,8 @@ export default function Chat() {
         requestParams.branch = branch;
       }
 
-      if (autoCommit) {
-        requestParams.autoCommit = true;
-      }
+      // Auto-commit is now always enabled
+      requestParams.autoCommit = true;
     }
 
     // Debug: Log the exact parameters being sent
@@ -800,9 +788,8 @@ export default function Chat() {
         requestParams.branch = lastRequest.branch;
       }
 
-      if (lastRequest.autoCommit) {
-        requestParams.autoCommit = true;
-      }
+      // Auto-commit is now always enabled
+      requestParams.autoCommit = true;
     }
 
     // Always use POST
@@ -966,8 +953,6 @@ export default function Chat() {
             setBaseBranch={setBaseBranch}
             branch={branch}
             setBranch={setBranch}
-            autoCommit={autoCommit}
-            setAutoCommit={setAutoCommit}
             repositories={repositories}
             isLoadingRepos={isLoadingRepos}
             isLocked={isLocked}
@@ -1082,11 +1067,6 @@ export default function Chat() {
                                 → <span className="font-medium">{branch}</span>
                               </span>
                             )}
-                            {autoCommit && (
-                              <span className="text-xs text-success">
-                                ✓ Auto-commit enabled
-                              </span>
-                            )}
                           </div>
                         )}
                       </div>
@@ -1116,8 +1096,6 @@ export default function Chat() {
               setBaseBranch={setBaseBranch}
               branch={branch}
               setBranch={setBranch}
-              autoCommit={autoCommit}
-              setAutoCommit={setAutoCommit}
               repositories={repositories}
               isLoadingRepos={isLoadingRepos}
               isLocked={isLocked}

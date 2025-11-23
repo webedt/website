@@ -27,7 +27,6 @@ export interface ChatSession {
   status: SessionStatus;
   repositoryUrl: string | null;
   branch: string | null;
-  autoCommit: boolean;
   createdAt: Date;
   completedAt: Date | null;
 }
@@ -85,7 +84,6 @@ export interface ExecuteRequest {
     branch?: string;
     accessToken: string;
   };
-  autoCommit?: boolean;
   database?: {
     type: string;
     host: string;

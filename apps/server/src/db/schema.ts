@@ -37,7 +37,6 @@ export const chatSessions = pgTable('chat_sessions', {
   repositoryUrl: text('repository_url'),
   baseBranch: text('base_branch'),
   branch: text('branch'),
-  autoCommit: boolean('auto_commit').default(false).notNull(),
   locked: boolean('locked').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   completedAt: timestamp('completed_at'),

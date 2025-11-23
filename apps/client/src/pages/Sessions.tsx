@@ -22,7 +22,6 @@ export default function Sessions() {
   const [selectedRepo, setSelectedRepo] = useState('');
   const [baseBranch, setBaseBranch] = useState('main');
   const [branch, setBranch] = useState('');
-  const [autoCommit, setAutoCommit] = useState(true);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['sessions'],
@@ -131,7 +130,7 @@ export default function Sessions() {
           repositoryUrl: selectedRepo || undefined,
           baseBranch: baseBranch || undefined,
           branch: branch || undefined,
-          autoCommit: autoCommit || undefined,
+          autoCommit: true,
         }
       }
     });
@@ -207,8 +206,6 @@ export default function Sessions() {
           setBaseBranch={setBaseBranch}
           branch={branch}
           setBranch={setBranch}
-          autoCommit={autoCommit}
-          setAutoCommit={setAutoCommit}
           repositories={repositories}
           isLoadingRepos={isLoadingRepos}
           isLocked={false}

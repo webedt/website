@@ -50,8 +50,11 @@ const executeHandler = async (req: any, res: any) => {
   try {
     // Support both GET (query) and POST (body) parameters
     const params = req.method === 'POST' ? req.body : req.query;
-    const { userRequest, repositoryUrl, baseBranch, branch, autoCommit, chatSessionId } = params;
+    const { userRequest, repositoryUrl, baseBranch, branch, chatSessionId } = params;
     resumeSessionId = params.resumeSessionId;
+
+    // Auto-commit is now always enabled
+    const autoCommit = true;
 
     // Debug: Log incoming parameters
     console.log('[Execute] ========== INCOMING REQUEST PARAMETERS ==========');
@@ -89,9 +92,6 @@ const executeHandler = async (req: any, res: any) => {
       });
       return;
     }
-
-    // Parse autoCommit from string to boolean
-    const autoCommitBool = autoCommit === 'true';
 
     // Check if we're continuing an existing session or creating a new one
     if (chatSessionId) {
@@ -161,7 +161,6 @@ const executeHandler = async (req: any, res: any) => {
           repositoryUrl: (repositoryUrl as string) || null,
           baseBranch: (baseBranch as string) || 'main', // Default to main if not provided
           branch: (branch as string) || null, // Will be populated if provided, or when branch is created
-          autoCommit: autoCommitBool,
           locked: false, // Will be locked after first message
         })
         .returning())[0];
@@ -373,7 +372,8 @@ const executeHandler = async (req: any, res: any) => {
       // NOTE: 'branch' (working branch) variable is intentionally not used here for checkout,
       // as we want to checkout the 'baseBranch' and let the worker create/manage the working branch.
 
-      executePayload.autoCommit = autoCommitBool;
+      // Auto-commit is now always enabled
+      executePayload.autoCommit = true;
     }
 
     // Log outbound request to AI worker

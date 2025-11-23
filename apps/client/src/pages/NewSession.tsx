@@ -78,7 +78,6 @@ export default function NewSession() {
   const [selectedRepo, setSelectedRepo] = useState('');
   const [baseBranch, setBaseBranch] = useState('main');
   const [branch, setBranch] = useState(''); // Working branch (optional)
-  const [autoCommit, setAutoCommit] = useState(true);
 
   // Repository search state
   const [repoSearchQuery, setRepoSearchQuery] = useState('');
@@ -219,7 +218,6 @@ export default function NewSession() {
         preSelectedSettings: {
           repositoryUrl: selectedRepo || undefined,
           branch: branch || undefined,
-          autoCommit: autoCommit !== undefined ? autoCommit : true,
           locked: true, // Lock these settings
         }
       }
@@ -395,24 +393,6 @@ export default function NewSession() {
                   className="flex-1 px-3 text-sm bg-transparent focus:outline-none disabled:opacity-50"
                   disabled={!selectedRepo}
                 />
-              </div>
-            </div>
-
-            {/* Auto-commit checkbox */}
-            <div className="flex-shrink-0">
-              <label className="label py-1">
-                <span className="label-text font-semibold text-sm">&nbsp;</span>
-              </label>
-              <div className="flex items-center h-9">
-                <label className="label cursor-pointer gap-2 py-0">
-                  <input
-                    type="checkbox"
-                    checked={autoCommit}
-                    onChange={(e) => setAutoCommit(e.target.checked)}
-                    className="checkbox checkbox-primary checkbox-sm"
-                  />
-                  <span className="label-text font-semibold text-sm whitespace-nowrap">Auto-commit on Save</span>
-                </label>
               </div>
             </div>
           </div>
