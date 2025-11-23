@@ -95,6 +95,11 @@ export default function Layout() {
       disabled: location.pathname === '/new-session'
     },
     {
+      to: '/sessions',
+      label: 'Sessions',
+      icon: <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M3 13h8v8H3v-8zm0-10h8v8H3V3zm10 0h8v8h-8V3zm0 10h8v8h-8v-8z"/></svg>
+    },
+    {
       to: '/quick-setup/chat',
       label: 'Chat',
       icon: <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
@@ -206,6 +211,16 @@ export default function Layout() {
                     New
                   </Link>
                 )}
+
+                <Link
+                  to="/sessions"
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded transition-colors text-base-content/70 hover:bg-base-200"
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M3 13h8v8H3v-8zm0-10h8v8H3V3zm10 0h8v8h-8V3zm0 10h8v8h-8v-8z"/>
+                  </svg>
+                  Sessions
+                </Link>
 
                 <Link
                   to="/quick-setup/chat"
@@ -335,8 +350,8 @@ export default function Layout() {
         </div>
       </nav>
 
-      {/* Second Bar - Context-specific content (hidden on dashboard, new session, and quick setup pages) */}
-      {!['/', '/new-session'].includes(location.pathname) && !location.pathname.startsWith('/quick-setup/') && (
+      {/* Second Bar - Context-specific content (hidden on dashboard, new session, sessions, and quick setup pages) */}
+      {!['/', '/new-session', '/sessions'].includes(location.pathname) && !location.pathname.startsWith('/quick-setup/') && (
         <div className="bg-base-100 border-b border-base-300">
           <div className="px-4 h-12 flex items-center justify-center gap-4">
             {location.pathname === '/new-session' ? (
