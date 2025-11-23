@@ -335,6 +335,9 @@ const executeHandler = async (req: any, res: any) => {
       userRequest: parsedUserRequest,
       codingAssistantProvider: 'ClaudeAgentSDK',
       codingAssistantAuthentication: claudeAuth,
+      // Always use the autoCommit setting from the session (persisted in DB)
+      // This ensures resumed sessions respect the initial setting
+      autoCommit: chatSession.autoCommit,
     };
 
     console.log(`[Execute] Session resumption debug:
@@ -357,12 +360,6 @@ const executeHandler = async (req: any, res: any) => {
         branch: (branch as string) || undefined,
         accessToken: authReq.user.githubAccessToken,
       };
-      executePayload.autoCommit = autoCommitBool;
-    } else if (resumeSessionId && chatSession.repositoryUrl) {
-      // Resuming session - use settings from database
-      // Note: We do not send github info (repoUrl, token) when resuming because
-      // the worker already has the repository state and sending it causes an error.
-      executePayload.autoCommit = chatSession.autoCommit;
     }
 
     // Log outbound request to AI worker
