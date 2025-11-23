@@ -389,7 +389,13 @@ export default function Chat() {
         // Navigate to the actual session URL if we're on /session/new
         if (!sessionId || sessionId === 'new') {
           console.log('[Chat] Navigating to session:', data.chatSessionId);
-          navigate(`/session/${data.chatSessionId}`, { replace: true });
+          // Preserve the section path (e.g., /session/new/chat -> /session/{id}/chat)
+          const currentPath = location.pathname;
+          const section = currentPath.split('/').pop(); // Get the last segment
+          const targetPath = section && section !== 'new'
+            ? `/session/${data.chatSessionId}/${section}`
+            : `/session/${data.chatSessionId}/chat`;
+          navigate(targetPath, { replace: true });
         }
 
         // Don't display this as a message
@@ -603,7 +609,13 @@ export default function Chat() {
         // Navigate to the session URL if not already there
         if (!sessionId || Number(sessionId) !== data.chatSessionId) {
           console.log('[Chat] Navigating to session:', data.chatSessionId);
-          navigate(`/session/${data.chatSessionId}`, { replace: true });
+          // Preserve the section path (e.g., /session/new/chat -> /session/{id}/chat)
+          const currentPath = location.pathname;
+          const section = currentPath.split('/').pop(); // Get the last segment
+          const targetPath = section && section !== 'new' && section !== String(data.chatSessionId)
+            ? `/session/${data.chatSessionId}/${section}`
+            : `/session/${data.chatSessionId}/chat`;
+          navigate(targetPath, { replace: true });
         }
       }
       // Refocus input after processing completes (with delay to ensure DOM updates)
