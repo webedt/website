@@ -513,7 +513,7 @@ export default function Chat() {
         console.log('[Chat] Execution completed, setting currentSessionId:', data.chatSessionId);
         setCurrentSessionId(data.chatSessionId);
         // Lock the fields after first submission completes
-        // This prevents users from changing repo/branch/autoCommit after a session has started
+        // This prevents users from changing repo/branch after a session has started
         if (!isLocked && selectedRepo) {
           console.log('[Chat] Locking fields after first submission');
           setIsLocked(true);
