@@ -156,46 +156,6 @@ function App() {
               }
             />
             <Route
-              path="/code"
-              element={
-                <ProtectedRoute>
-                  <Code />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/images"
-              element={
-                <ProtectedRoute>
-                  <Images />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/sound"
-              element={
-                <ProtectedRoute>
-                  <Sound />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/scene-editor"
-              element={
-                <ProtectedRoute>
-                  <SceneEditor />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/preview"
-              element={
-                <ProtectedRoute>
-                  <Preview />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path="/item/:id"
               element={
                 <ProtectedRoute>
@@ -204,6 +164,48 @@ function App() {
               }
             />
           </Route>
+
+          {/* Standalone editor routes (wrapped in SessionLayout internally) */}
+          <Route
+            path="/code"
+            element={
+              <ProtectedRoute>
+                <Code />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/images"
+            element={
+              <ProtectedRoute>
+                <Images />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/sound"
+            element={
+              <ProtectedRoute>
+                <Sound />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/scene-editor"
+            element={
+              <ProtectedRoute>
+                <SceneEditor />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/preview"
+            element={
+              <ProtectedRoute>
+                <Preview />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Session routes use SessionLayout (embedded in Chat component) */}
           <Route
