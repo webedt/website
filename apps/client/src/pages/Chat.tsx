@@ -344,26 +344,10 @@ export default function Chat() {
     if (state?.startStream && state?.streamParams && !streamUrl) {
       console.log('[Chat] Auto-starting stream from navigation state:', state.streamParams);
 
-      const { userRequest } = state.streamParams;
-
-      // Check if userRequest is an array (images present)
-      if (Array.isArray(userRequest)) {
-        // Use POST for requests with images
-        setStreamMethod('POST');
-        setStreamBody(state.streamParams);
-        setStreamUrl(`${API_BASE_URL}/api/execute`);
-      } else {
-        // Use GET for text-only requests
-        setStreamMethod('GET');
-        setStreamBody(null);
-        const params = new URLSearchParams();
-        Object.entries(state.streamParams).forEach(([key, value]) => {
-          if (value !== undefined && value !== null) {
-            params.append(key, String(value));
-          }
-        });
-        setStreamUrl(`${API_BASE_URL}/api/execute?${params}`);
-      }
+      // Always use POST
+      setStreamMethod('POST');
+      setStreamBody(state.streamParams);
+      setStreamUrl(`${API_BASE_URL}/api/execute`);
 
       setIsExecuting(true);
 
@@ -759,24 +743,14 @@ export default function Chat() {
       }
     }
 
-    // Use POST for requests with images to avoid URL length limits
-    if (images.length > 0) {
-      // Use POST for large requests with images
-      setStreamMethod('POST');
-      setStreamBody(requestParams);
-      setStreamUrl(`${API_BASE_URL}/api/execute`);
-    } else {
-      // Use GET with query params for text-only requests
-      setStreamMethod('GET');
-      setStreamBody(null);
-      const params = new URLSearchParams();
-      Object.entries(requestParams).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          params.append(key, String(value));
-        }
-      });
-      setStreamUrl(`${API_BASE_URL}/api/execute?${params}`);
-    }
+    // Debug: Log the exact parameters being sent
+    console.log('[Chat] Final request parameters:', JSON.stringify(requestParams, null, 2));
+    console.log('[Chat] Parameters being sent:', Object.keys(requestParams));
+
+    // Always use POST to allow reading error body in response
+    setStreamMethod('POST');
+    setStreamBody(requestParams);
+    setStreamUrl(`${API_BASE_URL}/api/execute`);
 
     setInput('');
     setImages([]);
@@ -797,25 +771,25 @@ export default function Chat() {
 
     setMessages((prev) => [...prev, userMessage]);
 
-    // Build stream URL with saved request data
-    const params = new URLSearchParams({
+    // Build request body with saved request data
+    const requestParams: any = {
       userRequest: lastRequest.input,
-    });
+    };
 
     if (currentSessionId) {
-      params.append('chatSessionId', String(currentSessionId));
+      requestParams.chatSessionId = currentSessionId;
       console.log('[Chat] Retrying with existing chatSession:', currentSessionId);
     }
 
     if (aiWorkerSessionId) {
-      params.append('resumeSessionId', aiWorkerSessionId);
+      requestParams.resumeSessionId = aiWorkerSessionId;
       console.log('[Chat] Retrying with AI worker session ID:', aiWorkerSessionId);
       // When resuming a session, do NOT send repository parameters
       // The repository is already available in the session workspace
     } else {
       // Only send repository parameters when starting a new session
       if (lastRequest.selectedRepo) {
-        params.append('repositoryUrl', lastRequest.selectedRepo);
+        requestParams.repositoryUrl = lastRequest.selectedRepo;
       }
 
       if (lastRequest.baseBranch) {
@@ -823,15 +797,18 @@ export default function Chat() {
       }
 
       if (lastRequest.branch) {
-        params.append('branch', lastRequest.branch);
+        requestParams.branch = lastRequest.branch;
       }
 
       if (lastRequest.autoCommit) {
-        params.append('autoCommit', 'true');
+        requestParams.autoCommit = true;
       }
     }
 
-    setStreamUrl(`${API_BASE_URL}/api/execute?${params}`);
+    // Always use POST
+    setStreamMethod('POST');
+    setStreamBody(requestParams);
+    setStreamUrl(`${API_BASE_URL}/api/execute`);
   };
 
   return (

@@ -413,13 +413,31 @@ export default function SessionLayout({
                       📧 {user?.email}
                     </div>
 
-                    {/* Dashboard link */}
+                    {/* Store link */}
                     <Link
                       to="/"
                       onClick={() => setUserMenuOpen(false)}
                       className="block px-4 py-2 text-sm text-base-content hover:bg-base-200 transition-colors"
                     >
-                      🏠 Dashboard
+                      🏪 Store
+                    </Link>
+
+                    {/* Library link */}
+                    <Link
+                      to="/library"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="block px-4 py-2 text-sm text-base-content hover:bg-base-200 transition-colors"
+                    >
+                      📚 Library
+                    </Link>
+
+                    {/* My Sessions link */}
+                    <Link
+                      to="/sessions"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="block px-4 py-2 text-sm text-base-content hover:bg-base-200 transition-colors"
+                    >
+                      📂 My Sessions
                     </Link>
 
                     {/* New Session link */}
@@ -572,9 +590,9 @@ export default function SessionLayout({
                 <div className="flex items-center gap-1.5">
                   {isLocked ? (
                     <>
-                      {/* Red dot when session is active but missing repository (error state) */}
-                      <div className="w-2 h-2 rounded-full bg-error"></div>
-                      <span className="text-xs font-medium text-base-content/50">No repository</span>
+                      {/* Grey dot when session is active but missing repository (offline/local state) */}
+                      <div className="w-2 h-2 rounded-full bg-base-content/30"></div>
+                      <span className="text-xs font-medium text-base-content/50">Offline</span>
                     </>
                   ) : (
                     <>

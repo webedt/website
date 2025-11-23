@@ -74,7 +74,16 @@ export function useEventSource(url: string | null, options: UseEventSourceOption
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (e) {
+          // ignore json parse error and use default message
+        }
+        throw new Error(errorMessage);
       }
 
       if (!response.body) {

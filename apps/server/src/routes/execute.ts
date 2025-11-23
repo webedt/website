@@ -53,6 +53,20 @@ const executeHandler = async (req: any, res: any) => {
     const { userRequest, repositoryUrl, baseBranch, branch, autoCommit, chatSessionId } = params;
     resumeSessionId = params.resumeSessionId;
 
+    // Debug: Log incoming parameters
+    console.log('[Execute] ========== INCOMING REQUEST PARAMETERS ==========');
+    console.log('[Execute] Request method:', req.method);
+    console.log('[Execute] All params:', JSON.stringify(params, null, 2));
+    console.log('[Execute] Extracted values:', {
+      userRequest: typeof userRequest === 'string' ? userRequest.substring(0, 50) : userRequest,
+      repositoryUrl,
+      branch,
+      autoCommit,
+      chatSessionId,
+      resumeSessionId,
+    });
+    console.log('[Execute] ========================================================');
+
     if (!userRequest && !resumeSessionId) {
       res.status(400).json({ success: false, error: 'userRequest or resumeSessionId is required' });
       return;
@@ -325,6 +339,9 @@ const executeHandler = async (req: any, res: any) => {
       userRequest: parsedUserRequest,
       codingAssistantProvider: 'ClaudeAgentSDK',
       codingAssistantAuthentication: claudeAuth,
+      // Always use the autoCommit setting from the session (persisted in DB)
+      // This ensures resumed sessions respect the initial setting
+      autoCommit: chatSession.autoCommit,
     };
 
     console.log(`[Execute] Session resumption debug:
@@ -341,6 +358,7 @@ const executeHandler = async (req: any, res: any) => {
     }
 
     if (repositoryUrl && authReq.user.githubAccessToken) {
+      // New session - use parameters from request
       executePayload.github = {
         repoUrl: repositoryUrl as string,
         // For the initial checkout, we use baseBranch unless a specific branch is already defined
@@ -369,7 +387,8 @@ const executeHandler = async (req: any, res: any) => {
     console.log(`[Execute] User Request: ${truncateContent(executePayload.userRequest)}`);
     console.log(`[Execute] Repository: ${executePayload.github?.repoUrl || 'N/A'}`);
     console.log(`[Execute] Branch: ${executePayload.github?.branch || 'N/A'}`);
-    console.log(`[Execute] Auto Commit: ${executePayload.autoCommit || false}`);
+    console.log(`[Execute] Auto Commit: ${executePayload.autoCommit ?? 'N/A'}`);
+    console.log(`[Execute] Auto Commit Source: ${repositoryUrl ? 'request parameter' : resumeSessionId && chatSession.repositoryUrl ? 'database (resumed session)' : 'none'}`);
     console.log(`[Execute] Full Payload (sanitized): ${JSON.stringify(sanitizedPayload, null, 2)}`);
     console.log(`[Execute] ==================================================================`);
 
