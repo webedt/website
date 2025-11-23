@@ -23,6 +23,11 @@ COPY scripts ./scripts
 # Copy .git directory for version generation
 COPY .git ./.git
 
+# Fetch full git history for accurate version calculation
+# Configure remote and fetch all history and tags
+RUN git remote add origin https://github.com/webedt/website.git 2>/dev/null || true && \
+    git fetch --unshallow --tags 2>/dev/null || git fetch --tags 2>/dev/null || true
+
 # Install all dependencies
 RUN pnpm install --frozen-lockfile
 

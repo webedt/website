@@ -24,21 +24,12 @@ export default function Layout() {
     }
   };
 
-  // Check if we're on the production domain
-  const isProduction = () => {
-    return window.location.hostname === 'webedt.etdofresh.com';
-  };
-
-  // Get the display text (version or commit SHA)
+  // Always show version number
   const getVersionDisplay = () => {
-    if (isProduction()) {
-      return `v${VERSION}`;
-    }
-    // Show short SHA (first 7 characters) on non-production
-    return VERSION_SHA ? `previous short sha: ${VERSION_SHA.substring(0, 7)}` : `v${VERSION}`;
+    return `v${VERSION}`;
   };
 
-  // Format timestamp to Central Time
+  // Format tooltip with short SHA and datetime
   const getVersionTooltip = () => {
     if (!VERSION_TIMESTAMP) return 'Version information';
 
@@ -54,13 +45,8 @@ export default function Layout() {
       timeZoneName: 'short'
     });
 
-    // On production, show timestamp with SHA in tooltip
-    if (isProduction() && VERSION_SHA) {
-      const shortSha = VERSION_SHA.substring(0, 7);
-      return `${formattedDate} (${shortSha})`;
-    }
-
-    return formattedDate;
+    const shortSha = VERSION_SHA ? VERSION_SHA.substring(0, 7) : 'unknown';
+    return `${shortSha} [${formattedDate}]`;
   };
 
   // Close user menu when clicking outside

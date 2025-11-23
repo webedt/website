@@ -100,27 +100,29 @@ Each branch independently counts commits from its most recent ancestor tag.
 
 ## Automated Version Management
 
-**Version numbers are automatically managed by GitHub Actions.**
+**Version numbers are automatically calculated during Docker builds.**
 
 ### How It Works
 
-When a pull request is merged into the `main` branch:
+When a Docker image is built:
 
-1. The `update-version-on-merge.yml` workflow automatically runs
-2. It executes `pnpm version:generate` to calculate the current version
-3. If `package.json` or `apps/client/src/version.ts` need updating, it commits them directly to main
-4. Version files are updated immediately after the merge
+1. The Dockerfile includes the `.git` directory and version generation script
+2. During the build stage, `node scripts/generate-version.js --update` runs
+3. Version is calculated from git tags and commit count
+4. `package.json` and `apps/client/src/version.ts` are generated with the correct version
+5. The built application includes the accurate version
 
 ### Benefits
 
-- ✅ No manual version management required during development
-- ✅ Versions are automatically updated when code lands on main
-- ✅ No extra commits cluttering PR history
-- ✅ Version always reflects the actual state of main
+- ✅ No manual version management required
+- ✅ No extra commits on main for version updates
+- ✅ Version is always accurate for the exact commit being built
+- ✅ Works automatically for all branches and deployments
+- ✅ Same version calculation works in development and production
 
 ### During Development
 
-You don't need to run `pnpm version:generate` during development. Just commit your changes normally:
+You don't need to run `pnpm version:generate` during development unless you want to preview the current version. Just commit your changes normally:
 
 ```bash
 # Work on your feature
@@ -130,28 +132,59 @@ git commit -m "Add new feature"
 # Create PR to main
 gh pr create --base main
 
-# After merge, GitHub Actions automatically updates version files on main
+# After merge, the next Docker build will calculate the version automatically
 ```
 
-The automation ensures version files are updated after your PR is merged to main.
+### Local Development
+
+To see what version will be generated, run:
+
+```bash
+pnpm version:show  # Shows the version
+pnpm version:info  # Shows detailed version info
+```
+
+You can optionally run `pnpm version:generate` to update local files, but these changes don't need to be committed since the Docker build will regenerate them.
 
 ## Build Integration
 
-The version is available at build time:
+The version is calculated automatically during Docker builds:
 
-1. **Development**: Version calculated from git history
-2. **PR automation**: GitHub Actions updates version files automatically
-3. **Build time**: Add to your build script if needed for additional workflows
+1. **Dockerfile**: The `build` stage runs `node scripts/generate-version.js --update`
+2. **Git history**: Version is calculated from tags and commit count
+3. **Build artifacts**: Generated files include the correct version
+4. **No commits needed**: Version files are generated, not committed
 
-### Add to Build (Optional)
+### Docker Build Process
 
-```json
-{
-  "scripts": {
-    "build": "pnpm version:generate && pnpm run -r build"
-  }
-}
+The Dockerfile handles version generation automatically:
+
+```dockerfile
+# Copy .git directory for version generation
+COPY .git ./.git
+
+# Fetch full git history for accurate version calculation
+RUN git remote add origin https://github.com/webedt/website.git 2>/dev/null || true && \
+    git fetch --unshallow --tags 2>/dev/null || git fetch --tags 2>/dev/null || true
+
+# Build stage
+FROM base AS build
+
+WORKDIR /app
+
+# Generate version info from git before building
+RUN node scripts/generate-version.js --update
+
+# Build client and server
+RUN pnpm --filter @webedt/client build
+RUN pnpm --filter @webedt/server build
 ```
+
+**Key Points:**
+- Copies the `.git` directory into the Docker image
+- Fetches full git history and tags (handles shallow clones from CI/CD)
+- Calculates version based on complete commit history
+- Ensures every build has the correct version for that exact commit
 
 ## Version Display
 
