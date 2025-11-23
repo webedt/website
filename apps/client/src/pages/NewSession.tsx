@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { githubApi } from '@/lib/api';
 import { useAuthStore } from '@/lib/store';
 import type { GitHubRepository } from '@webedt/shared';
+import SessionLayout from '@/components/SessionLayout';
 
 type ActivityType = 'chat' | 'code' | 'images' | 'sound' | 'scene' | 'preview';
 
@@ -226,7 +227,8 @@ export default function NewSession() {
   };
 
   return (
-    <div className="min-h-screen bg-base-200 flex items-start justify-center px-4 pt-8">
+    <SessionLayout>
+      <div className="bg-base-200 flex items-start justify-center px-4 pt-8">
       <div className="max-w-5xl w-full">
         <div className="text-center mb-4">
           <h1 className="text-3xl font-bold text-base-content mb-2">Start a New Session</h1>
@@ -420,5 +422,6 @@ export default function NewSession() {
         </div>
       </div>
     </div>
+    </SessionLayout>
   );
 }

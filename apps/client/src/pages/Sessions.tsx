@@ -5,6 +5,7 @@ import { sessionsApi, githubApi } from '@/lib/api';
 import { useAuthStore } from '@/lib/store';
 import ChatInput, { type ImageAttachment } from '@/components/ChatInput';
 import type { ChatSession, GitHubRepository } from '@webedt/shared';
+import SessionLayout from '@/components/SessionLayout';
 
 export default function Sessions() {
   const queryClient = useQueryClient();
@@ -182,7 +183,8 @@ export default function Sessions() {
   }, [deletingId, deleteMutation.isPending]);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <SessionLayout>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
         <div className="text-center mb-6">
           <h1 className="text-3xl font-bold text-base-content mb-2">Your Sessions</h1>
@@ -394,5 +396,6 @@ export default function Sessions() {
         </div>
       )}
     </div>
+    </SessionLayout>
   );
 }
