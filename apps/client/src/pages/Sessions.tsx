@@ -20,6 +20,7 @@ export default function Sessions() {
   const [input, setInput] = useState('');
   const [images, setImages] = useState<ImageAttachment[]>([]);
   const [selectedRepo, setSelectedRepo] = useState('');
+  const [baseBranch, setBaseBranch] = useState('main');
   const [branch, setBranch] = useState('');
 
   const { data, isLoading, error } = useQuery({
@@ -127,6 +128,7 @@ export default function Sessions() {
         streamParams: {
           userRequest: userRequestParam,
           repositoryUrl: selectedRepo || undefined,
+          baseBranch: baseBranch || undefined,
           branch: branch || undefined,
           autoCommit: true,
         }
@@ -200,6 +202,8 @@ export default function Sessions() {
           isExecuting={false}
           selectedRepo={selectedRepo}
           setSelectedRepo={setSelectedRepo}
+          baseBranch={baseBranch}
+          setBaseBranch={setBaseBranch}
           branch={branch}
           setBranch={setBranch}
           repositories={repositories}

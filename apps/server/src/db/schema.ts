@@ -35,6 +35,7 @@ export const chatSessions = pgTable('chat_sessions', {
   userRequest: text('user_request').notNull(),
   status: text('status').notNull().default('pending'), // 'pending' | 'running' | 'completed' | 'error'
   repositoryUrl: text('repository_url'),
+  baseBranch: text('base_branch'),
   branch: text('branch'),
   locked: boolean('locked').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),

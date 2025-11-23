@@ -35,6 +35,7 @@ export const chatSessions = sqliteTable('chat_sessions', {
   userRequest: text('user_request').notNull(),
   status: text('status').notNull().default('pending'),
   repositoryUrl: text('repository_url'),
+  baseBranch: text('base_branch'),
   branch: text('branch'),
   locked: integer('locked', { mode: 'boolean' }).notNull().default(false),
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
