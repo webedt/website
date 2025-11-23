@@ -542,11 +542,22 @@ export default function SessionLayout({
             </>
           ) : (
             <>
-              {/* Show disconnected status when no repository */}
+              {/* Show offline or no repository status */}
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-base-content/30"></div>
-                  <span className="text-xs font-medium text-base-content/50">Not connected to repository</span>
+                  {sessionId ? (
+                    <>
+                      {/* Red dot when in session but no repository */}
+                      <div className="w-2 h-2 rounded-full bg-error"></div>
+                      <span className="text-xs font-medium text-base-content/50">No repository</span>
+                    </>
+                  ) : (
+                    <>
+                      {/* Grey dot when in quick-setup/offline mode */}
+                      <div className="w-2 h-2 rounded-full bg-base-content/30"></div>
+                      <span className="text-xs font-medium text-base-content/50">Offline</span>
+                    </>
+                  )}
                 </div>
               </div>
             </>
