@@ -7,9 +7,10 @@ interface ShopItem {
   description: string;
   price: string;
   thumbnail: string;
+  purchasedDate: string;
 }
 
-// Same items as in Dashboard/Store - showing purchased items
+// Subset of store items that user has "purchased"
 const libraryItems: ShopItem[] = [
   {
     id: 1,
@@ -17,13 +18,7 @@ const libraryItems: ShopItem[] = [
     description: 'Advanced code editor with syntax highlighting and auto-completion',
     price: '$19.99',
     thumbnail: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=300&fit=crop',
-  },
-  {
-    id: 2,
-    title: 'Data Visualizer',
-    description: 'Create stunning data visualizations and interactive charts',
-    price: '$24.99',
-    thumbnail: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=300&fit=crop',
+    purchasedDate: '2025-11-15',
   },
   {
     id: 3,
@@ -31,13 +26,7 @@ const libraryItems: ShopItem[] = [
     description: 'Manage your projects with powerful planning and tracking tools',
     price: '$18.99',
     thumbnail: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400&h=300&fit=crop',
-  },
-  {
-    id: 4,
-    title: 'API Tester',
-    description: 'Test and debug your APIs with an intuitive interface',
-    price: '$23.99',
-    thumbnail: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=400&h=300&fit=crop',
+    purchasedDate: '2025-11-10',
   },
   {
     id: 5,
@@ -45,6 +34,7 @@ const libraryItems: ShopItem[] = [
     description: 'Create stunning mockups and prototypes for your projects',
     price: '$19.99',
     thumbnail: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=300&fit=crop',
+    purchasedDate: '2025-11-05',
   },
   {
     id: 6,
@@ -52,20 +42,7 @@ const libraryItems: ShopItem[] = [
     description: 'Communicate seamlessly with your team in real-time',
     price: '$24.99',
     thumbnail: 'https://images.unsplash.com/photo-1611606063065-ee7946f0787a?w=400&h=300&fit=crop',
-  },
-  {
-    id: 7,
-    title: 'CRM Insights',
-    description: 'Manage customer relationships with powerful analytics tools',
-    price: '$24.89',
-    thumbnail: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop',
-  },
-  {
-    id: 8,
-    title: 'Web Builder',
-    description: 'Create and deploy responsive websites with no-code tools',
-    price: '$24.99',
-    thumbnail: 'https://images.unsplash.com/photo-1547658719-da2b51169166?w=400&h=300&fit=crop',
+    purchasedDate: '2025-10-28',
   },
 ];
 
@@ -80,13 +57,13 @@ export default function Library() {
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-base-content mb-4">My Library</h1>
           <p className="text-base-content/70">
-            Access your purchased apps and tools
+            Your purchased apps and tools
           </p>
         </div>
 
         {/* Category Filters */}
         <div className="mb-8 flex gap-2">
-          {['All', 'Productivity', 'Development', 'Analytics', 'Design'].map((category) => (
+          {['All', 'Recently Added', 'Most Used', 'Favorites'].map((category) => (
             <button
               key={category}
               onClick={() => setSelectedCategory(category)}
@@ -146,45 +123,43 @@ export default function Library() {
                   {item.description}
                 </p>
 
-                {/* Price with Icons */}
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-success font-semibold">Owned</div>
-                  <div className="flex gap-3">
-                    {/* Launch Icon */}
-                    <button
-                      className="btn btn-ghost btn-sm btn-circle"
-                      onClick={() => console.log('Launch:', item.title)}
-                      title="Launch"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                      >
-                        <path d="M8 5v14l11-7z" />
-                      </svg>
-                    </button>
-
-                    {/* Download Icon */}
-                    <button
-                      className="btn btn-ghost btn-sm btn-circle"
-                      onClick={() => navigate(`/library/${item.id}`)}
-                      title="View Details"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="M12 16v-4M12 8h.01" />
-                      </svg>
-                    </button>
+                {/* Price and Purchase Date */}
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-sm font-semibold text-primary">{item.price}</div>
+                  <div className="text-xs text-base-content/50">
+                    Purchased {new Date(item.purchasedDate).toLocaleDateString()}
                   </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2">
+                  <button
+                    className="btn btn-primary btn-sm flex-1"
+                    onClick={() => navigate(`/library/${item.id}`)}
+                  >
+                    Open
+                  </button>
+                  <button
+                    className="btn btn-ghost btn-sm btn-circle"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      console.log('Download:', item.title);
+                    }}
+                    title="Download"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                  </button>
                 </div>
               </div>
             </div>
