@@ -8,6 +8,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import Dashboard from '@/pages/Dashboard';
+import Sessions from '@/pages/Sessions';
 import Chat from '@/pages/Chat';
 import NewSession from '@/pages/NewSession';
 import QuickChatSetup from '@/pages/QuickChatSetup';
@@ -60,7 +61,7 @@ function App() {
 
     // Check if we're in a path-based deployment (3+ path segments)
     const pathSegments = pathname.split('/').filter(Boolean);
-    if (pathSegments.length >= 3 && !['login', 'register', 'session', 'settings', 'new-session', 'code', 'images', 'sound', 'scene-editor', 'preview'].includes(pathSegments[0])) {
+    if (pathSegments.length >= 3 && !['login', 'register', 'session', 'sessions', 'settings', 'new-session', 'code', 'images', 'sound', 'scene-editor', 'preview'].includes(pathSegments[0])) {
       // Assume format: /owner/repo/branch/...
       return `/${pathSegments[0]}/${pathSegments[1]}/${pathSegments[2]}`;
     }
@@ -83,6 +84,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/sessions"
+              element={
+                <ProtectedRoute>
+                  <Sessions />
                 </ProtectedRoute>
               }
             />
