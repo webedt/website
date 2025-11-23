@@ -21,7 +21,6 @@ export default function Sessions() {
   const [images, setImages] = useState<ImageAttachment[]>([]);
   const [selectedRepo, setSelectedRepo] = useState('');
   const [baseBranch, setBaseBranch] = useState('main');
-  const [branch, setBranch] = useState('');
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['sessions'],
@@ -129,7 +128,6 @@ export default function Sessions() {
           userRequest: userRequestParam,
           repositoryUrl: selectedRepo || undefined,
           baseBranch: baseBranch || undefined,
-          branch: branch || undefined,
           autoCommit: true,
         }
       }
@@ -204,8 +202,6 @@ export default function Sessions() {
           setSelectedRepo={setSelectedRepo}
           baseBranch={baseBranch}
           setBaseBranch={setBaseBranch}
-          branch={branch}
-          setBranch={setBranch}
           repositories={repositories}
           isLoadingRepos={isLoadingRepos}
           isLocked={false}
