@@ -1,240 +1,160 @@
 import { useState } from 'react';
 import { useViewMode } from '@/hooks/useViewMode';
 import ViewToggle from '@/components/ViewToggle';
-import ItemGridView from '@/components/ItemViews/ItemGridView';
-import ItemDetailedView from '@/components/ItemViews/ItemDetailedView';
-import ItemMinimalView from '@/components/ItemViews/ItemMinimalView';
 
-interface CommunityItem {
+interface BlogPost {
   id: number;
   title: string;
-  description: string;
+  content: string;
   author: string;
+  date: string;
+  comments: number;
   likes: number;
-  thumbnail: string;
+  category: string;
 }
 
-const communityItems: CommunityItem[] = [
+interface Announcement {
+  id: number;
+  title: string;
+  content: string;
+  date: string;
+  type: 'info' | 'update' | 'event';
+}
+
+const blogPosts: BlogPost[] = [
   {
     id: 1,
-    title: 'Interactive Portfolio Template',
-    description: 'A stunning portfolio website with smooth animations and dark mode',
-    author: 'Sarah Chen',
+    title: 'Welcome to the WebEDT Community!',
+    content: 'We are excited to launch our new community platform where developers, designers, and creators can connect, share ideas, and collaborate on amazing projects. Join the conversation and be part of something special!',
+    author: 'WebEDT Team',
+    date: '2025-11-20',
+    comments: 45,
     likes: 234,
-    thumbnail: 'https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?w=400&h=300&fit=crop',
+    category: 'Announcement',
   },
   {
     id: 2,
-    title: 'E-commerce Dashboard',
-    description: 'Complete admin dashboard for managing online stores',
-    author: 'Alex Martinez',
+    title: 'New Feature: Real-time Collaboration',
+    content: 'Introducing real-time collaboration features! Now you can work together with your team in real-time, share code, and build amazing projects faster than ever before.',
+    author: 'Sarah Chen',
+    date: '2025-11-18',
+    comments: 32,
     likes: 189,
-    thumbnail: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop',
+    category: 'Update',
   },
   {
     id: 3,
-    title: 'Weather App with Maps',
-    description: 'Real-time weather data visualization with interactive maps',
-    author: 'Emma Wilson',
+    title: 'Community Spotlight: Top Projects This Week',
+    content: 'Check out the most impressive projects created by our community this week. From stunning portfolios to complex web applications, our users continue to amaze us!',
+    author: 'Alex Martinez',
+    date: '2025-11-15',
+    comments: 28,
     likes: 156,
-    thumbnail: 'https://images.unsplash.com/photo-1592210454359-9043f067919b?w=400&h=300&fit=crop',
+    category: 'Spotlight',
   },
   {
     id: 4,
-    title: 'Task Management System',
-    description: 'Collaborative task tracker with team features and notifications',
-    author: 'Michael Brown',
+    title: 'Upcoming Webinar: Building Scalable Applications',
+    content: 'Join us next week for an in-depth webinar on building scalable web applications. Learn best practices, tips, and tricks from industry experts.',
+    author: 'Emma Wilson',
+    date: '2025-11-12',
+    comments: 41,
     likes: 298,
-    thumbnail: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400&h=300&fit=crop',
-  },
-  {
-    id: 5,
-    title: 'Music Player Interface',
-    description: 'Beautiful music player with playlist management and visualizations',
-    author: 'Lisa Anderson',
-    likes: 412,
-    thumbnail: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=400&h=300&fit=crop',
-  },
-  {
-    id: 6,
-    title: 'Recipe Sharing Platform',
-    description: 'Share and discover recipes with step-by-step instructions',
-    author: 'David Kim',
-    likes: 176,
-    thumbnail: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=400&h=300&fit=crop',
-  },
-  {
-    id: 7,
-    title: 'Fitness Tracker Dashboard',
-    description: 'Track workouts, nutrition, and progress with detailed analytics',
-    author: 'Jessica Lee',
-    likes: 267,
-    thumbnail: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&h=300&fit=crop',
-  },
-  {
-    id: 8,
-    title: 'Chat Application',
-    description: 'Real-time messaging app with file sharing and group chats',
-    author: 'Robert Taylor',
-    likes: 345,
-    thumbnail: 'https://images.unsplash.com/photo-1611606063065-ee7946f0787a?w=400&h=300&fit=crop',
+    category: 'Event',
   },
 ];
 
-type SortField = 'title' | 'likes' | null;
-type SortDirection = 'asc' | 'desc' | null;
+const announcements: Announcement[] = [
+  {
+    id: 1,
+    title: 'Platform Maintenance Scheduled',
+    content: 'Scheduled maintenance on Nov 25, 2025 from 2:00 AM - 4:00 AM UTC',
+    date: '2025-11-21',
+    type: 'info',
+  },
+  {
+    id: 2,
+    title: 'New Design Templates Available',
+    content: 'Check out our latest collection of professional design templates',
+    date: '2025-11-19',
+    type: 'update',
+  },
+  {
+    id: 3,
+    title: 'Community Meetup - Dec 5th',
+    content: 'Join us for our monthly virtual community meetup',
+    date: '2025-11-17',
+    type: 'event',
+  },
+];
 
 export default function Community() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [viewMode, setViewMode] = useViewMode('community-view');
-  const [sortField, setSortField] = useState<SortField>(null);
-  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
 
-  // Handle sort click
-  const handleSort = (field: Exclude<SortField, null>) => {
-    if (sortField === field) {
-      // Cycle through: asc -> desc -> none
-      if (sortDirection === 'asc') {
-        setSortDirection('desc');
-      } else if (sortDirection === 'desc') {
-        setSortField(null);
-        setSortDirection(null);
-      }
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
-    }
-  };
 
-  // Sort items
-  const sortedItems = [...communityItems].sort((a, b) => {
-    if (!sortField || !sortDirection) return 0;
-
-    let comparison = 0;
-    if (sortField === 'title') {
-      comparison = a.title.localeCompare(b.title);
-    } else if (sortField === 'likes') {
-      comparison = a.likes - b.likes;
-    }
-
-    return sortDirection === 'asc' ? comparison : -comparison;
-  });
-
-  // Render sort icon
-  const renderSortIcon = (field: Exclude<SortField, null>) => {
-    if (sortField !== field) {
-      return (
-        <svg className="w-4 h-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-        </svg>
-      );
-    }
-    if (sortDirection === 'asc') {
-      return (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-        </svg>
-      );
-    }
-    return (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-      </svg>
-    );
-  };
-
-  // Header for list views
-  const renderHeader = () => (
-    <div className="flex items-center gap-4 px-4 py-3 bg-base-300 rounded-lg font-semibold text-sm mb-2">
-      <div className="w-10 h-10"></div> {/* Thumbnail spacer */}
-      <button
-        onClick={() => handleSort('title')}
-        className="flex-1 flex items-center gap-2 hover:text-primary transition-colors"
-      >
-        Title
-        {renderSortIcon('title')}
-      </button>
-      <button
-        onClick={() => handleSort('likes')}
-        className="flex items-center gap-2 hover:text-primary transition-colors"
-      >
-        Likes
-        {renderSortIcon('likes')}
-      </button>
-      <div className="w-24"></div> {/* Actions spacer */}
-    </div>
-  );
-
-  // Grid/Card view renderer
-  const renderCard = (item: CommunityItem) => (
-    <div
-      key={item.id}
-      className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow"
-    >
-      {/* Thumbnail - Clickable to Open */}
-      <figure
-        className="relative h-48 overflow-hidden cursor-pointer group"
-        onClick={() => console.log('Open:', item.title)}
-      >
-        <img
-          src={item.thumbnail}
-          alt={item.title}
-          className="w-full h-full object-cover transition-transform group-hover:scale-105"
-        />
-        {/* Hover Overlay */}
-        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-          <div className="text-white transform scale-90 group-hover:scale-100 transition-transform duration-300">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-16 w-16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-              <circle cx="9" cy="7" r="4" />
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-            </svg>
-          </div>
+  // Grid/Card view renderer for blog posts
+  const renderCard = (post: BlogPost) => (
+    <div key={post.id} className="card bg-base-100 shadow-xl">
+      <div className="card-body">
+        {/* Category Badge */}
+        <div className="flex items-start justify-between">
+          <span className="badge badge-primary">{post.category}</span>
+          <span className="text-sm text-base-content/50">
+            {new Date(post.date).toLocaleDateString()}
+          </span>
         </div>
-      </figure>
 
-      <div className="card-body p-4">
         {/* Title */}
-        <h2 className="card-title text-lg">{item.title}</h2>
+        <h2 className="card-title text-xl mt-2">{post.title}</h2>
 
-        {/* Description */}
-        <p className="text-sm text-base-content/70 line-clamp-2 mb-2">
-          {item.description}
-        </p>
+        {/* Content Preview */}
+        <p className="text-base-content/70 line-clamp-3">{post.content}</p>
 
-        {/* Author and Likes */}
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-base-content/60">{item.author}</div>
-          <div className="flex gap-3 items-center">
-            {/* Likes Count */}
-            <div className="flex items-center gap-1 text-sm">
+        {/* Author and Stats */}
+        <div className="flex items-center justify-between mt-4 pt-4 border-t border-base-300">
+          <div className="flex items-center gap-2">
+            <div className="avatar placeholder">
+              <div className="bg-primary text-primary-content rounded-full w-8">
+                <span className="text-xs">{post.author[0]}</span>
+              </div>
+            </div>
+            <span className="text-sm font-medium">{post.author}</span>
+          </div>
+
+          <div className="flex gap-4">
+            {/* Likes */}
+            <button className="flex items-center gap-1 hover:text-primary transition-colors">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4"
+                className="h-5 w-5"
                 viewBox="0 0 24 24"
-                fill="currentColor"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
               >
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
               </svg>
-              <span>{item.likes}</span>
-            </div>
+              <span className="text-sm">{post.likes}</span>
+            </button>
 
-            {/* Share Icon */}
-            <button
-              className="btn btn-ghost btn-sm btn-circle"
-              onClick={() => console.log('Share:', item.title)}
-              title="Share"
-            >
+            {/* Comments */}
+            <button className="flex items-center gap-1 hover:text-primary transition-colors">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+              <span className="text-sm">{post.comments}</span>
+            </button>
+
+            {/* Share */}
+            <button className="hover:text-primary transition-colors">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-5 w-5"
@@ -256,169 +176,277 @@ export default function Community() {
     </div>
   );
 
-  // Detailed line view renderer
-  const renderDetailedRow = (item: CommunityItem) => (
+  // Detailed line view renderer for blog posts
+  const renderDetailedRow = (post: BlogPost) => (
     <div
-      key={item.id}
-      className="flex items-center gap-4 p-4 bg-base-100 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer"
-      onClick={() => console.log('Open:', item.title)}
+      key={post.id}
+      className="p-4 bg-base-100 rounded-lg shadow hover:shadow-lg transition-shadow"
     >
-      {/* Thumbnail */}
-      <img
-        src={item.thumbnail}
-        alt={item.title}
-        className="w-24 h-24 object-cover rounded"
-      />
-
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        <h3 className="text-lg font-semibold text-base-content">{item.title}</h3>
-        <p className="text-sm text-base-content/70 mt-1">{item.description}</p>
-        <p className="text-xs text-base-content/50 mt-2">{item.author}</p>
+      <div className="flex items-start justify-between mb-2">
+        <span className="badge badge-primary badge-sm">{post.category}</span>
+        <span className="text-xs text-base-content/50">
+          {new Date(post.date).toLocaleDateString()}
+        </span>
       </div>
 
-      {/* Likes and Actions */}
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-1 text-sm">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-          >
-            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-          </svg>
-          <span>{item.likes}</span>
+      <h3 className="text-lg font-semibold text-base-content mb-2">{post.title}</h3>
+      <p className="text-sm text-base-content/70 mb-3">{post.content}</p>
+
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="avatar placeholder">
+            <div className="bg-primary text-primary-content rounded-full w-6">
+              <span className="text-xs">{post.author[0]}</span>
+            </div>
+          </div>
+          <span className="text-xs font-medium">{post.author}</span>
         </div>
-        <button
-          className="btn btn-ghost btn-sm btn-circle"
-          onClick={(e) => {
-            e.stopPropagation();
-            console.log('Share:', item.title);
-          }}
-          title="Share"
-        >
+
+        <div className="flex gap-3">
+          <button className="flex items-center gap-1 text-xs hover:text-primary transition-colors">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
+            </svg>
+            <span>{post.likes}</span>
+          </button>
+          <button className="flex items-center gap-1 text-xs hover:text-primary transition-colors">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            <span>{post.comments}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Minimal line view renderer for blog posts
+  const renderMinimalRow = (post: BlogPost) => (
+    <div
+      key={post.id}
+      className="flex items-center gap-3 p-2 bg-base-100 rounded hover:bg-base-200 transition-colors"
+    >
+      <span className="badge badge-primary badge-xs">{post.category}</span>
+
+      <div className="flex-1 min-w-0">
+        <h3 className="text-sm font-medium text-base-content truncate">{post.title}</h3>
+      </div>
+
+      <div className="text-xs text-base-content/60 hidden sm:block">{post.author}</div>
+
+      <div className="flex items-center gap-2 text-xs">
+        <span className="flex items-center gap-1">
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5"
+            className="h-3 w-3"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
           >
-            <circle cx="18" cy="5" r="3" />
-            <circle cx="6" cy="12" r="3" />
-            <circle cx="18" cy="19" r="3" />
-            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+            <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
           </svg>
-        </button>
+          {post.likes}
+        </span>
+        <span className="flex items-center gap-1">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-3 w-3"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+          {post.comments}
+        </span>
       </div>
     </div>
   );
 
-  // Minimal line view renderer
-  const renderMinimalRow = (item: CommunityItem) => (
-    <div
-      key={item.id}
-      className="flex items-center gap-4 p-3 bg-base-100 rounded hover:bg-base-200 transition-colors cursor-pointer"
-      onClick={() => console.log('Open:', item.title)}
-    >
-      {/* Icon/Thumbnail */}
-      <img
-        src={item.thumbnail}
-        alt={item.title}
-        className="w-10 h-10 object-cover rounded"
-      />
-
-      {/* Title */}
-      <div className="flex-1 min-w-0">
-        <h3 className="text-sm font-medium text-base-content truncate">{item.title}</h3>
-      </div>
-
-      {/* Author */}
-      <div className="text-xs text-base-content/60 hidden sm:block">{item.author}</div>
-
-      {/* Likes */}
-      <div className="flex items-center gap-1 text-xs">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-4 w-4"
-          viewBox="0 0 24 24"
-          fill="currentColor"
-        >
-          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-        </svg>
-        <span>{item.likes}</span>
-      </div>
-
-      {/* Quick Action */}
-      <button
-        className="btn btn-ghost btn-xs btn-circle"
-        onClick={(e) => {
-          e.stopPropagation();
-          console.log('Share:', item.title);
-        }}
-        title="Share"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-4 w-4"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <circle cx="18" cy="5" r="3" />
-          <circle cx="6" cy="12" r="3" />
-          <circle cx="18" cy="19" r="3" />
-          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-        </svg>
-      </button>
-    </div>
-  );
+  const getAnnouncementBadge = (type: string) => {
+    switch (type) {
+      case 'info':
+        return 'badge-info';
+      case 'update':
+        return 'badge-success';
+      case 'event':
+        return 'badge-warning';
+      default:
+        return 'badge-ghost';
+    }
+  };
 
   return (
     <div className="min-h-screen bg-base-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-base-content mb-4">Community</h1>
+          <h1 className="text-4xl font-bold text-base-content mb-4">Community Hub</h1>
           <p className="text-base-content/70">
-            Discover and share projects created by the WebEDT community
+            Stay updated with the latest news, announcements, and community discussions
           </p>
         </div>
 
-        {/* Category Filters and View Toggle */}
-        <div className="mb-8 flex flex-wrap gap-4 items-center justify-between">
-          <div className="flex gap-2">
-            {['All', 'Popular', 'Recent', 'Featured', 'Trending'].map((category) => (
-              <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className={`btn btn-sm ${
-                  selectedCategory === category ? 'btn-primary' : 'btn-ghost'
-                }`}
-              >
-                {category}
-              </button>
-            ))}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Content - Blog Posts */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Category Filters and View Toggle */}
+            <div className="flex flex-wrap gap-4 items-center justify-between mb-6">
+              <div className="flex gap-2">
+                {['All', 'Announcements', 'Updates', 'Events', 'Spotlight'].map((category) => (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className={`btn btn-sm ${
+                      selectedCategory === category ? 'btn-primary' : 'btn-ghost'
+                    }`}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+
+              <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
+            </div>
+
+            {/* Blog Posts - Dynamic View */}
+            {viewMode === 'grid' && (
+              <div className="space-y-6">
+                {blogPosts.map((post) => renderCard(post))}
+              </div>
+            )}
+            {viewMode === 'detailed' && (
+              <div className="space-y-3">
+                {blogPosts.map((post) => renderDetailedRow(post))}
+              </div>
+            )}
+            {viewMode === 'minimal' && (
+              <div className="space-y-1">
+                {blogPosts.map((post) => renderMinimalRow(post))}
+              </div>
+            )}
+
+            {/* Placeholder for Chat/Discord Area */}
+            <div className="card bg-base-100 shadow-xl">
+              <div className="card-body">
+                <h3 className="card-title">Community Chat</h3>
+                <p className="text-base-content/70">
+                  Join the conversation! Our Discord-style community chat will be available soon.
+                  Connect with other developers, ask questions, and share your projects in real-time.
+                </p>
+                <button className="btn btn-primary mt-4">Coming Soon</button>
+              </div>
+            </div>
           </div>
 
-          <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
-        </div>
+          {/* Sidebar - Announcements */}
+          <div className="space-y-6">
+            <div className="card bg-base-100 shadow-xl">
+              <div className="card-body">
+                <h3 className="card-title text-xl mb-4">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6 mr-2"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+                    <line x1="4" y1="22" x2="4" y2="15" />
+                  </svg>
+                  Announcements
+                </h3>
 
-        {/* Community Items - Dynamic View */}
-        {viewMode === 'grid' && (
-          <ItemGridView items={sortedItems} renderCard={renderCard} />
-        )}
-        {viewMode === 'detailed' && (
-          <ItemDetailedView items={sortedItems} renderRow={renderDetailedRow} renderHeader={renderHeader} />
-        )}
-        {viewMode === 'minimal' && (
-          <ItemMinimalView items={sortedItems} renderRow={renderMinimalRow} renderHeader={renderHeader} />
-        )}
+                <div className="space-y-4">
+                  {announcements.map((announcement) => (
+                    <div key={announcement.id} className="p-4 bg-base-200 rounded-lg">
+                      <div className="flex items-start justify-between mb-2">
+                        <span className={`badge badge-sm ${getAnnouncementBadge(announcement.type)}`}>
+                          {announcement.type}
+                        </span>
+                        <span className="text-xs text-base-content/50">
+                          {new Date(announcement.date).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <h4 className="font-semibold text-sm mb-1">{announcement.title}</h4>
+                      <p className="text-xs text-base-content/70">{announcement.content}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Links */}
+            <div className="card bg-base-100 shadow-xl">
+              <div className="card-body">
+                <h3 className="card-title text-xl mb-4">Quick Links</h3>
+                <div className="space-y-2">
+                  <button className="btn btn-ghost btn-sm justify-start w-full">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 mr-2"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                    </svg>
+                    Documentation
+                  </button>
+                  <button className="btn btn-ghost btn-sm justify-start w-full">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 mr-2"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                      <line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
+                    Help & Support
+                  </button>
+                  <button className="btn btn-ghost btn-sm justify-start w-full">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 mr-2"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                      <circle cx="8.5" cy="7" r="4" />
+                      <polyline points="17 11 19 13 23 9" />
+                    </svg>
+                    Report a Bug
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
