@@ -160,6 +160,13 @@ The version is calculated automatically during Docker builds:
 The Dockerfile handles version generation automatically:
 
 ```dockerfile
+# Copy .git directory for version generation
+COPY .git ./.git
+
+# Fetch full git history for accurate version calculation
+RUN git remote add origin https://github.com/webedt/website.git 2>/dev/null || true && \
+    git fetch --unshallow --tags 2>/dev/null || git fetch --tags 2>/dev/null || true
+
 # Build stage
 FROM base AS build
 
@@ -173,7 +180,11 @@ RUN pnpm --filter @webedt/client build
 RUN pnpm --filter @webedt/server build
 ```
 
-This ensures every build has the correct version for that exact commit.
+**Key Points:**
+- Copies the `.git` directory into the Docker image
+- Fetches full git history and tags (handles shallow clones from CI/CD)
+- Calculates version based on complete commit history
+- Ensures every build has the correct version for that exact commit
 
 ## Version Display
 
