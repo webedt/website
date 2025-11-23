@@ -1,4 +1,9 @@
 import { useState } from 'react';
+import { useViewMode } from '@/hooks/useViewMode';
+import ViewToggle from '@/components/ViewToggle';
+import ItemGridView from '@/components/ItemViews/ItemGridView';
+import ItemDetailedView from '@/components/ItemViews/ItemDetailedView';
+import ItemMinimalView from '@/components/ItemViews/ItemMinimalView';
 
 interface CommunityItem {
   id: number;
@@ -78,6 +83,221 @@ const communityItems: CommunityItem[] = [
 
 export default function Community() {
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [viewMode, setViewMode] = useViewMode('community-view');
+
+  // Grid/Card view renderer
+  const renderCard = (item: CommunityItem) => (
+    <div
+      key={item.id}
+      className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow"
+    >
+      {/* Thumbnail - Clickable to Open */}
+      <figure
+        className="relative h-48 overflow-hidden cursor-pointer group"
+        onClick={() => console.log('Open:', item.title)}
+      >
+        <img
+          src={item.thumbnail}
+          alt={item.title}
+          className="w-full h-full object-cover transition-transform group-hover:scale-105"
+        />
+        {/* Hover Overlay */}
+        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+          <div className="text-white transform scale-90 group-hover:scale-100 transition-transform duration-300">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-16 w-16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+          </div>
+        </div>
+      </figure>
+
+      <div className="card-body p-4">
+        {/* Title */}
+        <h2 className="card-title text-lg">{item.title}</h2>
+
+        {/* Description */}
+        <p className="text-sm text-base-content/70 line-clamp-2 mb-2">
+          {item.description}
+        </p>
+
+        {/* Author and Likes */}
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-base-content/60">{item.author}</div>
+          <div className="flex gap-3 items-center">
+            {/* Likes Count */}
+            <div className="flex items-center gap-1 text-sm">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+              </svg>
+              <span>{item.likes}</span>
+            </div>
+
+            {/* Share Icon */}
+            <button
+              className="btn btn-ghost btn-sm btn-circle"
+              onClick={() => console.log('Share:', item.title)}
+              title="Share"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <circle cx="18" cy="5" r="3" />
+                <circle cx="6" cy="12" r="3" />
+                <circle cx="18" cy="19" r="3" />
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Detailed line view renderer
+  const renderDetailedRow = (item: CommunityItem) => (
+    <div
+      key={item.id}
+      className="flex items-center gap-4 p-4 bg-base-100 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer"
+      onClick={() => console.log('Open:', item.title)}
+    >
+      {/* Thumbnail */}
+      <img
+        src={item.thumbnail}
+        alt={item.title}
+        className="w-24 h-24 object-cover rounded"
+      />
+
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <h3 className="text-lg font-semibold text-base-content">{item.title}</h3>
+        <p className="text-sm text-base-content/70 mt-1">{item.description}</p>
+        <p className="text-xs text-base-content/50 mt-2">{item.author}</p>
+      </div>
+
+      {/* Likes and Actions */}
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-1 text-sm">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+          </svg>
+          <span>{item.likes}</span>
+        </div>
+        <button
+          className="btn btn-ghost btn-sm btn-circle"
+          onClick={(e) => {
+            e.stopPropagation();
+            console.log('Share:', item.title);
+          }}
+          title="Share"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <circle cx="18" cy="5" r="3" />
+            <circle cx="6" cy="12" r="3" />
+            <circle cx="18" cy="19" r="3" />
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+
+  // Minimal line view renderer
+  const renderMinimalRow = (item: CommunityItem) => (
+    <div
+      key={item.id}
+      className="flex items-center gap-4 p-3 bg-base-100 rounded hover:bg-base-200 transition-colors cursor-pointer"
+      onClick={() => console.log('Open:', item.title)}
+    >
+      {/* Icon/Thumbnail */}
+      <img
+        src={item.thumbnail}
+        alt={item.title}
+        className="w-10 h-10 object-cover rounded"
+      />
+
+      {/* Title */}
+      <div className="flex-1 min-w-0">
+        <h3 className="text-sm font-medium text-base-content truncate">{item.title}</h3>
+      </div>
+
+      {/* Author */}
+      <div className="text-xs text-base-content/60 hidden sm:block">{item.author}</div>
+
+      {/* Likes */}
+      <div className="flex items-center gap-1 text-xs">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-4 w-4"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+        >
+          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+        </svg>
+        <span>{item.likes}</span>
+      </div>
+
+      {/* Quick Action */}
+      <button
+        className="btn btn-ghost btn-xs btn-circle"
+        onClick={(e) => {
+          e.stopPropagation();
+          console.log('Share:', item.title);
+        }}
+        title="Share"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-4 w-4"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <circle cx="18" cy="5" r="3" />
+          <circle cx="6" cy="12" r="3" />
+          <circle cx="18" cy="19" r="3" />
+          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+        </svg>
+      </button>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-base-200">
@@ -90,113 +310,35 @@ export default function Community() {
           </p>
         </div>
 
-        {/* Category Filters */}
-        <div className="mb-8 flex gap-2">
-          {['All', 'Popular', 'Recent', 'Featured', 'Trending'].map((category) => (
-            <button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
-              className={`btn btn-sm ${
-                selectedCategory === category ? 'btn-primary' : 'btn-ghost'
-              }`}
-            >
-              {category}
-            </button>
-          ))}
-        </div>
-
-        {/* Community Items Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {communityItems.map((item) => (
-            <div
-              key={item.id}
-              className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow"
-            >
-              {/* Thumbnail - Clickable to Open */}
-              <figure
-                className="relative h-48 overflow-hidden cursor-pointer group"
-                onClick={() => console.log('Open:', item.title)}
+        {/* Category Filters and View Toggle */}
+        <div className="mb-8 flex flex-wrap gap-4 items-center justify-between">
+          <div className="flex gap-2">
+            {['All', 'Popular', 'Recent', 'Featured', 'Trending'].map((category) => (
+              <button
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+                className={`btn btn-sm ${
+                  selectedCategory === category ? 'btn-primary' : 'btn-ghost'
+                }`}
               >
-                <img
-                  src={item.thumbnail}
-                  alt={item.title}
-                  className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                />
-                {/* Hover Overlay */}
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                  <div className="text-white transform scale-90 group-hover:scale-100 transition-transform duration-300">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-16 w-16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                      <circle cx="9" cy="7" r="4" />
-                      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                    </svg>
-                  </div>
-                </div>
-              </figure>
+                {category}
+              </button>
+            ))}
+          </div>
 
-              <div className="card-body p-4">
-                {/* Title */}
-                <h2 className="card-title text-lg">{item.title}</h2>
-
-                {/* Description */}
-                <p className="text-sm text-base-content/70 line-clamp-2 mb-2">
-                  {item.description}
-                </p>
-
-                {/* Author and Likes */}
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-base-content/60">{item.author}</div>
-                  <div className="flex gap-3 items-center">
-                    {/* Likes Count */}
-                    <div className="flex items-center gap-1 text-sm">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                      >
-                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                      </svg>
-                      <span>{item.likes}</span>
-                    </div>
-
-                    {/* Share Icon */}
-                    <button
-                      className="btn btn-ghost btn-sm btn-circle"
-                      onClick={() => console.log('Share:', item.title)}
-                      title="Share"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <circle cx="18" cy="5" r="3" />
-                        <circle cx="6" cy="12" r="3" />
-                        <circle cx="18" cy="19" r="3" />
-                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-                        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
+          <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
         </div>
+
+        {/* Community Items - Dynamic View */}
+        {viewMode === 'grid' && (
+          <ItemGridView items={communityItems} renderCard={renderCard} />
+        )}
+        {viewMode === 'detailed' && (
+          <ItemDetailedView items={communityItems} renderRow={renderDetailedRow} />
+        )}
+        {viewMode === 'minimal' && (
+          <ItemMinimalView items={communityItems} renderRow={renderMinimalRow} />
+        )}
       </div>
     </div>
   );
