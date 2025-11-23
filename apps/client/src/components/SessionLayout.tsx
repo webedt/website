@@ -11,10 +11,8 @@ import type { GitHubRepository } from '@webedt/shared';
 interface SessionLayoutProps {
   selectedRepo?: string;
   baseBranch?: string;
-  branch?: string;
   onRepoChange?: (repo: string) => void;
   onBaseBranchChange?: (branch: string) => void;
-  onBranchChange?: (branch: string) => void;
   repositories?: GitHubRepository[];
   isLoadingRepos?: boolean;
   isLocked?: boolean;
@@ -24,10 +22,8 @@ interface SessionLayoutProps {
 export default function SessionLayout({
   selectedRepo: selectedRepoProp,
   baseBranch: baseBranchProp,
-  branch: branchProp,
   onRepoChange,
   onBaseBranchChange,
-  onBranchChange,
   repositories: repositoriesProp,
   isLoadingRepos: isLoadingReposProp,
   isLocked: isLockedProp,
@@ -64,7 +60,7 @@ export default function SessionLayout({
   // Use fetched data if props not provided
   const selectedRepo = selectedRepoProp ?? sessionData?.data?.repositoryUrl ?? '';
   const baseBranch = baseBranchProp ?? sessionData?.data?.baseBranch ?? 'main';
-  const branch = branchProp ?? sessionData?.data?.branch ?? '';
+  const branch = sessionData?.data?.branch ?? '';
   const repositories = repositoriesProp ?? reposData?.data ?? [];
   const isLoadingRepos = isLoadingReposProp ?? isLoadingReposQuery;
   const isLocked = isLockedProp ?? (!!sessionId && !!sessionData?.data);
@@ -501,10 +497,12 @@ export default function SessionLayout({
                   </div>
 
                   {/* Read-only branch when locked */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-base-content/70">Branch:</span>
-                    <span className="text-sm text-base-content">{branch || '(auto-generated)'}</span>
-                  </div>
+                  {branch && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-base-content/70">Branch:</span>
+                      <span className="text-sm text-base-content">{branch}</span>
+                    </div>
+                  )}
                 </>
               ) : (
                 <>
@@ -535,18 +533,6 @@ export default function SessionLayout({
                       onChange={(e) => onBaseBranchChange?.(e.target.value)}
                       className="input input-sm input-bordered w-32"
                       placeholder="main"
-                    />
-                  </div>
-
-                  {/* Branch */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-base-content/70">Branch:</span>
-                    <input
-                      type="text"
-                      value={branch}
-                      onChange={(e) => onBranchChange?.(e.target.value)}
-                      className="input input-sm input-bordered w-32"
-                      placeholder="(auto-generated)"
                     />
                   </div>
                 </>
