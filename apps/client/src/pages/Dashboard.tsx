@@ -73,10 +73,92 @@ const shopItems: ShopItem[] = [
   },
 ];
 
+type SortField = 'title' | 'price' | null;
+type SortDirection = 'asc' | 'desc' | null;
+
 export default function Dashboard() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [viewMode, setViewMode] = useViewMode('dashboard-view');
+  const [sortField, setSortField] = useState<SortField>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const navigate = useNavigate();
+
+  // Handle sort click
+  const handleSort = (field: Exclude<SortField, null>) => {
+    if (sortField === field) {
+      // Cycle through: asc -> desc -> none
+      if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else if (sortDirection === 'desc') {
+        setSortField(null);
+        setSortDirection(null);
+      }
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  // Sort items
+  const sortedItems = [...shopItems].sort((a, b) => {
+    if (!sortField || !sortDirection) return 0;
+
+    let comparison = 0;
+    if (sortField === 'title') {
+      comparison = a.title.localeCompare(b.title);
+    } else if (sortField === 'price') {
+      const priceA = parseFloat(a.price.replace('$', ''));
+      const priceB = parseFloat(b.price.replace('$', ''));
+      comparison = priceA - priceB;
+    }
+
+    return sortDirection === 'asc' ? comparison : -comparison;
+  });
+
+  // Render sort icon
+  const renderSortIcon = (field: Exclude<SortField, null>) => {
+    if (sortField !== field) {
+      return (
+        <svg className="w-4 h-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+        </svg>
+      );
+    }
+    if (sortDirection === 'asc') {
+      return (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+        </svg>
+      );
+    }
+    return (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+      </svg>
+    );
+  };
+
+  // Header for list views
+  const renderHeader = () => (
+    <div className="flex items-center gap-4 px-4 py-3 bg-base-300 rounded-lg font-semibold text-sm mb-2">
+      <div className="w-10 h-10"></div> {/* Thumbnail spacer */}
+      <button
+        onClick={() => handleSort('title')}
+        className="flex-1 flex items-center gap-2 hover:text-primary transition-colors"
+      >
+        Title
+        {renderSortIcon('title')}
+      </button>
+      <button
+        onClick={() => handleSort('price')}
+        className="flex items-center gap-2 hover:text-primary transition-colors"
+      >
+        Price
+        {renderSortIcon('price')}
+      </button>
+      <div className="w-24"></div> {/* Actions spacer */}
+    </div>
+  );
 
   // Grid/Card view renderer
   const renderCard = (item: ShopItem) => (
@@ -345,13 +427,13 @@ export default function Dashboard() {
 
         {/* Shop Items - Dynamic View */}
         {viewMode === 'grid' && (
-          <ItemGridView items={shopItems} renderCard={renderCard} />
+          <ItemGridView items={sortedItems} renderCard={renderCard} />
         )}
         {viewMode === 'detailed' && (
-          <ItemDetailedView items={shopItems} renderRow={renderDetailedRow} />
+          <ItemDetailedView items={sortedItems} renderRow={renderDetailedRow} renderHeader={renderHeader} />
         )}
         {viewMode === 'minimal' && (
-          <ItemMinimalView items={shopItems} renderRow={renderMinimalRow} />
+          <ItemMinimalView items={sortedItems} renderRow={renderMinimalRow} renderHeader={renderHeader} />
         )}
       </div>
     </div>
