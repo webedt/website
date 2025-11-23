@@ -53,6 +53,20 @@ const executeHandler = async (req: any, res: any) => {
     const { userRequest, repositoryUrl, branch, autoCommit, chatSessionId } = params;
     resumeSessionId = params.resumeSessionId;
 
+    // Debug: Log incoming parameters
+    console.log('[Execute] ========== INCOMING REQUEST PARAMETERS ==========');
+    console.log('[Execute] Request method:', req.method);
+    console.log('[Execute] All params:', JSON.stringify(params, null, 2));
+    console.log('[Execute] Extracted values:', {
+      userRequest: typeof userRequest === 'string' ? userRequest.substring(0, 50) : userRequest,
+      repositoryUrl,
+      branch,
+      autoCommit,
+      chatSessionId,
+      resumeSessionId,
+    });
+    console.log('[Execute] ========================================================');
+
     if (!userRequest && !resumeSessionId) {
       res.status(400).json({ success: false, error: 'userRequest or resumeSessionId is required' });
       return;
