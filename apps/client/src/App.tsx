@@ -19,6 +19,7 @@ import Images from '@/pages/Images';
 import Sound from '@/pages/Sound';
 import SceneEditor from '@/pages/SceneEditor';
 import Preview from '@/pages/Preview';
+import ItemPage from '@/pages/ItemPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -61,7 +62,7 @@ function App() {
 
     // Check if we're in a path-based deployment (3+ path segments)
     const pathSegments = pathname.split('/').filter(Boolean);
-    if (pathSegments.length >= 3 && !['login', 'register', 'session', 'sessions', 'settings', 'new-session', 'code', 'images', 'sound', 'scene-editor', 'preview'].includes(pathSegments[0])) {
+    if (pathSegments.length >= 3 && !['login', 'register', 'session', 'sessions', 'settings', 'new-session', 'code', 'images', 'sound', 'scene-editor', 'preview', 'item'].includes(pathSegments[0])) {
       // Assume format: /owner/repo/branch/...
       return `/${pathSegments[0]}/${pathSegments[1]}/${pathSegments[2]}`;
     }
@@ -164,6 +165,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Preview />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/item/:id"
+              element={
+                <ProtectedRoute>
+                  <ItemPage />
                 </ProtectedRoute>
               }
             />
