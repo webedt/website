@@ -103,8 +103,11 @@ export default function Dashboard() {
               key={item.id}
               className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow"
             >
-              {/* Thumbnail */}
-              <figure className="h-48 overflow-hidden">
+              {/* Thumbnail - Clickable to Open */}
+              <figure
+                className="h-48 overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+                onClick={() => console.log('Open:', item.title)}
+              >
                 <img
                   src={item.thumbnail}
                   alt={item.title}
@@ -121,16 +124,51 @@ export default function Dashboard() {
                   {item.description}
                 </p>
 
-                {/* Price */}
-                <div className="text-xl font-bold text-primary mb-3">{item.price}</div>
+                {/* Price with Icons */}
+                <div className="flex items-center justify-between">
+                  <div className="text-xl font-bold text-primary">{item.price}</div>
+                  <div className="flex gap-3">
+                    {/* Film Reel Icon - Trailer */}
+                    <button
+                      className="btn btn-ghost btn-sm btn-circle"
+                      onClick={() => console.log('Trailer:', item.title)}
+                      title="Watch Trailer"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" />
+                        <line x1="7" y1="2" x2="7" y2="22" />
+                        <line x1="17" y1="2" x2="17" y2="22" />
+                        <line x1="2" y1="12" x2="22" y2="12" />
+                        <line x1="2" y1="7" x2="7" y2="7" />
+                        <line x1="2" y1="17" x2="7" y2="17" />
+                        <line x1="17" y1="17" x2="22" y2="17" />
+                        <line x1="17" y1="7" x2="22" y2="7" />
+                      </svg>
+                    </button>
 
-                {/* Action Buttons */}
-                <div className="card-actions justify-between items-center">
-                  <div className="flex gap-2">
-                    <button className="btn btn-outline btn-sm">Trailer</button>
-                    <button className="btn btn-outline btn-sm">Open</button>
+                    {/* Play Icon */}
+                    <button
+                      className="btn btn-ghost btn-sm btn-circle"
+                      onClick={() => console.log('Play:', item.title)}
+                      title="Play"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                      >
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </button>
                   </div>
-                  <button className="btn btn-primary btn-sm">Play</button>
                 </div>
               </div>
             </div>
