@@ -1,4 +1,3 @@
-import { useParams } from 'react-router-dom';
 import { useState } from 'react';
 import SessionLayout from '@/components/SessionLayout';
 
@@ -17,7 +16,6 @@ type FolderNode = {
 type TreeNode = FileNode | FolderNode;
 
 export default function Code() {
-  const { sessionId } = useParams();
   const [selectedFile, setSelectedFile] = useState('Button.jsx');
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['src', 'components']));
 
@@ -180,21 +178,12 @@ export default Button;`;
     </div>
   );
 
-  // If accessed via session route, wrap in SessionLayout
-  if (sessionId) {
-    return (
-      <SessionLayout>
-        <div className="h-[calc(100vh-112px)]">
-          <CodeEditor />
-        </div>
-      </SessionLayout>
-    );
-  }
-
-  // Otherwise render standalone
+  // Always use SessionLayout to show status bar
   return (
-    <div className="min-h-screen">
-      <CodeEditor />
-    </div>
+    <SessionLayout>
+      <div className="h-[calc(100vh-112px)]">
+        <CodeEditor />
+      </div>
+    </SessionLayout>
   );
 }
