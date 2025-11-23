@@ -12,11 +12,9 @@ interface SessionLayoutProps {
   selectedRepo?: string;
   baseBranch?: string;
   branch?: string;
-  autoCommit?: boolean;
   onRepoChange?: (repo: string) => void;
   onBaseBranchChange?: (branch: string) => void;
   onBranchChange?: (branch: string) => void;
-  onAutoCommitChange?: (autoCommit: boolean) => void;
   repositories?: GitHubRepository[];
   isLoadingRepos?: boolean;
   isLocked?: boolean;
@@ -27,11 +25,9 @@ export default function SessionLayout({
   selectedRepo: selectedRepoProp,
   baseBranch: baseBranchProp,
   branch: branchProp,
-  autoCommit: autoCommitProp,
   onRepoChange,
   onBaseBranchChange,
   onBranchChange,
-  onAutoCommitChange,
   repositories: repositoriesProp,
   isLoadingRepos: isLoadingReposProp,
   isLocked: isLockedProp,
@@ -69,7 +65,6 @@ export default function SessionLayout({
   const selectedRepo = selectedRepoProp ?? sessionData?.data?.repositoryUrl ?? '';
   const baseBranch = baseBranchProp ?? sessionData?.data?.baseBranch ?? 'main';
   const branch = branchProp ?? sessionData?.data?.branch ?? '';
-  const autoCommit = autoCommitProp ?? sessionData?.data?.autoCommit ?? true;
   const repositories = repositoriesProp ?? reposData?.data ?? [];
   const isLoadingRepos = isLoadingReposProp ?? isLoadingReposQuery;
   const isLocked = isLockedProp ?? (!!sessionId && !!sessionData?.data);
@@ -510,14 +505,6 @@ export default function SessionLayout({
                     <span className="text-sm font-medium text-base-content/70">Branch:</span>
                     <span className="text-sm text-base-content">{branch || '(auto-generated)'}</span>
                   </div>
-
-                  {/* Read-only auto-commit status when locked */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-base-content/70">Auto-commit:</span>
-                    <span className="text-sm text-base-content">
-                      {autoCommit ? 'On' : 'Off'}
-                    </span>
-                  </div>
                 </>
               ) : (
                 <>
@@ -561,20 +548,6 @@ export default function SessionLayout({
                       className="input input-sm input-bordered w-32"
                       placeholder="(auto-generated)"
                     />
-                  </div>
-
-                  {/* Auto-commit */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-base-content/70">Auto-commit:</span>
-                    <input
-                      type="checkbox"
-                      checked={autoCommit}
-                      onChange={(e) => onAutoCommitChange?.(e.target.checked)}
-                      className="toggle toggle-sm toggle-primary"
-                    />
-                    <span className="text-sm text-base-content/50">
-                      {autoCommit ? 'On' : 'Off'}
-                    </span>
                   </div>
                 </>
               )}
