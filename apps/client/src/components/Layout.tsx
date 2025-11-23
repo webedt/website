@@ -306,32 +306,20 @@ export default function Layout() {
         </div>
       </nav>
 
-      {/* Second Bar - Status Indicator */}
-      <div className="bg-base-100 border-b border-base-300">
-        <div className="px-4 h-12 flex items-center justify-center gap-4">
-          {isEditorMode ? (
-            <>
-              {/* Show offline status for editor pages */}
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-base-content/30"></div>
-                  <span className="text-xs font-medium text-base-content/50">Offline</span>
-                </div>
+      {/* Second Bar - Status Indicator (Only shown in editor mode) */}
+      {isEditorMode && (
+        <div className="bg-base-100 border-b border-base-300">
+          <div className="px-4 h-12 flex items-center justify-center gap-4">
+            {/* Show offline status for editor pages */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-base-content/30"></div>
+                <span className="text-xs font-medium text-base-content/50">Offline</span>
               </div>
-            </>
-          ) : (
-            <>
-              {/* Show New Session button for store pages */}
-              <Link
-                to="/new-session"
-                className="btn btn-sm btn-primary"
-              >
-                New Session
-              </Link>
-            </>
-          )}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Main Content */}
       <main className="flex-1">
