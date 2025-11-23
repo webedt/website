@@ -4,7 +4,7 @@ import SessionLayout from '@/components/SessionLayout';
 function PreviewPlaceholder() {
   return (
     <div className="h-full bg-base-300 flex flex-col">
-      {/* Main preview area */}
+      {/* Main preview area - Game iframe will go here */}
       <div className="flex-1 relative bg-gradient-to-br from-base-200 to-base-300 flex items-center justify-center">
         {/* Placeholder content */}
         <div className="text-center space-y-6">
@@ -17,8 +17,8 @@ function PreviewPlaceholder() {
 
           {/* Text */}
           <div className="space-y-2">
-            <h2 className="text-2xl font-semibold text-base-content/60">No Preview Available</h2>
-            <p className="text-base-content/40">Preview functionality coming soon</p>
+            <h2 className="text-2xl font-semibold text-base-content/60">No Game Preview Available</h2>
+            <p className="text-base-content/40">Game preview will load here</p>
           </div>
         </div>
 
@@ -33,70 +33,59 @@ function PreviewPlaceholder() {
         </div>
       </div>
 
-      {/* Control bar */}
+      {/* Game control bar */}
       <div className="bg-base-200 border-t border-base-content/10 px-4 py-3">
         <div className="flex items-center gap-4">
-          {/* Playback controls */}
+          {/* Left: Playback controls */}
           <div className="flex items-center gap-2">
-            <button className="btn btn-sm btn-circle btn-ghost cursor-not-allowed">
+            {/* Restart */}
+            <button className="btn btn-sm btn-circle btn-ghost cursor-not-allowed" title="Restart">
               <svg className="w-4 h-4 text-base-content/40" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
+                <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/>
               </svg>
             </button>
-            <button className="btn btn-sm btn-circle btn-ghost cursor-not-allowed">
+
+            {/* Play/Pause */}
+            <button className="btn btn-sm btn-circle btn-ghost cursor-not-allowed" title="Play/Pause">
               <svg className="w-5 h-5 text-base-content/40" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M6 19h4V5H6v14zm8-14v14l11-7z"/>
+                <path d="M8 5v14l11-7z"/>
               </svg>
             </button>
-            <button className="btn btn-sm btn-circle btn-ghost cursor-not-allowed">
+
+            {/* Next Frame */}
+            <button className="btn btn-sm btn-circle btn-ghost cursor-not-allowed" title="Next Frame">
               <svg className="w-4 h-4 text-base-content/40" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/>
               </svg>
             </button>
-            <button className="btn btn-sm btn-circle btn-ghost cursor-not-allowed">
-              <svg className="w-4 h-4 text-base-content/40" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M7.58 16.89l5.77-4.07c.56-.4.56-1.24 0-1.63L7.58 7.11C6.91 6.65 6 7.12 6 7.93v8.14c0 .81.91 1.28 1.58.82zM16 7v10h2V7h-2z"/>
-              </svg>
-            </button>
           </div>
 
-          {/* Time display */}
-          <div className="text-sm text-base-content/40 font-mono">
-            00:00
+          {/* Center: Scene selector dropdown */}
+          <div className="flex-1 flex items-center gap-2">
+            <select className="select select-sm bg-base-100/10 border-base-content/20 text-base-content/40 cursor-not-allowed max-w-xs" disabled>
+              <option>Recent Scenes</option>
+              <option>Scene 1</option>
+              <option>Scene 2</option>
+              <option>Scene 3</option>
+            </select>
+
+            <select className="select select-sm bg-base-100/10 border-base-content/20 text-base-content/40 cursor-not-allowed max-w-xs" disabled>
+              <option>All Scenes</option>
+              <option>Main Menu</option>
+              <option>Level 1</option>
+              <option>Level 2</option>
+              <option>Boss Fight</option>
+            </select>
           </div>
 
-          {/* Progress bar */}
-          <div className="flex-1">
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value="0"
-              className="range range-xs range-primary opacity-30 cursor-not-allowed"
-              disabled
-            />
-          </div>
-
-          {/* Duration display */}
-          <div className="text-sm text-base-content/40 font-mono">
-            00:00
-          </div>
-
-          {/* Volume control */}
+          {/* Right: Volume control */}
           <div className="flex items-center gap-2">
-            <button className="btn btn-sm btn-circle btn-ghost cursor-not-allowed">
+            {/* Mute/Unmute */}
+            <button className="btn btn-sm btn-circle btn-ghost cursor-not-allowed" title="Mute/Unmute">
               <svg className="w-5 h-5 text-base-content/40" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
               </svg>
             </button>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value="50"
-              className="range range-xs w-20 opacity-30 cursor-not-allowed"
-              disabled
-            />
           </div>
         </div>
       </div>
