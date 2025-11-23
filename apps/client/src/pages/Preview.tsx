@@ -1,4 +1,3 @@
-import { useParams } from 'react-router-dom';
 import SessionLayout from '@/components/SessionLayout';
 
 function PreviewPlaceholder() {
@@ -94,21 +93,10 @@ function PreviewPlaceholder() {
 }
 
 export default function Preview() {
-  const { sessionId } = useParams();
-
-  // If accessed via session route, wrap in SessionLayout
-  if (sessionId) {
-    return (
-      <SessionLayout>
-        <PreviewPlaceholder />
-      </SessionLayout>
-    );
-  }
-
-  // Otherwise render standalone
+  // Always use SessionLayout to show status bar
   return (
-    <div className="min-h-screen bg-base-200">
+    <SessionLayout>
       <PreviewPlaceholder />
-    </div>
+    </SessionLayout>
   );
 }

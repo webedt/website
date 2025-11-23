@@ -1,4 +1,3 @@
-import { useParams } from 'react-router-dom';
 import { useState } from 'react';
 import SessionLayout from '@/components/SessionLayout';
 
@@ -422,21 +421,10 @@ function generateWaveformPath(): string {
 }
 
 export default function Sound() {
-  const { sessionId } = useParams();
-
-  // If accessed via session route, wrap in SessionLayout
-  if (sessionId) {
-    return (
-      <SessionLayout>
-        <SoundContent />
-      </SessionLayout>
-    );
-  }
-
-  // Otherwise render standalone
+  // Always use SessionLayout to show status bar
   return (
-    <div className="min-h-screen bg-base-200">
+    <SessionLayout>
       <SoundContent />
-    </div>
+    </SessionLayout>
   );
 }

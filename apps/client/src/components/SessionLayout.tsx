@@ -453,13 +453,21 @@ export default function SessionLayout({
         </div>
       </nav>
 
-      {/* Second Bar - Repository Controls */}
+      {/* Second Bar - Repository Controls / Connection Status */}
       <div className="bg-base-100 border-b border-base-300">
         <div className="px-4 h-12 flex items-center justify-center gap-4">
-          {hasRepository && (
+          {hasRepository ? (
             <>
               {isLocked ? (
                 <>
+                  {/* Connection indicator when locked */}
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2 h-2 rounded-full bg-success animate-pulse"></div>
+                      <span className="text-xs font-medium text-base-content/50">Connected</span>
+                    </div>
+                  </div>
+
                   {/* Read-only repository info when locked */}
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-base-content/70">Repository:</span>
@@ -531,6 +539,27 @@ export default function SessionLayout({
                   </div>
                 </>
               )}
+            </>
+          ) : (
+            <>
+              {/* Show offline or no repository status */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
+                  {isLocked ? (
+                    <>
+                      {/* Red dot when session is active but missing repository (error state) */}
+                      <div className="w-2 h-2 rounded-full bg-error"></div>
+                      <span className="text-xs font-medium text-base-content/50">No repository</span>
+                    </>
+                  ) : (
+                    <>
+                      {/* Grey dot for setup pages, new session, sessions list, quick-setup, etc. */}
+                      <div className="w-2 h-2 rounded-full bg-base-content/30"></div>
+                      <span className="text-xs font-medium text-base-content/50">Offline</span>
+                    </>
+                  )}
+                </div>
+              </div>
             </>
           )}
         </div>

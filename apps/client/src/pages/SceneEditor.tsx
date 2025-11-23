@@ -1,4 +1,3 @@
-import { useParams } from 'react-router-dom';
 import SessionLayout from '@/components/SessionLayout';
 import { useState } from 'react';
 
@@ -251,21 +250,10 @@ function EditorPlaceholder() {
 }
 
 export default function SceneEditor() {
-  const { sessionId } = useParams();
-
-  // If accessed via session route, wrap in SessionLayout
-  if (sessionId) {
-    return (
-      <SessionLayout>
-        <EditorPlaceholder />
-      </SessionLayout>
-    );
-  }
-
-  // For standalone/quick setup mode, render with minimal wrapper
+  // Always use SessionLayout to show status bar
   return (
-    <div className="min-h-screen bg-base-200">
+    <SessionLayout>
       <EditorPlaceholder />
-    </div>
+    </SessionLayout>
   );
 }

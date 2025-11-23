@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
 import SessionLayout from '@/components/SessionLayout';
 
 type EditorType = 'sprite' | 'spritesheet' | 'animation';
@@ -631,21 +630,10 @@ function AnimationEditor() {
 }
 
 export default function Images() {
-  const { sessionId } = useParams();
-
-  // If accessed via session route, wrap in SessionLayout
-  if (sessionId) {
-    return (
-      <SessionLayout>
-        <ImagesContent />
-      </SessionLayout>
-    );
-  }
-
-  // Otherwise render standalone with similar layout structure
+  // Always use SessionLayout to show status bar
   return (
-    <div className="min-h-screen bg-base-200">
+    <SessionLayout>
       <ImagesContent />
-    </div>
+    </SessionLayout>
   );
 }
