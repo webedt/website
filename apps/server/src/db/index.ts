@@ -70,6 +70,7 @@ if (usePostgres) {
       user_request TEXT NOT NULL,
       status TEXT NOT NULL DEFAULT 'pending',
       repository_url TEXT,
+      base_branch TEXT,
       branch TEXT,
       auto_commit BOOLEAN NOT NULL DEFAULT FALSE,
       locked BOOLEAN NOT NULL DEFAULT FALSE,
@@ -96,6 +97,12 @@ if (usePostgres) {
           WHERE table_name = 'chat_sessions' AND column_name = 'locked'
         ) THEN
           ALTER TABLE chat_sessions ADD COLUMN locked BOOLEAN NOT NULL DEFAULT FALSE;
+        END IF;
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'chat_sessions' AND column_name = 'base_branch'
+        ) THEN
+          ALTER TABLE chat_sessions ADD COLUMN base_branch TEXT;
         END IF;
         IF NOT EXISTS (
           SELECT 1 FROM information_schema.columns
@@ -164,6 +171,7 @@ if (usePostgres) {
       user_request TEXT NOT NULL,
       status TEXT NOT NULL DEFAULT 'pending',
       repository_url TEXT,
+      base_branch TEXT,
       branch TEXT,
       auto_commit INTEGER NOT NULL DEFAULT 0,
       locked INTEGER NOT NULL DEFAULT 0,
@@ -192,6 +200,12 @@ if (usePostgres) {
     if (!hasLockedColumn) {
       sqlite.exec('ALTER TABLE chat_sessions ADD COLUMN locked INTEGER NOT NULL DEFAULT 0;');
       console.log('SQLite migration: Added locked column to chat_sessions');
+    }
+
+    const hasBaseBranchColumn = chatSessionsInfo.some((col) => col.name === 'base_branch');
+    if (!hasBaseBranchColumn) {
+      sqlite.exec('ALTER TABLE chat_sessions ADD COLUMN base_branch TEXT;');
+      console.log('SQLite migration: Added base_branch column to chat_sessions');
     }
 
     const messagesInfo = sqlite.pragma('table_info(messages)') as Array<{ name: string }>;

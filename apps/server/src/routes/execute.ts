@@ -50,7 +50,7 @@ const executeHandler = async (req: any, res: any) => {
   try {
     // Support both GET (query) and POST (body) parameters
     const params = req.method === 'POST' ? req.body : req.query;
-    const { userRequest, repositoryUrl, branch, autoCommit, chatSessionId } = params;
+    const { userRequest, repositoryUrl, baseBranch, branch, autoCommit, chatSessionId } = params;
     resumeSessionId = params.resumeSessionId;
 
     if (!userRequest && !resumeSessionId) {
@@ -111,7 +111,10 @@ const executeHandler = async (req: any, res: any) => {
         .where(eq(chatSessions.id, chatSession.id));
     } else {
       // Check if there's already a locked session for this repo/branch combination
-      if (repositoryUrl && branch) {
+      // Use branch if available, otherwise baseBranch
+      const targetBranch = branch || baseBranch;
+
+      if (repositoryUrl && targetBranch) {
         const existingLockedSession = await db
           .select()
           .from(chatSessions)
@@ -119,7 +122,7 @@ const executeHandler = async (req: any, res: any) => {
             and(
               eq(chatSessions.userId, authReq.user.id),
               eq(chatSessions.repositoryUrl, repositoryUrl as string),
-              eq(chatSessions.branch, branch as string),
+              eq(chatSessions.branch, targetBranch as string),
               eq(chatSessions.locked, true)
             )
           )
@@ -128,7 +131,7 @@ const executeHandler = async (req: any, res: any) => {
         if (existingLockedSession.length > 0) {
           res.status(400).json({
             success: false,
-            error: `Repository ${repositoryUrl} on branch ${branch} is locked by an existing session. Please complete or delete the existing session first.`,
+            error: `Repository ${repositoryUrl} on branch ${targetBranch} is locked by an existing session. Please complete or delete the existing session first.`,
           });
           return;
         }
@@ -142,7 +145,8 @@ const executeHandler = async (req: any, res: any) => {
           userRequest: (userRequest as string) || 'New session',
           status: 'pending',
           repositoryUrl: (repositoryUrl as string) || null,
-          branch: (branch as string) || null,
+          baseBranch: (baseBranch as string) || 'main', // Default to main if not provided
+          branch: (branch as string) || null, // Will be populated if provided, or when branch is created
           autoCommit: autoCommitBool,
           locked: false, // Will be locked after first message
         })
@@ -339,9 +343,18 @@ const executeHandler = async (req: any, res: any) => {
     if (repositoryUrl && authReq.user.githubAccessToken) {
       executePayload.github = {
         repoUrl: repositoryUrl as string,
-        branch: (branch as string) || undefined,
+        // For the initial checkout, we use baseBranch unless a specific branch is already defined
+        // If we are resuming, the worker probably handles the branch from session context
+        branch: (baseBranch as string) || 'main',
         accessToken: authReq.user.githubAccessToken,
       };
+      // If we have a specific working branch we want to use/create, we might need to pass it differently?
+      // But standard ai-coding-worker behavior is to checkout 'branch' and then create new branch if autoCommit.
+      // If 'branch' (working branch) is provided, we might want to use THAT as the checkout branch if it exists?
+      // But usually 'baseBranch' is the safe bet for starting point.
+      // NOTE: 'branch' (working branch) variable is intentionally not used here for checkout,
+      // as we want to checkout the 'baseBranch' and let the worker create/manage the working branch.
+
       executePayload.autoCommit = autoCommitBool;
     }
 
@@ -531,6 +544,29 @@ const executeHandler = async (req: any, res: any) => {
 
               if (eventData.type === 'session_name' && eventData.sessionName) {
                 console.log(`[Execute] Session Name: ${eventData.sessionName}`);
+              }
+
+              // Update branch name if received from worker
+              if (eventData.type === 'branch_created' && eventData.branchName) {
+                console.log(`[Execute] Branch created: ${eventData.branchName}`);
+                await db
+                  .update(chatSessions)
+                  .set({ branch: eventData.branchName })
+                  .where(eq(chatSessions.id, chatSession.id));
+
+                // Update local session object
+                chatSession.branch = eventData.branchName;
+              }
+
+              if (eventData.type === 'session_name' && eventData.branchName) {
+                 // Also update branch if provided in session_name event
+                 console.log(`[Execute] Branch name from session metadata: ${eventData.branchName}`);
+                 await db
+                  .update(chatSessions)
+                  .set({ branch: eventData.branchName })
+                  .where(eq(chatSessions.id, chatSession.id));
+
+                 chatSession.branch = eventData.branchName;
               }
 
               if (eventData.error) {
